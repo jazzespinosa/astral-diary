@@ -1,1 +1,130 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Parisienne&display=swap');
+@import '../node_modules/angular-calendar/css/angular-calendar.css';
+
+/* OFFCANVAS */
+.offcanvas-backdrop {
+  opacity: 0 !important;
+  background-color: transparent !important;
+}
+
+/* FULL CALENDAR */
+div:has(> .fc-toolbar-title) {
+  text-align: end !important;
+}
+
+.fc-toolbar-title {
+  font-size: 1.5rem !important;
+}
+
+.fc-today-button {
+  padding: 0.2rem 0.4rem !important;
+}
+
+.fc-prev-button,
+.fc-next-button {
+  padding: 0.2rem !important;
+}
+
+.fc-button-primary {
+  font-size: 0.8rem !important;
+}
+
+/* ENTRY FORM */
+.p-editor .p-editor-toolbar.ql-snow {
+  padding: 0.2rem !important;
+  font-size: 0.5rem;
+}
+
+.ql-toolbar.ql-snow .ql-formats {
+  margin-inline-end: 0.2rem !important;
+}
+
+.ql-container {
+  font-size: 0.8rem;
+}
+
+/* ENTRY FORM EDITOR */
+.ql-editor ol li:before {
+  content: none !important;
+}
+
+.p-editor .p-editor-content .ql-editor {
+  padding: 0.5rem !important;
+}
+
+/* ENTRY FORM FILE UPLOAD */
+.p-fileupload-header {
+  padding: 0.5rem !important;
+}
+
+.p-button.p-fileupload-choose-button,
+.p-button.p-fileupload-cancel-button {
+  font-size: 0.8rem !important;
+  padding: 0.5rem !important;
+}
+
+.p-fileupload-file-badge.p-badge.p-badge-warn.p-component {
+  display: none;
+}
+
+.p-component.p-progressbar.p-progressbar-determinate {
+  display: none;
+}
+
+/* FORM DATE PICKER */
+.date-container .p-datepicker-input.p-inputtext,
+.date-container .p-datepicker .p-datepicker-dropdown {
+  background: transparent;
+  border: none;
+}
+
+.date-container .p-datepicker-input.p-inputtext {
+  border-bottom: 1px solid #000000;
+  border-radius: 0;
+  padding: 0 0 0 2px;
+}
+
+.p-datepicker-input.p-datepicker-input {
+  width: 10rem;
+}
+
+/* SEARCH ENTRY */
+.p-select-label,
+.date-select .p-datepicker-input.p-datepicker-input {
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.date-select .p-datepicker-input.p-datepicker-input {
+  width: 6rem;
+}
+
+@media (max-width: 768px) {
+  .p-fileupload-header {
+    padding: 0.2rem !important;
+  }
+
+  .p-button.p-fileupload-choose-button,
+  .p-button.p-fileupload-cancel-button {
+    padding: 0.25rem !important;
+  }
+
+  .p-card-body {
+    padding: 1rem !important;
+    gap: 0 !important;
+  }
+
+  .p-card-title {
+    font-size: 1rem !important;
+  }
+
+  .p-card-subtitle {
+    font-size: 1rem !important;
+  }
+
+  .p-card-content {
+    font-size: 0.9rem !important;
+    margin-top: 0.5rem !important;
+  }
+}

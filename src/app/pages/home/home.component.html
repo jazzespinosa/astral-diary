@@ -1,0 +1,16 @@
+<div class="background"></div>
+<div class="canvas-container">
+  <div class="canvas-content">
+    <ngt-canvas
+      [dpr]="appService.isMobileView() ? 1 : 2"
+      [gl]="{ antialias: !appService.isMobileView(), powerPreference: 'high-performance' }"
+    >
+      <app-scene-graph *canvasContent />
+    </ngt-canvas>
+  </div>
+  @if (appService.isEntryOpen()) {
+    <div class="home-entry-container">
+      <app-entry parentComponent="home" />
+    </div>
+  }
+</div>

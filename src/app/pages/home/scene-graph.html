@@ -1,0 +1,141 @@
+<!-- MOON -->
+<ngt-mesh #moonRef (click)="moonClick($event)">
+  <ngt-sphere-geometry *args="[5, 32, 32]" />
+  @let moon = moonTexture.value();
+  @let map = moon?.map;
+  @let bumpMap = moon?.bumpMap;
+  @let emissiveMap = moon?.emissiveMap;
+  <ngt-mesh-standard-material
+    [map]="map"
+    [emissiveMap]="emissiveMap"
+    [emissive]="'white'"
+    [bumpMap]="bumpMap"
+    [roughness]="0.5"
+    [metalness]="0.5"
+    [emissiveIntensity]="0.7"
+  />
+  <ngts-edges [options]="{ threshold: 15, color: 'darkblue', lineWidth: 20 }" />
+</ngt-mesh>
+
+<ngts-clouds [options]="cloudsSystemOptions()">
+  @for (cloud of clouds(); track $index) {
+    <app-clouds
+      [position]="cloud.position"
+      [bounds]="cloud.bounds"
+      [scale]="cloud.scale"
+      [hasLightning]="hasLightning()"
+      [lightningIntensity]="lightningIntensity()"
+      [options]="cloudOptions()"
+    />
+  }
+</ngts-clouds>
+
+<ngts-center>
+  <ngt-points #asteroidsRef>
+    <ngt-primitive
+      *args="[asteroids.scene()]"
+      [parameters]="{ position: [-100, -180, -100], scale: 3, rotation: [0, 135, 0] }"
+    />
+  </ngt-points>
+
+  <ngt-points #cometRef>
+    <ngt-primitive
+      *args="[comet.scene()]"
+      [parameters]="{ position: [-40, 200, -800], scale: 0.5, rotation: [-0.6, 0.5, -0.4] }"
+    />
+    <ngt-mesh #cometTailRef [position]="[-10, 210, -800]">
+      <ngt-sphere-geometry *args="[1, 8, 8]" />
+      <ngt-mesh-basic-material [transparent]="true" [opacity]="0" />
+    </ngt-mesh>
+    <ngts-spot-light
+      [options]="{
+        position: [-40, 200, -800],
+        debug: false,
+        angle: 0.1,
+        volumetric: true,
+        opacity: 1,
+        radiusTop: 1,
+        radiusBottom: 20,
+        distance: 300,
+        intensity: 0.5,
+        attenuation: 150,
+        anglePower: 1.5,
+        color: '#ccbdff',
+        target: cometTailCS(),
+      }"
+    />
+    <ngts-spot-light
+      [options]="{
+        position: [-46, 197.5, -799],
+        debug: false,
+        angle: 0.7,
+        volumetric: true,
+        opacity: 0.5,
+        radiusTop: 1,
+        radiusBottom: 15,
+        distance: 50,
+        intensity: 30,
+        attenuation: 8,
+        anglePower: 1,
+        color: '#ffcfcf',
+        target: cometTailCS(),
+      }"
+    />
+  </ngt-points>
+
+  <!-- <ngt-primitive *args="[change.scene()]" [parameters]="{ position: [20, 20, 0], scale: 3 }" /> -->
+</ngts-center>
+
+<app-stars
+  [starCount]="20"
+  [minDistance]="15"
+  [maxDistanceMultiplier]="75"
+  [size]="starSizeInner()"
+/>
+<app-stars
+  [starCount]="100"
+  [minDistance]="90"
+  [maxDistanceMultiplier]="200"
+  [size]="starSizeOuter()"
+/>
+
+<ngts-perspective-camera
+  [options]="{ makeDefault: true, position: [0, 0, 60], fov: 40, far: 1200 }"
+/>
+<!-- <ngts-perspective-camera [options]="{ makeDefault: true, position: [-70, 200, -850], fov: 70 }" /> -->
+
+<!-- ENVIRONMENT -->
+<ngts-environment
+  [options]="{
+    files: appService.isBackgroundMilkyWay() ? getMilkyWay() : getBlueNebula(),
+    background: true,
+    backgroundIntensity: 1,
+  }"
+/>
+
+<ngt-ambient-light [intensity]="0.5" />
+<ngt-hemisphere-light [intensity]="2" color="#ffffff" />
+
+<ngtp-effect-composer [options]="{ autoClear: false, multisampling: 2 }">
+  <ngtp-outline
+    [options]="{
+      selection: moonSelectionCS(),
+      edgeStrength: 15,
+      visibleEdgeColor: +'0xABE9FF',
+      hiddenEdgeColor: +'0xABE9FF',
+      pulseSpeed: 0.1,
+      blur: true,
+    }"
+  />
+  <ngtp-bloom [options]="{ luminanceThreshold: 0.9, intensity: 0.1 }" />
+  <ngtp-vignette [options]="{ darkness: 0.5 }" />
+</ngtp-effect-composer>
+
+<!-- <ngts-adaptive-dpr [pixelated]="true" />
+<ngts-adaptive-events /> -->
+
+<!-- <ngt-grid-helper /> -->
+<!-- <ngts-orbit-controls /> -->
+<ngts-orbit-controls
+  [options]="{ regress: true, enablePan: false, minDistance: 20, maxDistance: 200 }"
+/>

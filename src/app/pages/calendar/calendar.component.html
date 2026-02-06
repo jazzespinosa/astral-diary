@@ -1,0 +1,156 @@
+<div
+  class="calendar-container container mh-100 d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden"
+>
+  <h3 class="">Calendar</h3>
+  <h4 class="m-0 align-self-end">
+    {{ viewTodayDate | calendarDate: CalendarView.Month + 'ViewTitle' : 'en' }}
+  </h4>
+  <div class="d-flex gap-1 align-self-end">
+    <button
+      mwlCalendarPreviousView
+      [view]="CalendarView.Month"
+      [(viewDate)]="viewTodayDate"
+      class="prev-btn rounded-3 border-0"
+    >
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button mwlCalendarToday [(viewDate)]="viewTodayDate" class="rounded border-0">
+      <i class="fa-solid fa-calendar-day"></i>
+    </button>
+    <button
+      mwlCalendarNextView
+      [view]="CalendarView.Month"
+      [(viewDate)]="viewTodayDate"
+      class="next-btn rounded-3 border-0"
+    >
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+  </div>
+  <mwl-calendar-month-view
+    [headerTemplate]="appService.isMobileView() ? headerTemplateMobile : headerTemplate"
+    [cellTemplate]="customCellTemplate"
+    [viewDate]="viewTodayDate"
+    (dayClicked)="dayClicked($event.day)"
+    (beforeViewRender)="beforeMonthViewRender($event)"
+    [events]="events"
+  />
+  @if (selectedMonthViewDay) {
+    <section class="entry-list bg-secondary rounded-2 p-2 overflow-y-auto">
+      <div class="d-flex flex-column gap-1">
+        @if (selectedEntries.length > 0) {
+          <div class="d-flex flex-row justify-content-between">
+            <div class="d-flex flex-row gap-1">
+              <div>Entries</div>
+              <div>({{ selectedEntries.length }})</div>
+            </div>
+            <div>{{ selectedMonthViewDay.date | date: 'mediumDate' }}</div>
+          </div>
+          <hr class="border-top border-2 border-black m-0" />
+          @for (entry of selectedEntries; track $index) {
+            <div class="d-flex flex-row justify-content-between">
+              <div>{{ entry.title }}</div>
+              <div class="m-2">
+                <i class="fa-solid fa-pen m-2"></i><i class="fa-solid fa-trash m-2"></i>
+              </div>
+            </div>
+          }
+        } @else {
+          <div>No entries</div>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+@if (appService.isEntryOpen()) {
+  <div class="calendar-entry-container">
+    <app-entry
+      parentComponent="calendar"
+      [defaultDate]="selectedDate ? selectedDate : viewTodayDate"
+    />
+  </div>
+}
+
+<!-- CALENDAR HEADERS -->
+<ng-template #headerTemplateMobile>
+  <div role="row" class="cal-cell-row cal-header">
+    <div tabindex="0" role="columnheader" class="cal-cell cal-past cal-weekend">Sun</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Mon</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Tue</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-today">Wed</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Thu</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Fri</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-future cal-weekend">Sat</div>
+  </div>
+</ng-template>
+<ng-template #headerTemplate>
+  <div role="row" class="cal-cell-row cal-header">
+    <div tabindex="0" role="columnheader" class="cal-cell cal-past cal-weekend">Sunday</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Monday</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Tuesday</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-today">Wednesday</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Thursday</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Friday</div>
+    <div tabindex="0" role="columnheader" class="cal-cell cal-future cal-weekend">Saturday</div>
+  </div>
+</ng-template>
+
+<!-- CALENDAR CELL -->
+<ng-template #customCellTemplate let-day="day" let-locale="locale">
+  <div class="cal-cell-top">
+    <span class="cal-day-number">{{ day.date | calendarDate: 'monthViewDayNumber' : locale }}</span>
+  </div>
+  @if (appService.isMobileView()) {
+    <div
+      class="cal-add-button-container position-absolute bottom-0 start-0 w-100 d-flex flex-row align-items-center justify-content-around overflow-hidden"
+      [class.show]="day.cssClass === 'cal-day-selected'"
+    >
+      <!-- @if (day.badgeTotal > 0) {
+        <i class="fa-solid fa-file"></i>
+      } -->
+      <i (click)="addEntry(day)" role="button" class="fa-solid fa-circle-plus"></i>
+    </div>
+  } @else {
+    @if (day.cssClass === 'cal-day-selected') {
+      <i
+        (click)="addEntry(day)"
+        role="button"
+        class="cal-add-button fa-solid fa-circle-plus fa-2xl"
+      ></i>
+    }
+  }
+  @if (day.badgeTotal > 0) {
+    <span class="cal-day-badge" role="button">{{ day.badgeTotal }}</span>
+  }
+</ng-template>
+
+<!-- CALENDAR ENTRY DIALOG -->
+<p-dialog
+  header="Edit Profile"
+  [modal]="true"
+  [(visible)]="visible"
+  [style]="{ width: '25rem' }"
+  [dismissableMask]="true"
+>
+  <div class="flex justify-end gap-2">
+    <p-button label="Cancel" severity="secondary" (click)="visible = false" />
+    <p-button label="Save" (click)="visible = false" />
+  </div>
+</p-dialog>
+
+<!-- ENTRY LIST DIALOG -->
+<!-- <p-dialog
+  header="Entries"
+  [modal]="true"
+  [(visible)]="visibleEntriesDialog"
+  [style]="{ width: '25rem' }"
+  [dismissableMask]="true"
+>
+  @for (entry of selectedEntries; track $index) {
+    <div>{{ entry.title }}</div>
+  }
+  <div class="flex justify-end gap-2">
+    <p-button label="Cancel" severity="secondary" (click)="visibleEntriesDialog = false" />
+    <p-button label="Save" (click)="visibleEntriesDialog = false" />
+  </div>
+</p-dialog> -->

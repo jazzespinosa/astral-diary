@@ -1,0 +1,27 @@
+<!-- <ngt-points #pointsRef>
+  <ngt-buffer-geometry>
+    <ngt-buffer-attribute attach="attributes.position" *args="[positions, 3]" />
+    <ngt-buffer-attribute attach="attributes.color" *args="[colors, 3]" />
+    <ngt-buffer-attribute attach="attributes.size" *args="[sizes, size()]" />
+  </ngt-buffer-geometry>
+  <ngt-points-material
+    [map]="starTexture"
+    [size]="size()"
+    [vertexColors]="true"
+    [transparent]="true"
+    [blending]="additiveBlending"
+    [depthWrite]="false"
+    [sizeAttenuation]="true"
+  />
+</ngt-points> -->
+<ngts-points-buffer #pointsRef [positions]="positions" [colors]="colors" [sizes]="sizes">
+  <ngt-points-material
+    [vertexColors]="true"
+    [map]="starTexture"
+    [size]="size()"
+    [transparent]="true"
+    [blending]="additiveBlending"
+    [depthWrite]="false"
+    [sizeAttenuation]="true"
+  />
+</ngts-points-buffer>

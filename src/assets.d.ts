@@ -1,0 +1,19 @@
+declare module '*.glb' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.hdr' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.exr' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.jpg' {
+  const content: string;
+  export default content;
+}

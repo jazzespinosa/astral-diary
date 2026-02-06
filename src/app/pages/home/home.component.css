@@ -1,0 +1,47 @@
+:host {
+  position: absolute;
+  /* top: 10%; */
+  display: block;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.background {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background-color: rgb(10, 10, 10);
+  z-index: -1;
+}
+
+.canvas-container {
+  position: relative;
+  min-width: 100vw;
+  min-height: 100vh;
+}
+
+.canvas-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+.home-entry-container {
+  position: absolute;
+  height: calc(100vh - 4.5rem);
+  top: 4.5rem;
+  left: 0;
+  width: 100%;
+  z-index: 2;
+}
+
+@media (max-width: 768px) {
+  .home-entry-container {
+    height: calc(100vh - 4rem);
+    top: 4rem;
+  }
+}

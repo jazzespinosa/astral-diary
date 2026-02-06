@@ -1,0 +1,30 @@
+:host {
+  height: calc(100vh - 4.5rem);
+  padding: 1rem;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 1rem;
+  overflow: hidden;
+}
+
+.drafts-container {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.drafts-list {
+  scrollbar-width: thin;
+}
+
+@media (max-width: 768px) {
+  :host {
+    height: calc(100vh - 4rem);
+    padding: 0.75rem;
+  }
+
+  .drafts-container {
+    padding: 0.75rem !important;
+  }
+
+  .drafts-header {
+    gap: 0.25rem !important;
+  }
+}
