@@ -1,15 +1,18 @@
 <div
-  class="position-fixed top-0 start-0 w-100 h-100 z-0 bg-black"
-  [ngClass]="parentComponent() !== 'add-entry' ? 'opacity-25' : 'opacity-0'"
+  class="entry-background position-fixed top-0 start-0 w-100 h-100 z-0"
+  [ngClass]="parentComponent() !== 'add-entry' ? 'blur' : ''"
   (click)="backgroundClick()"
 ></div>
-<div class="paper" [ngClass]="[paperState, isExpanded ? 'expanded' : 'not-expanded']">
+<section class="entry-header z-2" [ngClass]="[isExpanded() ? 'show' : '']">
+  <h4>{{ header() }}</h4>
+</section>
+<div class="paper" [ngClass]="[paperState(), isExpanded() ? 'expanded' : 'not-expanded']">
   <div class="red-line position-absolute top-0 bottom-0"></div>
   <div #paperInnerRef class="paper-inner h-100 overflow-y-auto">
     <button
       [disabled]="parentComponent() === 'add-entry'"
       [hidden]="parentComponent() === 'add-entry'"
-      class="position-absolute top-0 end-0 border-0 opacity-50 bg-transparent mt-1 me-2 p-0 z-3"
+      class="position-absolute top-0 end-0 border-0 opacity-50 bg-transparent mt-1 me-2 p-0 z-2"
       (click)="closeEntry()"
     >
       <i class="fa-solid fa-xmark"></i>
@@ -19,6 +22,7 @@
         <label class="me-2">Date:</label>
         <p-datepicker
           class="date-picker"
+          [ngClass]="{ 'icon-hidden': access() === 'view' }"
           formControlName="entryDate"
           dateFormat="D, mm/dd/yy"
           [showIcon]="true"
@@ -49,7 +53,7 @@
           #contentRef
           formControlName="entryContent"
           (input)="entryContentAutoGrow(paperInnerRef, contentRef)"
-          placeholder="Start writing your thoughts here..."
+          [placeholder]="placeholder()"
           class="bg-transparent m-0 p-0 w-100 border-0 rounded-0 entry-textarea"
           rows="5"
         ></textarea>
@@ -57,46 +61,48 @@
     </form>
   </div>
 </div>
-<div
-  class="lower-section d-flex flex-column w-100 z-3 mb-2 align-items-center"
-  [ngClass]="[isExpanded ? 'show' : '']"
->
-  @if (isAttachmentOpen) {
-    <p-fileupload
-      name="attachmentEntry"
-      [multiple]="true"
-      [auto]="false"
-      [customUpload]="true"
-      chooseLabel="Add Attachment"
-      accept="image/*"
-      (onSelect)="onFileSelect($event)"
-      [showUploadButton]="false"
-      maxFileSize="10485760"
-      mode="advanced"
-      class="attachment w-100 overflow-y-auto mt-2"
-    >
-      <ng-template #empty>
-        <div>Add files to here to upload.</div>
-      </ng-template>
-    </p-fileupload>
-  }
-  <div class="d-flex flex-row w-100 align-items-center justify-content-between mt-3">
-    <button
-      class="attach-button ms-3 rounded-circle border-0 opacity-50 z-3"
-      (click)="showAttachment()"
-    >
-      <i class="fa-solid fa-paperclip"></i>
-    </button>
-    <button
-      pButton
-      label="Submit"
-      icon="fa-solid fa-paper-plane"
-      class="send-button p-2"
-      severity="success"
-      [raised]="true"
-      [rounded]="true"
-      (click)="onSubmit()"
-    ></button>
-    <div style="width: 32px"></div>
+@if (access() === 'new' || access() === 'edit') {
+  <div
+    class="lower-section d-flex flex-column w-100 z-2 mb-2 align-items-center"
+    [ngClass]="[isExpanded() ? 'show' : '']"
+  >
+    @if (isAttachmentOpen()) {
+      <p-fileupload
+        name="attachmentEntry"
+        [multiple]="true"
+        [auto]="false"
+        [customUpload]="true"
+        chooseLabel="Add Attachment"
+        accept="image/*"
+        (onSelect)="onFileSelect($event)"
+        [showUploadButton]="false"
+        maxFileSize="10485760"
+        mode="advanced"
+        class="attachment w-100 overflow-y-auto mt-2"
+      >
+        <ng-template #empty>
+          <div>Add files to here to upload.</div>
+        </ng-template>
+      </p-fileupload>
+    }
+    <div class="d-flex flex-row w-100 align-items-center justify-content-between mt-3">
+      <button
+        class="attach-button ms-3 rounded-circle border-0 opacity-50 z-2"
+        (click)="showAttachment()"
+      >
+        <i class="fa-solid fa-paperclip"></i>
+      </button>
+      <button
+        pButton
+        label="Submit"
+        icon="fa-solid fa-paper-plane"
+        class="send-button p-2"
+        severity="success"
+        [raised]="true"
+        [rounded]="true"
+        (click)="onSubmit()"
+      ></button>
+      <div style="width: 32px"></div>
+    </div>
   </div>
-</div>
+}

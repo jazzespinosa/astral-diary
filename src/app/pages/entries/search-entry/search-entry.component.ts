@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ViewEncapsulation } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardModule } from 'primeng/card';
@@ -20,6 +20,7 @@ import { DatePickerModule } from 'primeng/datepicker';
   ],
   templateUrl: './search-entry.component.html',
   styleUrl: './search-entry.component.css',
+  encapsulation: ViewEncapsulation.None,
 })
 export class SearchEntryComponent implements OnInit {
   sort!: string;

@@ -7,10 +7,9 @@ import {
   OnInit,
   inject,
   computed,
-  input,
   signal,
+  effect,
 } from '@angular/core';
-import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { beforeRender, NgtArgs } from 'angular-three';
 import { Object3D, Object3DEventMap } from 'three';
@@ -24,10 +23,10 @@ import {
   NgtpVignette,
   NgtpOutline,
 } from 'angular-three-postprocessing';
-import { NgtsEdges, NgtsHelper } from 'angular-three-soba/abstractions';
-import { NgtsAdaptiveDpr, NgtsAdaptiveEvents, NgtsBVH } from 'angular-three-soba/performances';
 import * as THREE from 'three';
 import { StarsComponent } from '../../shared/models/stars/stars.component';
+import { CloudsComponent } from 'app/shared/models/clouds/clouds.component';
+import { MainStarComponent } from 'app/shared/models/main-star/main-star.component';
 import { AppService } from '../../services/app.service';
 
 import blueNebulaPC from 'assets/blue-nebula-pc.hdr' with { loader: 'file' }; // for PC
@@ -40,7 +39,6 @@ import moonEmissive from 'assets/moon-emissive.jpg' with { loader: 'file' };
 import change from 'assets/change-updated.glb' with { loader: 'file' };
 import asteroids from 'assets/asteroids.glb' with { loader: 'file' };
 import comet from 'assets/comet.glb' with { loader: 'file' };
-import { CloudsComponent } from 'app/shared/models/clouds/clouds.component';
 
 const Clouds = [
   // FRONT
@@ -120,9 +118,9 @@ const Clouds = [
     NgtpOutline,
     CommonModule,
     NgtsClouds,
-    NgtsEdges,
     NgtsSpotLight,
     CloudsComponent,
+    MainStarComponent,
     // NgtsAdaptiveDpr,
     // NgtsAdaptiveEvents,
   ],
@@ -139,11 +137,11 @@ export class SceneGraph implements OnInit {
       ? { smallestVolume: 1.5, segments: 8, limit: 20, speed: 0.03 }
       : { smallestVolume: 1.5, segments: 20, limit: 100, speed: 0.1 },
   );
-  cloudsSystemOptions = computed(() => ({ limit: this.isMobileView() ? 100 : 400 }));
+  cloudsLimits = computed(() => (this.isMobileView() ? 100 : 400));
   hasLightning = computed(() => !this.isMobileView());
   lightningIntensity = computed(() => (this.isMobileView() ? 0 : 50));
-  starSizeInner = computed(() => (this.isMobileView() ? 50 : 20));
-  starSizeOuter = computed(() => (this.isMobileView() ? 100 : 40));
+  starSizeInner = computed(() => (this.isMobileView() ? 30 : 15));
+  starSizeOuter = computed(() => (this.isMobileView() ? 60 : 30));
 
   getMilkyWay() {
     return this.isMobileView() ? milkyWayMobile : milkyWayPC;
@@ -154,9 +152,9 @@ export class SceneGraph implements OnInit {
   }
 
   // GLTF Resources
-  change = gltfResource(() => change);
-  asteroids = gltfResource(() => asteroids);
-  comet = gltfResource(() => comet);
+  readonly change = gltfResource(() => change);
+  readonly asteroids = gltfResource(() => asteroids);
+  readonly comet = gltfResource(() => comet);
 
   // Texture Resources
   moonTexture = textureResource(() => ({
@@ -195,7 +193,8 @@ export class SceneGraph implements OnInit {
   // private rotationSpeedCometY = 0;
 
   constructor() {
-    beforeRender(({ delta }) => {
+    beforeRender(({ delta, clock }) => {
+      // Rotate import objects
       const moonPoints = this.moonRef()?.nativeElement;
       if (moonPoints) {
         moonPoints.rotation.y += this.rotationSpeedYMoon * delta * 60;
@@ -211,15 +210,99 @@ export class SceneGraph implements OnInit {
         comet.rotation.x += this.rotationSpeedCometX * delta * 60;
         comet.rotation.y += this.rotationSpeedCometY * delta * 60;
       }
+
+      // position + orientation each frame
+      const t = (clock.getElapsedTime() * this.speed) % 1;
+
+      const obj = this.traveler();
+      const pos = this.curve.getPointAt(t);
+      const tangent = this.curve.getTangentAt(t).normalize();
+
+      obj.position.copy(pos);
+
+      // orient the object to face along the path tangent
+      obj.up.set(0, 1, 0);
+      obj.lookAt(pos.clone().add(tangent));
+    });
+
+    effect(() => {
+      const gltf = this.travelerRes.value();
+      if (!gltf) return;
+      gltf.scene.rotateY(Math.PI / -2);
+
+      const root = this.traveler();
+      root.clear();
+
+      const model = gltf.scene.clone(true);
+      root.add(model);
     });
   }
 
   ngOnInit(): void {}
 
-  moonClick(event: any) {
+  moonClick() {
     this.appService.setIsEntryOpen(true);
   }
 
-  readonly PointLightHelper = THREE.PointLightHelper;
-  readonly HemisphereLightHelper = THREE.HemisphereLightHelper;
+  // Custom path
+  private readonly curve = new THREE.CatmullRomCurve3(
+    [
+      // new THREE.Vector3(-40, 0, 0),
+      // new THREE.Vector3(-20, 20, 10),
+      // new THREE.Vector3(0, 0, 30),
+      // new THREE.Vector3(20, 10, 10),
+      // new THREE.Vector3(40, 0, -10),
+      // new THREE.Vector3(0, -10, -30),
+
+      new THREE.Vector3(10, 0, 0),
+      new THREE.Vector3(0, 0, 12),
+      new THREE.Vector3(-13, 5, 0),
+      new THREE.Vector3(0, 5, -10),
+      new THREE.Vector3(13, 5, 0),
+      new THREE.Vector3(0, 3, 12),
+      new THREE.Vector3(-12, 2, 0),
+      new THREE.Vector3(0, 0, -12),
+      new THREE.Vector3(11, -4, 0),
+      new THREE.Vector3(2, -7, 9),
+      new THREE.Vector3(-10, -4, 1),
+      new THREE.Vector3(2, -3, -10),
+      new THREE.Vector3(9, -3, -1),
+      new THREE.Vector3(3, -3, 11),
+      new THREE.Vector3(-12, -1, 5),
+      new THREE.Vector3(-6, 2, -8),
+      new THREE.Vector3(9, 7, -3),
+      new THREE.Vector3(1, 8, 5),
+      new THREE.Vector3(-8, 2, -1),
+      new THREE.Vector3(2, 1, -11),
+    ],
+    true, // closed loop
+    'catmullrom',
+    0.5,
+  );
+
+  // Custom object in TS and render it with ngt-primitive
+  readonly travelerRes = gltfResource(() => change);
+  readonly traveler = signal<THREE.Object3D>(new THREE.Group());
+
+  // Path as a line
+  readonly pathLine = signal<THREE.Object3D>(this.createPathLine());
+
+  // Speed controls
+  readonly speed = 0.008; // "loops per second" (roughly)
+
+  private createPathLine(): THREE.Object3D {
+    const points = this.curve.getPoints(300);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+    const material = new THREE.LineBasicMaterial({
+      // color: 'white',
+      opacity: 0,
+      transparent: true,
+    });
+
+    // LineLoop makes it closed; use THREE.Line if your curve is not closed
+    const line = new THREE.LineLoop(geometry, material);
+    line.visible = false;
+    return line;
+  }
 }

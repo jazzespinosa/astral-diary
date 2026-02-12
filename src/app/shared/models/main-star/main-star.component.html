@@ -1,0 +1,23 @@
+@for (instance of instances; track $index) {
+  <ngt-group
+    #starGroup
+    [scale]="instance.scale"
+    [position]="instance.position"
+    (click)="mainStarClicked($event)"
+  >
+    <ngts-billboard>
+      <ngt-mesh>
+        <ngt-shape-geometry *args="[starShape]" />
+        @let star = instance.map.value();
+        @let map = star?.map;
+        @let alphaMap = star?.alphaMaps;
+        <ngt-mesh-standard-material
+          [map]="map"
+          [alphaMap]="alphaMap"
+          [transparent]="true"
+          #starMat
+        />
+      </ngt-mesh>
+    </ngts-billboard>
+  </ngt-group>
+}

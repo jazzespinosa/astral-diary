@@ -1,3 +1,5 @@
-<app-navbar />
-<app-blur-background />
+@if (!isLandingPage()) {
+  <app-navbar />
+  <app-blur-background />
+}
 <router-outlet />

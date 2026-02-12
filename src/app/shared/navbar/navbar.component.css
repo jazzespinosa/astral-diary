@@ -18,7 +18,7 @@
   /* background-color: #f5f5f5; */
   /* max-height: 10vh; */
   height: 4.5rem;
-  background: rgba(90, 90, 90, 0.151);
+  background: rgba(128, 128, 128, 0.08);
 }
 
 .navbar.scrolled {
@@ -39,17 +39,14 @@ button.btn:first-child:active {
 
 /* OFF CANVAS */
 .offcanvas {
-  max-width: 60%;
+  max-width: 70%;
   height: auto;
   top: 4.5rem;
-}
-
-.offcanvas.bg-fantasy-blue.transparent-bg {
-  background: linear-gradient(20deg, #3099ef50, #09c4e21c);
+  backdrop-filter: blur(10px);
 }
 
 .offcanvas.bg-fantasy-blue {
-  background: linear-gradient(20deg, #6bb7f5, #96b5bc);
+  background: linear-gradient(20deg, #3099ef50, #09c4e21c);
 }
 
 .offcanvas.bg-fantasy-blue .offcanvas-body .list-group .list-group-item.active {
@@ -57,12 +54,8 @@ button.btn:first-child:active {
   border-color: #bbd7eb;
 }
 
-.offcanvas.bg-milky-way.transparent-bg {
-  background: linear-gradient(20deg, #2e2e2e50, #bfbfbf1c);
-}
-
 .offcanvas.bg-milky-way {
-  background: linear-gradient(20deg, #474747, #595958);
+  background: linear-gradient(20deg, #2e2e2e50, #bfbfbf1c);
 }
 
 .offcanvas.bg-milky-way .offcanvas-body .list-group .list-group-item.active {
@@ -75,7 +68,8 @@ button.btn:first-child:active {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0;
+  padding: 0rem 0.5rem;
+  align-items: center;
 }
 
 .offcanvas.offcanvas-start {
@@ -85,6 +79,7 @@ button.btn:first-child:active {
 /* LIST GROUP */
 .list-group {
   width: 100%;
+  max-width: 300px;
 }
 
 .list-group-item {

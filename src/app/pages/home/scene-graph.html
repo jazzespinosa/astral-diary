@@ -1,5 +1,5 @@
 <!-- MOON -->
-<ngt-mesh #moonRef (click)="moonClick($event)">
+<ngt-mesh #moonRef (click)="moonClick()">
   <ngt-sphere-geometry *args="[5, 32, 32]" />
   @let moon = moonTexture.value();
   @let map = moon?.map;
@@ -14,10 +14,11 @@
     [metalness]="0.5"
     [emissiveIntensity]="0.7"
   />
-  <ngts-edges [options]="{ threshold: 15, color: 'darkblue', lineWidth: 20 }" />
 </ngt-mesh>
 
-<ngts-clouds [options]="cloudsSystemOptions()">
+<app-main-star />
+
+<ngts-clouds [limit]="cloudsLimits()">
   @for (cloud of clouds(); track $index) {
     <app-clouds
       [position]="cloud.position"
@@ -82,9 +83,10 @@
       }"
     />
   </ngt-points>
-
-  <!-- <ngt-primitive *args="[change.scene()]" [parameters]="{ position: [20, 20, 0], scale: 3 }" /> -->
 </ngts-center>
+
+<ngt-primitive *args="[pathLine()]" />
+<!-- <ngt-primitive *args="[traveler()]" [parameters]="{ scale: 5 }" /> -->
 
 <app-stars
   [starCount]="20"
@@ -92,8 +94,9 @@
   [maxDistanceMultiplier]="75"
   [size]="starSizeInner()"
 />
+
 <app-stars
-  [starCount]="100"
+  [starCount]="300"
   [minDistance]="90"
   [maxDistanceMultiplier]="200"
   [size]="starSizeOuter()"

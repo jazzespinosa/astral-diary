@@ -1,0 +1,57 @@
+<video
+  #videoPlayer
+  class="bg-video position-fixed w-100 h-100 object-fit-cover z-n1"
+  autoplay
+  loop
+  muted
+  playsinline
+  preload="auto"
+>
+  <source src="background-landing.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+<div
+  class="landing-container position-relative d-flex align-items-center justify-content-center w-100 vh-100 overflow-hidden"
+>
+  <!-- Floating stars -->
+  <div class="stars position-absolute z-1">
+    <div class="star" style="--delay: 0s; --x: 15%; --y: 20%; --size: 5px"></div>
+    <div class="star" style="--delay: 1.2s; --x: 80%; --y: 10%; --size: 3px"></div>
+    <div
+      class="star"
+      style="--delay: 0.5s; --x: 45%; --y: 75%; --size: 7px; --color: #8ee1fa"
+    ></div>
+    <div class="star" style="--delay: 2s; --x: 90%; --y: 60%; --size: 5px; --color: #b2ccf7"></div>
+    <div
+      class="star"
+      style="--delay: 0.8s; --x: 25%; --y: 85%; --size: 5px; --color: #f7f49c"
+    ></div>
+    <div class="star" style="--delay: 1.5s; --x: 70%; --y: 35%; --size: 5px"></div>
+    <div class="star" style="--delay: 3s; --x: 10%; --y: 55%; --size: 5px; --color: #f5cfb0"></div>
+    <div class="star" style="--delay: 2.5s; --x: 55%; --y: 15%; --size: 5px"></div>
+    <div class="star" style="--delay: 0.3s; --x: 35%; --y: 35%; --size: 7px"></div>
+    <div
+      class="star"
+      style="--delay: 1.8s; --x: 65%; --y: 90%; --size: 5px; --color: #b0d8f5"
+    ></div>
+    <div class="star" style="--delay: 3.5s; --x: 5%; --y: 40%; --size: 5px"></div>
+    <div
+      class="star"
+      style="--delay: 2.2s; --x: 95%; --y: 80%; --size: 7px; --color: #efd6ff"
+    ></div>
+  </div>
+
+  <!-- Hero content -->
+  <div class="hero position-relative z-2 d-flex align-items-center justify-content-center p-3">
+    <div class="hero-card d-flex flex-column align-items-center gap-3">
+      <h1 class="title">Astral Diary</h1>
+      <p class="tagline">Your thoughts, written among the stars.</p>
+      <div class="divider"></div>
+      <button class="google-btn" type="button">
+        <i class="fa-brands fa-google"></i>
+        <span>Continue with Google</span>
+      </button>
+      <a routerLink="/home" class="text-white">Go to Homepage</a>
+    </div>
+  </div>
+</div>

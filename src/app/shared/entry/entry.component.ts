@@ -3,6 +3,7 @@ import {
   AfterViewInit,
   ChangeDetectorRef,
   Component,
+  computed,
   DestroyRef,
   effect,
   ElementRef,
@@ -13,6 +14,7 @@ import {
   signal,
   ViewChild,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -46,48 +48,98 @@ export type EntryComponentInput = 'home' | 'add-entry' | 'calendar';
   ],
   templateUrl: './entry.component.html',
   styleUrl: './entry.component.css',
+  encapsulation: ViewEncapsulation.None,
 })
-export class EntryComponent implements OnInit, OnDestroy {
+export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
   // inject dependencies
-  private ref = inject(ChangeDetectorRef);
+  // private ref = inject(ChangeDetectorRef);
   private formBuilder = inject(FormBuilder);
   private appService = inject(AppService);
 
   // inputs
   parentComponent = input.required<EntryComponentInput>();
-  defaultDate = input<Date>(new Date());
+  access = input.required<'new' | 'view' | 'edit'>();
+  entryValues = input.required<{ entryDate: Date; entryTitle: string; entryContent: string }>();
+
+  header = computed(() => {
+    switch (this.access()) {
+      case 'new':
+        return 'Creating New Entry';
+      case 'view':
+        return 'Viewing Entry';
+      case 'edit':
+        return 'Editing Entry';
+      default:
+        return '';
+    }
+  });
+
+  placeholder = computed(() => {
+    return this.access() === 'new' ? 'Start writing your thoughts here...' : '';
+  });
 
   // variables
-  @ViewChild('textareaRef') textarea!: ElementRef<HTMLTextAreaElement>;
+  titleRef = viewChild.required<ElementRef<HTMLInputElement>>('titleRef');
+  measuringSpan = viewChild.required<ElementRef<HTMLSpanElement>>('measuringSpan');
+  paperInnerRef = viewChild.required<ElementRef<HTMLDivElement>>('paperInnerRef');
+  contentRef = viewChild.required<ElementRef<HTMLTextAreaElement>>('contentRef');
+
   form!: FormGroup;
   formSubmitted = false;
   selectedFile: any;
 
   // paper state
-  paperState: 'hidden' | 'flying' = 'hidden';
-  isExpanded = false;
-  isAttachmentOpen = false;
+  paperState = signal<'hidden' | 'flying' | 'zoomin'>('hidden');
+  isExpanded = signal(false);
+  isAttachmentOpen = signal(false);
 
-  constructor() {
-    this.form = this.formBuilder.group({
-      entryDate: [new Date(), Validators.required],
-      entryTitle: ['', Validators.required],
-      entryContent: ['', Validators.required],
-    });
-
-    // console.log('constructor', this.defaultDate());
-  }
+  constructor() {}
 
   ngOnInit(): void {
     if (this.appService.isEntryOpen()) {
       this.summonPaper();
     }
 
-    this.form.setValue({
-      entryDate: this.defaultDate(),
-      entryTitle: '',
-      entryContent: '',
-    });
+    // console.log(this.entryValues());
+
+    switch (this.access()) {
+      case 'new':
+        this.form = this.formBuilder.group({
+          entryDate: [this.entryValues().entryDate, Validators.required],
+          entryTitle: ['', Validators.required],
+          entryContent: ['', Validators.required],
+        });
+        break;
+      case 'view':
+        this.form = this.formBuilder.group({
+          entryDate: [{ value: this.entryValues()?.entryDate, disabled: true }],
+          entryTitle: [{ value: this.entryValues()?.entryTitle, disabled: true }],
+          entryContent: [{ value: this.entryValues()?.entryContent, disabled: true }],
+        });
+        break;
+      case 'edit':
+        this.form = this.formBuilder.group({
+          entryDate: [this.entryValues()?.entryDate],
+          entryTitle: [this.entryValues()?.entryTitle],
+          entryContent: [this.entryValues()?.entryContent],
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.access() !== 'new') {
+      this.entryTitleAutoGrow(this.titleRef().nativeElement, this.measuringSpan().nativeElement);
+      this.entryContentAutoGrow(
+        this.paperInnerRef().nativeElement,
+        this.contentRef().nativeElement,
+      );
+      setTimeout(() => {
+        this.paperInnerRef().nativeElement.scrollTop = 0;
+      }, 200);
+    }
   }
 
   ngOnDestroy(): void {
@@ -150,17 +202,20 @@ export class EntryComponent implements OnInit, OnDestroy {
   }
 
   private summonPaper() {
-    this.paperState = 'flying';
+    this.paperState.set(this.access() === 'new' ? 'flying' : 'zoomin');
 
     // show paper lines and content
-    setTimeout(() => {
-      this.isExpanded = true;
-      this.ref.detectChanges();
-    }, 500);
+    setTimeout(
+      () => {
+        this.isExpanded.set(true);
+        // this.ref.detectChanges();
+      },
+      this.access() !== 'new' ? 100 : 500,
+    );
   }
 
   showAttachment() {
-    this.isAttachmentOpen = !this.isAttachmentOpen;
+    this.isAttachmentOpen.update((value) => !value);
   }
 
   backgroundClick() {
@@ -180,9 +235,9 @@ export class EntryComponent implements OnInit, OnDestroy {
   }
 
   private reset() {
-    this.isExpanded = false;
-    this.isAttachmentOpen = false;
-    this.paperState = 'hidden';
+    this.isExpanded.set(false);
+    this.isAttachmentOpen.set(false);
+    this.paperState.set('hidden');
     this.appService.setIsEntryOpen(false);
   }
 }

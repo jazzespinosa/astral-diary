@@ -24,12 +24,10 @@ export class CloudsComponent {
   // Inputs
   position = input.required<NgtVector3>();
   bounds = input.required<NgtVector3>();
-  options = input<Partial<NgtsCloudOptions>>();
   scale = input<NgtVector3>(1);
-  segments = input<number>(5);
-  smallestVolume = input<number>(1);
   hasLightning = input<boolean>(false);
   lightningIntensity = input<number>(0);
+  options = input<Partial<NgtsCloudOptions>>();
 
   cloudOpts = computed(() => ({
     seed: this.seed,
@@ -37,7 +35,7 @@ export class CloudsComponent {
     scale: this.scale(),
     bounds: this.bounds(),
     opacity: 1,
-    fade: 100,
+    fade: 300,
     color: 'white',
     ...this.options(),
   }));
@@ -46,7 +44,7 @@ export class CloudsComponent {
   private seed = Math.random() * 1000;
 
   // Light Refs
-  private lightRef = viewChild.required<ElementRef<THREE.PointLight>>('light');
+  private lightRef = viewChild<ElementRef<THREE.PointLight>>('light');
 
   // Flash generator
   private flash = new random.FlashGen({

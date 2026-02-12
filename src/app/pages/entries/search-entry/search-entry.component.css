@@ -1,4 +1,5 @@
-:host {
+:host,
+app-search-entry {
   height: calc(100vh - 4.5rem);
   font-family: 'Google Sans', sans-serif;
   font-size: 1rem;
@@ -6,19 +7,33 @@
   overflow: hidden;
 }
 
+/* CONTAINER */
 .search-container {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .search-bar {
 }
 
+/* FILTERS */
 .filters {
   font-size: 0.8rem;
   width: fit-content;
 }
 
-h6 {
+/* DATEPICKER */
+.p-select-label,
+.date-select .p-datepicker-input.p-datepicker-input {
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.date-select .p-datepicker-input.p-datepicker-input {
+  width: 6rem;
+}
+
+/* TEXT */
+.date-range h6 {
   margin: 0;
   font-size: 0.8rem;
   font-weight: 500;
@@ -34,8 +49,13 @@ h6 {
   scrollbar-width: thin;
 }
 
+.results .result-entry:last-child {
+  margin-bottom: 0 !important;
+}
+
 @media (max-width: 768px) {
-  :host {
+  :host,
+  app-search-entry {
     height: calc(100vh - 4rem);
     padding: 0.75rem;
   }

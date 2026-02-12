@@ -1,18 +1,10 @@
 :host,
 app-calendar {
-  /* position: absolute;
-  height: 100%;
-  width: 100%;
-  padding: 1rem;
-  font-family: 'Google Sans', sans-serif;
-  font-size: 1rem;
-  overflow: hidden; */
-
   height: calc(100vh - 4.5rem);
   font-family: 'Google Sans', sans-serif;
   font-size: 1rem;
   padding: 1rem;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .calendar-container {
@@ -80,6 +72,51 @@ app-calendar {
   opacity: 1;
 }
 
+/* .entries-list .entry:nth-child(even) {
+  background: #ff0000;
+} */
+
+.entries-list .entry:nth-child(odd) {
+  background: #ffffff50;
+}
+
+.entries-list .entry.selected {
+  background-color: #ff00ff !important;
+  color: white;
+}
+
+.entry-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-height: 6rem;
+}
+
+.p-dialog {
+  max-width: 90%;
+}
+
+.p-dialog-header {
+  padding: 1rem !important;
+}
+
+.p-dialog-content,
+.p-dialog-footer {
+  padding: 0 1rem 1rem 1rem !important;
+}
+
+.p-confirmdialog-message {
+  display: -webkit-box;
+  -webkit-line-clamp: 5; /* number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.p-confirmdialog-icon {
+  align-self: start;
+}
+
 @media (max-width: 768px) {
   :host,
   app-calendar {
@@ -120,5 +157,14 @@ app-calendar {
   .calendar-entry-container {
     height: calc(100vh - 4rem);
     top: 4rem;
+  }
+
+  .p-dialog-header {
+    padding: 0.5rem !important;
+  }
+
+  .p-dialog-content,
+  .p-dialog-footer {
+    padding: 0 0.5rem 0.5rem 0.5rem !important;
   }
 }

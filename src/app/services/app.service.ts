@@ -22,4 +22,10 @@ export class AppService {
   setIsMobileView(value: boolean) {
     this._isMobileView.set(value);
   }
+
+  private readonly _activeLink = signal('');
+  readonly activeLink = this._activeLink.asReadonly();
+  setActiveLink(value: string) {
+    this._activeLink.set(value);
+  }
 }

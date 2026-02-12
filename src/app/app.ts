@@ -1,20 +1,11 @@
-import {
-  AfterViewInit,
-  Component,
-  DestroyRef,
-  ElementRef,
-  HostListener,
-  inject,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { Component, DestroyRef, HostListener, inject, OnInit, signal } from '@angular/core';
 import { NavbarComponent } from './shared/navbar/navbar.component';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AppService } from './services/app.service';
-import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { filter } from 'rxjs';
 import { BlurBackgroundComponent } from './shared/blur-background/blur-background.component';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -24,6 +15,10 @@ import { BlurBackgroundComponent } from './shared/blur-background/blur-backgroun
 })
 export class App implements OnInit {
   private appService = inject(AppService);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+
+  isLandingPage = signal(true);
 
   @HostListener('window:resize')
   onResize() {
@@ -32,5 +27,15 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     this.appService.setIsMobileView(window.innerWidth < 768);
+
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event: NavigationEnd) => {
+        this.isLandingPage.set(event.urlAfterRedirects === '/');
+        this.appService.setActiveLink(event.urlAfterRedirects);
+      });
   }
 }

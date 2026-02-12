@@ -1,11 +1,11 @@
 import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA, viewChild, input } from '@angular/core';
 import * as THREE from 'three';
-import { beforeRender } from 'angular-three';
+import { beforeRender, NgtArgs } from 'angular-three';
 import { NgtsPointsBuffer } from 'angular-three-soba/performances';
 
 @Component({
   selector: 'app-stars',
-  imports: [NgtsPointsBuffer],
+  imports: [NgtsPointsBuffer, NgtArgs],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './stars.component.html',
   styleUrl: './stars.component.css',

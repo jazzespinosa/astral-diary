@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { AppService } from 'app/services/app.service';
 
 @Component({
@@ -7,8 +7,18 @@ import { AppService } from 'app/services/app.service';
   templateUrl: './blur-background.component.html',
   styleUrl: './blur-background.component.css',
 })
-export class BlurBackgroundComponent implements OnInit {
+export class BlurBackgroundComponent implements AfterViewInit {
   protected appService = inject(AppService);
 
-  ngOnInit(): void {}
+  videoPlayer = viewChild<ElementRef<HTMLVideoElement>>('videoPlayer');
+
+  ngAfterViewInit(): void {
+    const video = this.videoPlayer()?.nativeElement;
+    if (video) {
+      video.muted = true; // Still required for autoplay
+      video.play().catch((err) => {
+        console.warn('Autoplay was prevented by the browser:', err);
+      });
+    }
+  }
 }

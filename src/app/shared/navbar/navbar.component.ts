@@ -1,23 +1,42 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, inject, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AppService } from 'app/services/app.service';
-import { filter } from 'rxjs';
+import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
+
+const PopUpMenu = [
+  {
+    label: 'Account',
+    items: [
+      {
+        label: 'Continue with Google',
+        icon: 'fa-brands fa-google',
+        labelStyle: { width: 'max-content' },
+      },
+      {
+        label: 'Logout',
+        icon: 'fa-solid fa-arrow-right-from-bracket',
+        iconClass: 'text-danger',
+        labelClass: 'text-danger',
+      },
+    ],
+  },
+];
 
 @Component({
   selector: 'app-navbar',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ButtonModule, MenuModule],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css',
 })
 export class NavbarComponent implements OnInit {
   protected appService = inject(AppService);
-  private destroyRef = inject(DestroyRef);
-  private router = inject(Router);
 
-  activeLink: string = 'home';
   isScrolled = false;
+
+  items: MenuItem[] | undefined;
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
@@ -25,14 +44,7 @@ export class NavbarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.router.events
-      .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((event: NavigationEnd) => {
-        this.activeLink = event.urlAfterRedirects;
-      });
+    this.items = PopUpMenu;
   }
 
   toggleBackground() {

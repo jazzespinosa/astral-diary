@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { EntryComponent } from 'app/shared/entry/entry.component';
 import { NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,6 +16,12 @@ export class AddEntryComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
   private appService = inject(AppService);
+
+  entryValues = signal({
+    entryDate: new Date(),
+    entryTitle: '',
+    entryContent: '',
+  });
 
   constructor() {}
 

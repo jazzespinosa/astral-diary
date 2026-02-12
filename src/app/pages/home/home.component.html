@@ -10,7 +10,7 @@
   </div>
   @if (appService.isEntryOpen()) {
     <div class="home-entry-container">
-      <app-entry parentComponent="home" />
+      <app-entry parentComponent="home" access="new" [entryValues]="entryValues()" />
     </div>
   }
 </div>

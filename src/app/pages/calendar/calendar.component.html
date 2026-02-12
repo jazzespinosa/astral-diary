@@ -1,27 +1,27 @@
-<div
-  class="calendar-container container mh-100 d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden"
->
+<div class="calendar-container container d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden">
   <h3 class="">Calendar</h3>
   <h4 class="m-0 align-self-end">
-    {{ viewTodayDate | calendarDate: CalendarView.Month + 'ViewTitle' : 'en' }}
+    {{ todayDate() | calendarDate: CalendarView.Month + 'ViewTitle' : 'en' }}
   </h4>
   <div class="d-flex gap-1 align-self-end">
     <button
       mwlCalendarPreviousView
       [view]="CalendarView.Month"
-      [(viewDate)]="viewTodayDate"
+      [(viewDate)]="todayDate"
       class="prev-btn rounded-3 border-0"
+      (click)="clearSelectedDay()"
     >
       <i class="fa-solid fa-chevron-left"></i>
     </button>
-    <button mwlCalendarToday [(viewDate)]="viewTodayDate" class="rounded border-0">
+    <button mwlCalendarToday [(viewDate)]="todayDate" class="rounded border-0">
       <i class="fa-solid fa-calendar-day"></i>
     </button>
     <button
       mwlCalendarNextView
       [view]="CalendarView.Month"
-      [(viewDate)]="viewTodayDate"
+      [(viewDate)]="todayDate"
       class="next-btn rounded-3 border-0"
+      (click)="clearSelectedDay()"
     >
       <i class="fa-solid fa-chevron-right"></i>
     </button>
@@ -29,31 +29,39 @@
   <mwl-calendar-month-view
     [headerTemplate]="appService.isMobileView() ? headerTemplateMobile : headerTemplate"
     [cellTemplate]="customCellTemplate"
-    [viewDate]="viewTodayDate"
+    [viewDate]="todayDate()"
     (dayClicked)="dayClicked($event.day)"
     (beforeViewRender)="beforeMonthViewRender($event)"
-    [events]="events"
+    [events]="events()"
   />
-  @if (selectedMonthViewDay) {
-    <section class="entry-list bg-secondary rounded-2 p-2 overflow-y-auto">
+  @if (selectedMonthViewDay()) {
+    <section class="bg-secondary rounded-2 p-2 overflow-y-auto">
       <div class="d-flex flex-column gap-1">
-        @if (selectedEntries.length > 0) {
+        @if (selectedEntries().length > 0) {
           <div class="d-flex flex-row justify-content-between">
             <div class="d-flex flex-row gap-1">
               <div>Entries</div>
-              <div>({{ selectedEntries.length }})</div>
+              <div>({{ selectedEntries().length }})</div>
             </div>
-            <div>{{ selectedMonthViewDay.date | date: 'mediumDate' }}</div>
+            <div>{{ selectedMonthViewDay()?.date | date: 'mediumDate' }}</div>
           </div>
           <hr class="border-top border-2 border-black m-0" />
-          @for (entry of selectedEntries; track $index) {
-            <div class="d-flex flex-row justify-content-between">
-              <div>{{ entry.title }}</div>
-              <div class="m-2">
-                <i class="fa-solid fa-pen m-2"></i><i class="fa-solid fa-trash m-2"></i>
+          <div class="entries-list">
+            @for (entry of selectedEntries(); track $index) {
+              <div
+                class="entry d-flex flex-row justify-content-between rounded-1"
+                [class.selected]="entry === selectedEntry()"
+                (click)="entryClicked(entry)"
+              >
+                <div class="entry-title align-content-center m-2">{{ entry.title }}</div>
+                <div class="m-2">
+                  <i class="fa-solid fa-file m-2" role="button" (click)="viewEntry(entry)"></i>
+                  <i class="fa-solid fa-pen m-2" role="button" (click)="editEntry(entry)"></i>
+                  <i class="fa-solid fa-trash m-2" role="button" (click)="deleteEntry(entry)"></i>
+                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         } @else {
           <div>No entries</div>
         }
@@ -64,10 +72,7 @@
 
 @if (appService.isEntryOpen()) {
   <div class="calendar-entry-container">
-    <app-entry
-      parentComponent="calendar"
-      [defaultDate]="selectedDate ? selectedDate : viewTodayDate"
-    />
+    <app-entry parentComponent="calendar" [access]="access()" [entryValues]="entryValues()" />
   </div>
 }
 
@@ -124,33 +129,6 @@
   }
 </ng-template>
 
-<!-- CALENDAR ENTRY DIALOG -->
-<p-dialog
-  header="Edit Profile"
-  [modal]="true"
-  [(visible)]="visible"
-  [style]="{ width: '25rem' }"
-  [dismissableMask]="true"
->
-  <div class="flex justify-end gap-2">
-    <p-button label="Cancel" severity="secondary" (click)="visible = false" />
-    <p-button label="Save" (click)="visible = false" />
-  </div>
-</p-dialog>
-
-<!-- ENTRY LIST DIALOG -->
-<!-- <p-dialog
-  header="Entries"
-  [modal]="true"
-  [(visible)]="visibleEntriesDialog"
-  [style]="{ width: '25rem' }"
-  [dismissableMask]="true"
->
-  @for (entry of selectedEntries; track $index) {
-    <div>{{ entry.title }}</div>
-  }
-  <div class="flex justify-end gap-2">
-    <p-button label="Cancel" severity="secondary" (click)="visibleEntriesDialog = false" />
-    <p-button label="Save" (click)="visibleEntriesDialog = false" />
-  </div>
-</p-dialog> -->
+<!-- DELETE ENTRY DIALOG -->
+<p-confirmdialog />
+<p-toast [breakpoints]="{ '768px': { width: '70%', left: 'auto' } }" />

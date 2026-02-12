@@ -1,0 +1,125 @@
+:host {
+  display: block;
+  min-height: calc(100vh - 4.5rem);
+  padding: 2rem 1rem;
+  background-color: transparent;
+  font-family: 'Google Sans', sans-serif;
+  overflow-y: auto;
+}
+
+.about-container {
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0.85); /* Mostly white, slight translucent */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(135, 206, 250, 0.3); /* Light blue border */
+  color: #333;
+}
+
+.about-title {
+  font-family: 'Parisienne', cursive;
+  color: #008cff; /* Light blue accent */
+  text-shadow: 0 0 10px rgba(0, 140, 255, 0.2);
+}
+
+.divider {
+  width: 100px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #87cefa, transparent);
+  margin-top: 1rem;
+}
+
+.section-title {
+  color: #1e90ff;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  font-size: 1.5rem;
+}
+
+.astral-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.astral-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.astral-list li::before {
+  content: '✦';
+  position: absolute;
+  left: 0;
+  color: #87cefa;
+}
+
+.feedback-section {
+  background: rgba(240, 248, 255, 0.6); /* Very light blue translucent */
+  border: 1px dashed #87cefa;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+::ng-deep .custom-select .p-select {
+  border-radius: 12px;
+  border: 1px solid #ced4da;
+  transition: all 0.3s ease;
+}
+
+::ng-deep .custom-select .p-select:hover {
+  border-color: #87cefa;
+}
+
+::ng-deep .custom-select .p-select.p-focus {
+  border-color: #1e90ff;
+  box-shadow: 0 0 0 0.2rem rgba(30, 144, 255, 0.25);
+}
+
+.custom-textarea {
+  border-radius: 12px;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.custom-textarea:focus {
+  border-color: #1e90ff;
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(30, 144, 255, 0.25);
+}
+
+::ng-deep .astral-btn .p-button {
+  background: linear-gradient(135deg, #1e90ff, #87cefa) !important;
+  border: none !important;
+  border-radius: 50px !important;
+  padding: 0.75rem 2rem !important;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease !important;
+}
+
+::ng-deep .astral-btn .p-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(30, 144, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+  :host {
+    min-height: calc(100vh - 4rem);
+    padding: 1rem 0.5rem;
+  }
+
+  .about-container {
+    padding: 1.5rem !important;
+  }
+
+  .about-title {
+    font-size: 2.5rem;
+  }
+}

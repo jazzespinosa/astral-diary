@@ -12,4 +12,10 @@ import { AppService } from 'app/services/app.service';
 })
 export class HomeComponent {
   protected appService = inject(AppService);
+
+  entryValues = signal({
+    entryDate: new Date(),
+    entryTitle: '',
+    entryContent: '',
+  });
 }

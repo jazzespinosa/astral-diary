@@ -8,15 +8,13 @@
   >
     <i class="fa-solid fa-bars"></i>
   </button>
-  <i class="fa-solid fa-user-astronaut"></i>
+  <i class="fa-solid fa-user-astronaut" (click)="menu.toggle($event)" role="button"></i>
+  <p-menu #menu [model]="items" [popup]="true" class="position-absolute top-0" />
 </div>
-
+<!-- OFFCANVAS -->
 <div
-  class="offcanvas offcanvas-start d-flex flex-column position-fixed p-3 align-items-center gap-4"
-  [ngClass]="[
-    appService.isBackgroundMilkyWay() ? 'bg-milky-way' : 'bg-fantasy-blue',
-    activeLink === '/home' ? 'transparent-bg' : '',
-  ]"
+  class="offcanvas offcanvas-start d-flex flex-column position-fixed py-3 px-2 align-items-center gap-4"
+  [ngClass]="[appService.isBackgroundMilkyWay() ? 'bg-milky-way' : 'bg-fantasy-blue']"
   data-bs-scroll="true"
   tabindex="-1"
   id="offcanvasWithBothOptions"
@@ -30,13 +28,13 @@
       <a
         class="list-group-item list-group-item-action"
         routerLink="/home"
-        [ngClass]="{ active: activeLink === '/home' }"
+        [ngClass]="{ active: appService.activeLink() === '/home' }"
         data-bs-dismiss="offcanvas"
         ><i class="fa-solid fa-house-chimney me-2"></i>Home</a
       >
       <a
         class="list-group-item list-group-item-action"
-        [ngClass]="{ active: activeLink.startsWith('/entry') }"
+        [ngClass]="{ active: appService.activeLink().startsWith('/entry') }"
         role="button"
         id="collapseEntryParent"
         href="#collapseEntry"
@@ -54,7 +52,7 @@
         <ul class="sub-list">
           <li
             class="list-group-item list-group-item-action"
-            [ngClass]="{ active: activeLink === '/entry/add' }"
+            [ngClass]="{ active: appService.activeLink() === '/entry/add' }"
             routerLink="entry/add"
             data-bs-dismiss="offcanvas"
           >
@@ -63,7 +61,7 @@
           </li>
           <li
             class="list-group-item list-group-item-action"
-            [ngClass]="{ active: activeLink === '/entry/search' }"
+            [ngClass]="{ active: appService.activeLink() === '/entry/search' }"
             routerLink="entry/search"
             data-bs-dismiss="offcanvas"
           >
@@ -73,7 +71,7 @@
           <li
             class="list-group-item list-group-item-action"
             routerLink="entry/drafts"
-            [ngClass]="{ active: activeLink === '/entry/drafts' }"
+            [ngClass]="{ active: appService.activeLink() === '/entry/drafts' }"
             data-bs-dismiss="offcanvas"
           >
             <i class="fa-regular fa-pen-to-square me-2"></i>
@@ -84,34 +82,44 @@
       <a
         class="list-group-item list-group-item-action"
         routerLink="/calendar"
-        [ngClass]="{ active: activeLink === '/calendar' }"
+        [ngClass]="{ active: appService.activeLink() === '/calendar' }"
         data-bs-dismiss="offcanvas"
         ><i class="fa-solid fa-calendar-days me-2"></i>Calendar</a
       >
       <a
         class="list-group-item list-group-item-action"
         routerLink="/about"
-        [ngClass]="{ active: activeLink === '/about' }"
+        [ngClass]="{ active: appService.activeLink() === '/about' }"
         data-bs-dismiss="offcanvas"
         ><i class="fa-solid fa-circle-info me-2"></i>About</a
       >
       <a
         class="list-group-item list-group-item-action"
         routerLink="/test"
-        [ngClass]="{ active: activeLink === '/test' }"
+        [ngClass]="{ active: appService.activeLink() === '/test' }"
         data-bs-dismiss="offcanvas"
         >Test</a
       >
       <a
         class="list-group-item list-group-item-action"
         routerLink="/test2"
-        [ngClass]="{ active: activeLink === '/test2' }"
+        [ngClass]="{ active: appService.activeLink() === '/test2' }"
         data-bs-dismiss="offcanvas"
         >Test2</a
       >
+      <a
+        class="list-group-item list-group-item-action"
+        routerLink="/account"
+        [ngClass]="{ active: appService.activeLink() === '/account' }"
+        data-bs-dismiss="offcanvas"
+        ><i class="fa-solid fa-user me-2"></i>Account</a
+      >
     </div>
 
-    <div class="form-check form-switch form-check-reverse" [hidden]="activeLink !== '/home'">
+    <div
+      class="form-check form-switch form-check-reverse"
+      [hidden]="appService.activeLink() !== '/home'"
+    >
       <!-- <div class="form-check form-switch form-check-reverse"> -->
       <label class="form-check-label" for="switchCheckDefault">Milky Way Background</label>
       <input
