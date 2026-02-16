@@ -9,18 +9,33 @@ import { SearchEntryComponent } from './pages/entries/search-entry/search-entry.
 import { DraftsComponent } from './pages/entries/drafts/drafts.component';
 import { AccountComponent } from './pages/account/account.component';
 import { LandingComponent } from './pages/landing/landing.component';
+import { provideNgtRenderer } from 'angular-three/dom';
+import { AuthComponent } from './pages/auth/auth.component';
 
 export const routes: Routes = [
   // { path: '', redirectTo: '', pathMatch: 'full' },
   { path: '', component: LandingComponent },
-  { path: 'home', component: HomeComponent },
+  {
+    path: 'home',
+    component: HomeComponent,
+    providers: [provideNgtRenderer()],
+  },
   { path: 'entry/add', component: AddEntryComponent },
   { path: 'entry/search', component: SearchEntryComponent },
   { path: 'entry/drafts', component: DraftsComponent },
   { path: 'calendar', component: CalendarComponent },
-  { path: 'about', component: AboutComponent },
   { path: 'account', component: AccountComponent },
-  { path: 'test', component: TestComponent },
-  { path: 'test2', component: Test2Component },
+  { path: 'about', component: AboutComponent },
+  { path: 'auth', component: AuthComponent },
+  {
+    path: 'test',
+    component: TestComponent,
+    providers: [provideNgtRenderer()],
+  },
+  {
+    path: 'test2',
+    component: Test2Component,
+    providers: [provideNgtRenderer()],
+  },
   { path: '**', redirectTo: '', pathMatch: 'full' },
 ];

@@ -1,10 +1,37 @@
-<ngt-canvas [camera]="{ position: [0, 0, 4] }">
-  <ngt-ambientLight [intensity]="0.6" />
-  <ngt-directionalLight [position]="[3, 3, 3]" [intensity]="1.2" />
+<div class="book-container">
+  <div class="book">
+    <div class="pages">
+      <div
+        *ngFor="let page of pages; let i = index"
+        class="page"
+        [class.turned]="i < currentPage"
+        [class.turning]="i === currentPage - 1"
+        [style.z-index]="pages.length - i"
+      >
+        <div class="page-front" [style.background]="page.color">
+          <div class="page-content">
+            <h2>{{ page.title }}</h2>
+            <p>{{ page.content }}</p>
+          </div>
+        </div>
 
-  <ngt-mesh>
-    <!-- ShapeGeometry from a THREE.Shape -->
-    <ngt-shapeGeometry [args]="[starShape]" />
-    <ngt-meshStandardMaterial color="black" />
-  </ngt-mesh>
-</ngt-canvas>
+        <div class="page-back" [style.background]="pages[i + 1]?.color || '#f8f9fa'">
+          <div class="page-content">
+            <h2>{{ pages[i + 1]?.title || 'End' }}</h2>
+            <p>{{ pages[i + 1]?.content || 'No more pages' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button (click)="previousPage()" [disabled]="currentPage === 0" class="btn btn-prev">
+      ← Previous
+    </button>
+    <span class="page-indicator">{{ currentPage + 1 }} / {{ pages.length }}</span>
+    <button (click)="nextPage()" [disabled]="currentPage === pages.length - 1" class="btn btn-next">
+      Next →
+    </button>
+  </div>
+</div>

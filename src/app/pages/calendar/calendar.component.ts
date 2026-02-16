@@ -17,7 +17,7 @@ import { DialogModule } from 'primeng/dialog';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { MessageService, ConfirmationService } from 'primeng/api';
-import { EntryComponent } from 'app/shared/entry/entry.component';
+import { EntryComponent } from 'app/shared/components/entry/entry.component';
 import { AppService } from 'app/services/app.service';
 import { DatePipe, NgClass } from '@angular/common';
 import { isSameDay, startOfDay } from 'date-fns';

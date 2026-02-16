@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal, Signal } from '@angular/core';
 import { NgtCanvas } from 'angular-three/dom';
 import { SceneGraph } from './scene-graph';
-import { EntryComponent } from 'app/shared/entry/entry.component';
+import { EntryComponent } from 'app/shared/components/entry/entry.component';
 import { AppService } from 'app/services/app.service';
 
 @Component({

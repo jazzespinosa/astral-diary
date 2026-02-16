@@ -1,0 +1,153 @@
+.book-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  perspective: 2000px;
+}
+
+.book {
+  position: relative;
+  width: 600px;
+  height: 400px;
+  transform-style: preserve-3d;
+}
+
+.pages {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.page {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  right: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform 1.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.page.turning {
+  animation: pageTurn 1.2s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+}
+
+.page.turned {
+  transform: rotateY(-180deg);
+}
+
+@keyframes pageTurn {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+
+.page-front,
+.page-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+}
+
+.page-front {
+  background: white;
+}
+
+.page-back {
+  background: #f8f9fa;
+  transform: rotateY(180deg);
+  border-radius: 8px 0 0 8px;
+}
+
+.page-content {
+  padding: 40px;
+  text-align: center;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.page-content h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.page-content p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+/* Controls */
+.controls {
+  margin-top: 40px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.btn {
+  padding: 12px 24px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  color: #667eea;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .book {
+    width: 90vw;
+    height: 60vh;
+    max-width: 400px;
+  }
+
+  .page-content h2 {
+    font-size: 1.8rem;
+  }
+
+  .page-content p {
+    font-size: 1rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

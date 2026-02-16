@@ -91,7 +91,7 @@ export class MainStarComponent {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
 
-      const scale = 10 + Math.random() * 8;
+      const scale = 8 + Math.random() * 7;
 
       this.instances.push({
         position: [

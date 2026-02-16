@@ -1,5 +1,5 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { EntryComponent } from 'app/shared/entry/entry.component';
+import { EntryComponent } from 'app/shared/components/entry/entry.component';
 import { NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, startWith } from 'rxjs';

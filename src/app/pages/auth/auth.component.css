@@ -1,0 +1,60 @@
+:host {
+  padding: 1rem;
+}
+
+.auth-container {
+  background-color: rgba(255, 255, 255, 0.25);
+  max-width: 600px;
+  /* min-height: 350px; */
+}
+
+.auth-container input {
+  flex-grow: 1;
+}
+
+/* ICONS */
+.auth-container i {
+  color: #007bff;
+  opacity: 0.5;
+}
+
+/* TOGGLE LINK */
+.auth-container .link-primary {
+  cursor: pointer;
+}
+
+/* PASSWORD INPUT */
+.auth-container .password-input {
+  padding-right: 2rem;
+}
+
+.auth-container .password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+/* DIVIDER */
+.divider-line {
+  height: 1px;
+  width: 100%;
+  max-width: 150px;
+  background: #bdbcbc;
+}
+
+.divider span {
+  padding: 0 0.75rem;
+  color: #333333;
+}
+
+@media (max-width: 768px) {
+  .auth-container {
+    /* min-height: 320px; */
+  }
+
+  .auth-container fieldset {
+    gap: 0.5rem !important;
+  }
+}

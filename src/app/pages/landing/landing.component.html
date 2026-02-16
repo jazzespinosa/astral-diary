@@ -47,9 +47,14 @@
       <h1 class="title">Astral Diary</h1>
       <p class="tagline">Your thoughts, written among the stars.</p>
       <div class="divider"></div>
-      <button class="google-btn" type="button">
-        <i class="fa-brands fa-google"></i>
-        <span>Continue with Google</span>
+      <button
+        pButton
+        label="Login"
+        severity="secondary"
+        class="login-btn"
+        (click)="router.navigate(['/auth'])"
+      >
+        <!-- <img class="google-icon me-2" src="./google-colored.svg" alt="Google" /> -->
       </button>
       <a routerLink="/home" class="text-white">Go to Homepage</a>
     </div>

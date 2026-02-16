@@ -6,19 +6,6 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-// import {
-//   Auth,
-//   createUserWithEmailAndPassword,
-//   signInWithEmailAndPassword,
-//   signOut,
-//   UserCredential,
-//   onAuthStateChanged,
-//   updateProfile,
-//   signInWithRedirect,
-//   getRedirectResult,
-//   GoogleAuthProvider,
-//   signInAnonymously,
-// } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-about',

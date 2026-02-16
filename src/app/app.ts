@@ -1,9 +1,9 @@
 import { Component, DestroyRef, HostListener, inject, OnInit, signal } from '@angular/core';
-import { NavbarComponent } from './shared/navbar/navbar.component';
+import { NavbarComponent } from './shared/layout/navbar/navbar.component';
 import { AppService } from './services/app.service';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { BlurBackgroundComponent } from './shared/blur-background/blur-background.component';
+import { BlurBackgroundComponent } from './shared/components/blur-background/blur-background.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 

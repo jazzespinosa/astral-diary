@@ -9,7 +9,41 @@
     <i class="fa-solid fa-bars"></i>
   </button>
   <i class="fa-solid fa-user-astronaut" (click)="menu.toggle($event)" role="button"></i>
-  <p-menu #menu [model]="items" [popup]="true" class="position-absolute top-0" />
+  <!-- <p-menu #menu [model]="items" [popup]="true" class="position-absolute top-0" /> -->
+  <p-menu
+    #menu
+    [model]="items"
+    [popup]="true"
+    class="d-flex justify-content-center position-absolute top-0"
+    styleClass="w-full md:w-60"
+  >
+    <ng-template #start>
+      <div class="d-flex flex-row gap-1 px-2 py-2">
+        <i class="fa-solid fa-moon" style="color: rgba(116, 192, 252, 1)"></i>
+        <span class="text-xl font-semibold">Astral Diary</span>
+      </div>
+    </ng-template>
+    <ng-template #submenuheader let-item>
+      <span class="text-primary font-bold">{{ item.label }}</span>
+    </ng-template>
+    <ng-template #item let-item>
+      <a pRipple class="flex items-center p-menu-item-link">
+        <span [class]="item.icon"></span>
+        <span class="ml-2">{{ item.label }}</span>
+        <!-- <span
+          *ngIf="item.shortcut"
+          class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1"
+          >{{ item.shortcut }}</span
+        > -->
+      </a>
+    </ng-template>
+    <ng-template #end>
+      <div class="d-flex flex-row justify-content-between p-2">
+        <label class="form-check-label" for="switchCheckDefault">Milky Way Background</label>
+        <p-toggleswitch [(ngModel)]="checked" (onChange)="toggleBackground()" />
+      </div>
+    </ng-template>
+  </p-menu>
 </div>
 <!-- OFFCANVAS -->
 <div
@@ -116,11 +150,10 @@
       >
     </div>
 
-    <div
+    <!-- <div
       class="form-check form-switch form-check-reverse"
       [hidden]="appService.activeLink() !== '/home'"
     >
-      <!-- <div class="form-check form-switch form-check-reverse"> -->
       <label class="form-check-label" for="switchCheckDefault">Milky Way Background</label>
       <input
         class="form-check-input"
@@ -129,6 +162,6 @@
         id="switchCheckDefault"
         (change)="toggleBackground()"
       />
-    </div>
+    </div> -->
   </div>
 </div>

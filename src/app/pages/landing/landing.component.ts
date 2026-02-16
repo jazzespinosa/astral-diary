@@ -1,14 +1,17 @@
-import { Component, AfterViewInit, viewChild, ElementRef } from '@angular/core';
+import { Component, AfterViewInit, viewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-landing',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ButtonModule],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.css',
 })
 export class LandingComponent implements AfterViewInit {
+  router = inject(Router);
+
   videoPlayer = viewChild<ElementRef<HTMLVideoElement>>('videoPlayer');
 
   ngAfterViewInit(): void {

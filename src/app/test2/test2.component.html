@@ -1,8 +1,46 @@
-<ngt-canvas>
-  <ngts-perspective-camera [options]="{ makeDefault: true, position: [0, 0, 5] }" />
+<!-- book-container.component.html -->
+<div class="book">
+  <!-- Front page (Page 1) -->
+  <div class="page" [class.flip]="isFlipping" (transitionend)="onAnimationEnd()">
+    <div class="page-content front">
+      <ng-container *ngTemplateOutlet="page1"></ng-container>
+    </div>
+    <div class="page-content back">
+      <ng-container *ngTemplateOutlet="page2"></ng-container>
+    </div>
+  </div>
 
-  <ngt-mesh #follower>
-    <ngt-box-geometry />
-    <ngt-mesh-basic-material color="hotpink" />
-  </ngt-mesh>
-</ngt-canvas>
+  <!-- Next page (remains static behind) -->
+  <div class="page next-page">
+    <div class="page-content front">
+      <ng-container *ngTemplateOutlet="page2"></ng-container>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button (click)="turnPage()" [disabled]="isFlipping">
+    {{ isFlipping ? 'Turning...' : 'Turn Page →' }}
+  </button>
+</div>
+
+<ng-template #page1>
+  <!-- page1.component.html -->
+  <div style="text-align: center">
+    <h1 style="font-size: 48px; color: #333">Chapter 1</h1>
+    <p style="font-size: 24px; color: #666; max-width: 600px; margin: 40px auto; line-height: 1.8">
+      This is the first page of our beautiful book.<br /><br />
+      Click the button below to turn the page and reveal the next chapter...
+    </p>
+  </div>
+</ng-template>
+
+<ng-template #page2>
+  <div style="text-align: center">
+    <h1 style="font-size: 48px; color: #d4380d">Chapter 2</h1>
+    <p style="font-size: 24px; color: #666; max-width: 600px; margin: 40px auto; line-height: 1.8">
+      Welcome to the next chapter!<br /><br />
+      The page has turned with a realistic 3D flip effect using only CSS.
+    </p>
+  </div>
+</ng-template>
