@@ -93,27 +93,30 @@ app-calendar {
   max-height: 6rem;
 }
 
-.p-dialog {
-  max-width: 90%;
+.confirm-delete-dialog.p-dialog {
+  max-width: clamp(400px, 90%, 1200px);
+  font-family: 'Google Sans', sans-serif;
 }
 
-.p-dialog-header {
+.confirm-delete-dialog .p-dialog-content {
+  padding: 1rem !important;
+  background-color: rgb(255 240 240);
+}
+
+.confirm-delete-dialog .p-dialog-header,
+.confirm-delete-dialog .p-dialog-footer {
   padding: 1rem !important;
 }
 
-.p-dialog-content,
-.p-dialog-footer {
-  padding: 0 1rem 1rem 1rem !important;
-}
-
-.p-confirmdialog-message {
+.confirm-delete-dialog .p-confirmdialog-message {
   display: -webkit-box;
   -webkit-line-clamp: 5; /* number of lines */
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* font-weight: 600; */
 }
 
-.p-confirmdialog-icon {
+.confirm-delete-dialog .p-confirmdialog-icon {
   align-self: start;
 }
 
@@ -159,12 +162,22 @@ app-calendar {
     top: 4rem;
   }
 
-  .p-dialog-header {
+  .confirm-delete-dialog,
+  .confirm-delete-dialog .p-button {
+    font-size: 0.9rem !important;
+  }
+
+  .confirm-delete-dialog.p-dialog {
+    max-width: 90%;
+  }
+
+  .confirm-delete-dialog .p-dialog-header,
+  .confirm-delete-dialog .p-dialog-content,
+  .confirm-delete-dialog .p-dialog-footer {
     padding: 0.5rem !important;
   }
 
-  .p-dialog-content,
-  .p-dialog-footer {
-    padding: 0 0.5rem 0.5rem 0.5rem !important;
+  .confirm-delete-dialog .p-dialog-title {
+    font-size: 1rem !important;
   }
 }

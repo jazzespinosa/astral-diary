@@ -10,6 +10,7 @@ app-navbar {
   z-index: 10;
 }
 
+/* TOP NAVBAR / HEADER */
 .navbar .p-menu {
   width: 14rem;
 }
@@ -42,9 +43,10 @@ app-navbar {
   cursor: pointer;
 }
 
-/* button.btn:first-child:active {
-  border-color: gray !important;
-} */
+/* P-MENU */
+.form-check-label {
+  font-size: 0.9rem;
+}
 
 /* OFF CANVAS */
 .offcanvas {
@@ -111,7 +113,7 @@ app-navbar {
 
 .sub-list {
   padding-left: 1rem !important;
-  border-left: 1px solid #dee2e6;
+  border-left: 2px solid #f4f7ff;
 }
 
 .sub-list .list-group-item {

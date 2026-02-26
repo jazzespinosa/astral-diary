@@ -4,27 +4,18 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
-import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
+import { AppService } from 'app/services/app.service';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    ButtonModule,
-    SelectModule,
-    TextareaModule,
-    ToastModule,
-  ],
-  providers: [MessageService],
+  imports: [CommonModule, ReactiveFormsModule, ButtonModule, SelectModule, TextareaModule],
   templateUrl: './about.component.html',
   styleUrl: './about.component.css',
 })
 export class AboutComponent implements OnInit {
+  private appService = inject(AppService);
   private fb = inject(FormBuilder);
-  private messageService = inject(MessageService);
 
   feedbackForm!: FormGroup;
   categories = [
@@ -44,7 +35,7 @@ export class AboutComponent implements OnInit {
   onSubmit() {
     if (this.feedbackForm.valid) {
       console.log('Feedback submitted:', this.feedbackForm.value);
-      this.messageService.add({
+      this.appService.setToastMessage({
         severity: 'success',
         summary: 'Feedback Received',
         detail: 'Thank you for your thoughts among the stars!',

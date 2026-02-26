@@ -3,7 +3,7 @@
 >
   <h2 class="mb-3">{{ isLogin() ? 'Login' : 'Register' }}</h2>
   @if (isLogin()) {
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmitLogin()" class="d-flex flex-grow-1">
+    <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" class="d-flex flex-grow-1">
       <fieldset [disabled]="!isLogin()" class="d-flex flex-column align-items-center gap-3">
         <div class="d-flex flex-column gap-1 align-items-center w-100">
           <div class="d-flex flex-row gap-1 align-items-center w-100">
@@ -53,7 +53,13 @@
             }
           }
         </div>
-        <p-button label="Submit" type="submit" severity="primary" class="mt-3 mb-2"></p-button>
+        <p-button
+          label="Submit"
+          type="submit"
+          severity="primary"
+          class="mt-3 mb-2"
+          [loading]="isSubmitLoading()"
+        ></p-button>
         <small class="mb-0"
           >Don't have an account?
           <a class="link-primary" (click)="toggleLogin()">Register</a></small
@@ -61,7 +67,7 @@
       </fieldset>
     </form>
   } @else {
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmitRegister()" class="d-flex flex-grow-1">
+    <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="d-flex flex-grow-1">
       <fieldset [disabled]="isLogin()" class="d-flex flex-column align-items-center gap-3">
         <div class="d-flex flex-column gap-1 align-items-center w-100">
           <div class="d-flex flex-row gap-1 align-items-center w-100">
@@ -117,7 +123,13 @@
             }
           }
         </div>
-        <p-button label="Submit" type="submit" severity="primary" class="mt-3 mb-2"></p-button>
+        <p-button
+          label="Submit"
+          type="submit"
+          severity="primary"
+          class="mt-3 mb-2"
+          [loading]="isSubmitLoading()"
+        ></p-button>
         <small class="mb-0"
           >Already have an account? <a class="link-primary" (click)="toggleLogin()">Login</a></small
         >
@@ -129,7 +141,7 @@
     <span>or</span>
     <div class="divider-line"></div>
   </div>
-  <p-button label="Login with Google" severity="secondary" class="">
+  <p-button label="Continue with Google" severity="secondary" class="" (click)="loginWithGoogle()">
     <img class="google-icon me-2" src="./google-colored.svg" alt="Google" />
   </p-button>
 </div>

@@ -226,7 +226,8 @@ app-entry {
 }
 
 /* ENTRY FORM FILE UPLOAD */
-.p-fileupload-header {
+.p-fileupload-header,
+.p-fileupload-content {
   padding: 0.5rem !important;
 }
 
@@ -244,6 +245,22 @@ app-entry {
   display: none;
 }
 
+.attachment-dialog .p-dialog {
+  max-height: calc(100vh - 6.5rem);
+  min-width: 500px;
+  max-width: clamp(500px, 90%, 1200px);
+  margin-top: 5.5rem;
+  margin-bottom: 1rem;
+}
+
+.attachment-dialog .p-dialog-header {
+  padding: 0.5rem 1rem 0 1rem !important;
+}
+
+.attachment-dialog .p-dialog-content {
+  padding: 0 1rem 1rem 1rem !important;
+}
+
 .attachment {
   background: #e8e8e8 !important;
   border-radius: 8px;
@@ -251,16 +268,24 @@ app-entry {
   scrollbar-width: thin;
 }
 
-.attach-button {
-  padding: 0.25rem;
-}
-
-.attach-button:hover {
-  background-color: #aaaaaa;
-}
-
-.send-button {
+.submit-button {
   width: 15rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.p-popover {
+  font-family: 'Google Sans', sans-serif;
+  --p-popover-arrow-offset: 1rem;
+}
+
+.p-popover.p-popover-flipped {
+  --p-popover-arrow-offset: 1.7rem;
+  --p-popover-arrow-left: -11px !important;
+}
+
+.p-popover-content {
+  padding: 0rem !important;
 }
 
 @media (max-width: 768px) {
@@ -273,19 +298,39 @@ app-entry {
   .lower-section {
     margin-top: 0.25rem !important;
     margin-bottom: 0.25rem !important;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 
-  .send-button {
-    /* margin-top: 0.5rem !important; */
+  .submit-button {
+    width: 10rem;
   }
 
-  .p-fileupload-header {
-    padding: 0.2rem !important;
-  }
-
+  .p-fileupload-header,
+  .p-fileupload-content,
   .p-button.p-fileupload-choose-button,
   .p-button.p-fileupload-cancel-button {
     padding: 0.25rem !important;
+  }
+
+  .attachment-dialog .p-dialog {
+    min-width: 300px;
+    max-width: clamp(300px, 90%, 1200px);
+  }
+
+  .p-fileupload-file {
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .p-popover {
+    --p-popover-arrow-offset: 1.3rem;
+    --p-popover-arrow-left: 89px !important;
+  }
+
+  .p-popover.p-popover-flipped {
+    --p-popover-arrow-offset: 1.7rem;
+    --p-popover-arrow-left: 83px !important;
   }
 }

@@ -24,10 +24,10 @@ import {
   NgtpOutline,
 } from 'angular-three-postprocessing';
 import * as THREE from 'three';
-import { StarsComponent } from '../../shared/three/objects/stars/stars.component';
-import { CloudsComponent } from 'app/shared/three/objects/clouds/clouds.component';
-import { MainStarComponent } from 'app/shared/three/objects/main-star/main-star.component';
-import { AppService } from '../../services/app.service';
+import { StarsComponent } from 'app/pages/home/three/objects/stars/stars.component';
+import { CloudsComponent } from 'app/pages/home/three/objects/clouds/clouds.component';
+import { MainStarComponent } from 'app/pages/home/three/objects/main-star/main-star.component';
+import { AppService } from '../../../services/app.service';
 
 import blueNebulaPC from 'assets/blue-nebula-pc.hdr' with { loader: 'file' }; // for PC
 import blueNebulaMobile from 'assets/blue-nebula-mobile.jpg' with { loader: 'file' }; // for Mobile
@@ -39,6 +39,7 @@ import moonEmissive from 'assets/moon-emissive.jpg' with { loader: 'file' };
 import change from 'assets/change-updated.glb' with { loader: 'file' };
 import asteroids from 'assets/asteroids.glb' with { loader: 'file' };
 import comet from 'assets/comet.glb' with { loader: 'file' };
+import { provideNgtRenderer } from 'angular-three/dom';
 
 const Clouds = [
   // FRONT

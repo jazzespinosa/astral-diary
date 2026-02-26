@@ -1,4 +1,11 @@
 @if (!isLandingPage()) {
+  <p-toast
+    [breakpoints]="{ '768px': { width: '70%', left: 'auto', top: '4.5rem', right: '0.5rem' } }"
+    preventOpenDuplicates="true"
+    life="3000"
+    position="top-right"
+    class="toast-container"
+  />
   <app-navbar />
   <app-blur-background />
 }

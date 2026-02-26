@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { ToastMessageOptions } from 'primeng/api';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
@@ -27,5 +28,11 @@ export class AppService {
   readonly activeLink = this._activeLink.asReadonly();
   setActiveLink(value: string) {
     this._activeLink.set(value);
+  }
+
+  private readonly _toastMessage = signal<ToastMessageOptions>({});
+  readonly toastMessage = this._toastMessage.asReadonly();
+  setToastMessage(value: ToastMessageOptions) {
+    this._toastMessage.set(value);
   }
 }

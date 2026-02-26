@@ -1,0 +1,3 @@
+# Ignore functions formatting
+functions/src/index.ts
+functions/.eslintrc.js

@@ -15,6 +15,7 @@ import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from 'app/services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -23,15 +24,16 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './navbar.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent {
   protected appService = inject(AppService);
+  protected authService = inject(AuthService);
   private router = inject(Router);
 
   isScrolled = false;
 
   checked = computed(() => this.appService.isBackgroundMilkyWay());
 
-  private PopUpMenuNotLoggedIn = [
+  private PopUpMenuNotLoggedIn: MenuItem[] = [
     {
       separator: true,
     },
@@ -39,11 +41,9 @@ export class NavbarComponent implements OnInit {
       label: 'Account',
       items: [
         {
-          label: 'Login or Register',
+          label: 'Login / Register',
           icon: 'fa-solid fa-arrow-right-to-bracket',
-          command: () => {
-            this.router.navigate(['/auth']);
-          },
+          command: () => this.router.navigate(['/auth']),
         },
       ],
     },
@@ -52,7 +52,7 @@ export class NavbarComponent implements OnInit {
     },
   ];
 
-  private PopUpMenuLoggedIn = [
+  private PopUpMenuLoggedIn: MenuItem[] = [
     {
       separator: true,
     },
@@ -62,15 +62,14 @@ export class NavbarComponent implements OnInit {
         {
           label: 'Profile',
           icon: 'fa-solid fa-user',
-          command: () => {
-            this.router.navigate(['/account']);
-          },
+          command: () => this.router.navigate(['/account']),
         },
         {
           label: 'Logout',
           icon: 'fa-solid fa-arrow-right-from-bracket',
           iconClass: 'text-danger',
           styleClass: 'logout',
+          command: () => this.logout(),
         },
       ],
     },
@@ -79,19 +78,29 @@ export class NavbarComponent implements OnInit {
     },
   ];
 
-  items: MenuItem[] | undefined;
+  items = computed(() => {
+    if (this.authService.activeUser$()) {
+      const name = this.authService.activeUser$()?.name;
+      this.PopUpMenuLoggedIn[1].items![0].label = name;
+      return this.PopUpMenuLoggedIn;
+    } else {
+      return this.PopUpMenuNotLoggedIn;
+    }
+  });
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
     this.isScrolled = window.scrollY > 20;
   }
 
-  ngOnInit(): void {
-    this.items = this.PopUpMenuLoggedIn;
-  }
-
-  toggleBackground() {
-    this.appService.setIsBackgroundMilkyWay(!this.appService.isBackgroundMilkyWay());
-    console.log(this.appService.isBackgroundMilkyWay());
+  private logout() {
+    this.authService.signOutIfNeeded();
+    this.authService.setActiveUser(null);
+    this.appService.setToastMessage({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Logged out successfully',
+    });
+    this.router.navigate(['/auth']);
   }
 }

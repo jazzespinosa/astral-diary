@@ -56,7 +56,7 @@
                 <div class="entry-title align-content-center m-2">{{ entry.title }}</div>
                 <div class="m-2">
                   <i class="fa-solid fa-file m-2" role="button" (click)="viewEntry(entry)"></i>
-                  <i class="fa-solid fa-pen m-2" role="button" (click)="editEntry(entry)"></i>
+                  <i class="fa-solid fa-pencil m-2" role="button" (click)="editEntry(entry)"></i>
                   <i class="fa-solid fa-trash m-2" role="button" (click)="deleteEntry(entry)"></i>
                 </div>
               </div>
@@ -125,10 +125,7 @@
     }
   }
   @if (day.badgeTotal > 0) {
-    <span class="cal-day-badge" role="button">{{ day.badgeTotal }}</span>
+    <span class="cal-day-badge">{{ day.badgeTotal }}</span>
   }
 </ng-template>
-
-<!-- DELETE ENTRY DIALOG -->
-<p-confirmdialog />
-<p-toast [breakpoints]="{ '768px': { width: '70%', left: 'auto' } }" />
+<p-confirmdialog styleClass="confirm-delete-dialog" draggable="false" />

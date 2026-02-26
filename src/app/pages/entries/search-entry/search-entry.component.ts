@@ -28,7 +28,7 @@ export class SearchEntryComponent implements OnInit {
   defaultDate = signal(new Date());
 
   ngOnInit(): void {
-    this.sort = 'desc';
+    this.sort = 'Descending';
     this.selectedDateFilter = 'Any';
   }
 }

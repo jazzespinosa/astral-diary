@@ -15,7 +15,6 @@ import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { EntryComponent } from 'app/shared/components/entry/entry.component';
 import { AppService } from 'app/services/app.service';
@@ -95,6 +94,11 @@ const Events = [
     title: 'Event 6',
     content: 'Content 6',
   },
+  {
+    start: startOfDay(new Date('2026-04-03')),
+    title: '',
+    content: '',
+  },
 ];
 
 @Component({
@@ -107,7 +111,6 @@ const Events = [
     CalendarDatePipe,
     ButtonModule,
     ConfirmDialogModule,
-    ToastModule,
     EntryComponent,
     DatePipe,
   ],
@@ -127,7 +130,6 @@ export class CalendarComponent {
   // inject dependencies
   protected appService = inject(AppService);
   private confirmationService = inject(ConfirmationService);
-  private messageService = inject(MessageService);
 
   readonly CalendarView = CalendarView;
   visibleDialog = signal<boolean>(false);
@@ -186,7 +188,9 @@ export class CalendarComponent {
   deleteEntry(entry: any) {
     this.confirmationService.confirm({
       target: entry.target as EventTarget,
-      message: 'Do you want to delete this entry? <br /><br />' + entry.title,
+      message:
+        '<span class="fw-semibold">Do you want to delete this entry?</span> <br /><br />' +
+        entry.title,
       header: 'Confirm Delete',
       icon: 'fa-solid fa-circle-exclamation',
       dismissableMask: true,
@@ -202,14 +206,14 @@ export class CalendarComponent {
       },
 
       accept: () => {
-        this.messageService.add({
+        this.appService.setToastMessage({
           severity: 'success',
           summary: 'Confirmed',
           detail: 'Record deleted',
         });
       },
       reject: () => {
-        // this.messageService.add({
+        // this.appService.setToastMessage({
         //   severity: 'error',
         //   summary: 'Rejected',
         //   detail: 'You have rejected',

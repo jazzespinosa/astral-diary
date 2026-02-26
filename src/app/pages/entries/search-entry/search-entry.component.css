@@ -33,8 +33,8 @@ app-search-entry {
 }
 
 /* TEXT */
-.date-range h6 {
-  margin: 0;
+.date-range span,
+.sort span {
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -47,6 +47,7 @@ app-search-entry {
 
 .results {
   scrollbar-width: thin;
+  padding-right: 0.1rem;
 }
 
 .results .result-entry:last-child {
@@ -66,5 +67,9 @@ app-search-entry {
 
   .search-bar {
     gap: 0.25rem !important;
+  }
+
+  .results {
+    padding-right: 0.3rem;
   }
 }

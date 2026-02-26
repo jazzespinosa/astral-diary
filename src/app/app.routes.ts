@@ -11,22 +11,33 @@ import { AccountComponent } from './pages/account/account.component';
 import { LandingComponent } from './pages/landing/landing.component';
 import { provideNgtRenderer } from 'angular-three/dom';
 import { AuthComponent } from './pages/auth/auth.component';
+import { AuthVerifyComponent } from './pages/auth-verify/auth-verify.component';
+import { ViewEntryComponent } from './pages/entries/view-entry/view-entry.component';
 
 export const routes: Routes = [
-  // { path: '', redirectTo: '', pathMatch: 'full' },
   { path: '', component: LandingComponent },
   {
     path: 'home',
     component: HomeComponent,
     providers: [provideNgtRenderer()],
+    // loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent),
   },
-  { path: 'entry/add', component: AddEntryComponent },
-  { path: 'entry/search', component: SearchEntryComponent },
-  { path: 'entry/drafts', component: DraftsComponent },
+  {
+    path: 'entry',
+    children: [
+      { path: '', redirectTo: 'search', pathMatch: 'full' },
+      { path: 'view', component: ViewEntryComponent },
+      { path: 'add', component: AddEntryComponent },
+      { path: 'search', component: SearchEntryComponent },
+      { path: 'drafts', component: DraftsComponent },
+      { path: '**', redirectTo: 'search', pathMatch: 'full' },
+    ],
+  },
   { path: 'calendar', component: CalendarComponent },
   { path: 'account', component: AccountComponent },
   { path: 'about', component: AboutComponent },
   { path: 'auth', component: AuthComponent },
+  { path: 'auth/verify', component: AuthVerifyComponent },
   {
     path: 'test',
     component: TestComponent,

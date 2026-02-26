@@ -9,3 +9,8 @@
   font-size: 1rem;
   color: #000000;
 }
+
+/* TOAST */
+.toast-container {
+  top: 5rem !important;
+}

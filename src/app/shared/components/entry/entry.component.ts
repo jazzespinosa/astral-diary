@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -9,6 +9,7 @@ import {
   ElementRef,
   inject,
   input,
+  model,
   OnDestroy,
   OnInit,
   signal,
@@ -25,15 +26,19 @@ import {
   Validators,
 } from '@angular/forms';
 import { DatePickerModule } from 'primeng/datepicker';
-import { FileUpload } from 'primeng/fileupload';
+import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { AppService } from 'app/services/app.service';
+import { DialogModule } from 'primeng/dialog';
+import { EntryService } from 'app/services/entry.service';
+import { EntryType } from 'app/models/entry.models';
+import { PopoverModule } from 'primeng/popover';
 
-export type EntryComponentInput = 'home' | 'add-entry' | 'calendar';
+export type EntryParentComponentInput = 'home' | 'add-entry' | 'calendar';
 
 @Component({
   selector: 'app-entry',
@@ -41,10 +46,12 @@ export type EntryComponentInput = 'home' | 'add-entry' | 'calendar';
     CommonModule,
     DatePickerModule,
     ReactiveFormsModule,
-    FileUpload,
+    FileUploadModule,
     ButtonModule,
     InputTextModule,
     TextareaModule,
+    DialogModule,
+    PopoverModule,
   ],
   templateUrl: './entry.component.html',
   styleUrl: './entry.component.css',
@@ -52,46 +59,62 @@ export type EntryComponentInput = 'home' | 'add-entry' | 'calendar';
 })
 export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
   // inject dependencies
-  // private ref = inject(ChangeDetectorRef);
-  private formBuilder = inject(FormBuilder);
   private appService = inject(AppService);
+  private entryService = inject(EntryService);
+  private formBuilder = inject(FormBuilder);
 
   // inputs
-  parentComponent = input.required<EntryComponentInput>();
+  parentComponent = input.required<EntryParentComponentInput>();
   access = input.required<'new' | 'view' | 'edit'>();
   entryValues = input.required<{ entryDate: Date; entryTitle: string; entryContent: string }>();
 
   header = computed(() => {
     switch (this.access()) {
       case 'new':
-        return 'Creating New Entry';
+        return {
+          label: 'Creating New Entry',
+          icon: 'fa-solid fa-file-circle-plus fa-xl',
+        };
       case 'view':
-        return 'Viewing Entry';
+        return {
+          label: 'Viewing Entry',
+          icon: 'fa-solid fa-book-open fa-xl',
+        };
       case 'edit':
-        return 'Editing Entry';
+        return {
+          label: 'Editing Entry',
+          icon: 'fa-solid fa-pencil fa-xl',
+        };
       default:
-        return '';
+        return {
+          label: '',
+          icon: '',
+        };
     }
   });
 
-  placeholder = computed(() => {
-    return this.access() === 'new' ? 'Start writing your thoughts here...' : '';
-  });
+  placeholder = computed(() =>
+    this.access() === 'new' ? 'Start writing your thoughts here...' : '',
+  );
 
   // variables
+  readonly maxFileSize = 10485760; // 10MB
+  currentFileSize = signal(0);
+  fileCount = signal(0);
+
   titleRef = viewChild.required<ElementRef<HTMLInputElement>>('titleRef');
   measuringSpan = viewChild.required<ElementRef<HTMLSpanElement>>('measuringSpan');
   paperInnerRef = viewChild.required<ElementRef<HTMLDivElement>>('paperInnerRef');
   contentRef = viewChild.required<ElementRef<HTMLTextAreaElement>>('contentRef');
 
   form!: FormGroup;
-  formSubmitted = false;
-  selectedFile: any;
+  private formSubmitted = false;
+  private selectedFiles: File[] = [];
 
   // paper state
   paperState = signal<'hidden' | 'flying' | 'zoomin'>('hidden');
   isExpanded = signal(false);
-  isAttachmentOpen = signal(false);
+  isAttachmentOpen = model(false);
 
   constructor() {}
 
@@ -99,8 +122,6 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.appService.isEntryOpen()) {
       this.summonPaper();
     }
-
-    // console.log(this.entryValues());
 
     switch (this.access()) {
       case 'new':
@@ -112,16 +133,16 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
         break;
       case 'view':
         this.form = this.formBuilder.group({
-          entryDate: [{ value: this.entryValues()?.entryDate, disabled: true }],
-          entryTitle: [{ value: this.entryValues()?.entryTitle, disabled: true }],
-          entryContent: [{ value: this.entryValues()?.entryContent, disabled: true }],
+          entryDate: [{ value: this.entryValues().entryDate, disabled: true }],
+          entryTitle: [{ value: this.entryValues().entryTitle, disabled: true }],
+          entryContent: [{ value: this.entryValues().entryContent, disabled: true }],
         });
         break;
       case 'edit':
         this.form = this.formBuilder.group({
-          entryDate: [this.entryValues()?.entryDate],
-          entryTitle: [this.entryValues()?.entryTitle],
-          entryContent: [this.entryValues()?.entryContent],
+          entryDate: [this.entryValues().entryDate],
+          entryTitle: [this.entryValues().entryTitle],
+          entryContent: [this.entryValues().entryContent],
         });
         break;
       default:
@@ -144,6 +165,7 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.reset();
+    this.appService.setIsEntryOpen(false);
   }
 
   entryTitleAutoGrow(titleRef: HTMLInputElement, measuringSpan: HTMLSpanElement) {
@@ -176,39 +198,77 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.formSubmitted = true;
 
     if (this.form.invalid) {
+      this.appService.setToastMessage({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Please fill out all required fields',
+      });
       return;
     }
 
     let formData = new FormData();
-    formData.append('entryDate', this.form.value.entryDate);
+    const formattedDate = formatDate(this.form.value.entryDate, 'yyyy-MM-dd', 'en-US');
+    formData.append('entryDate', formattedDate);
     formData.append('entryTitle', this.form.value.entryTitle);
     formData.append('entryContent', this.form.value.entryContent);
-    formData.append('attachmentEntry', this.selectedFile);
+    formData.append('entryType', EntryType.Entry);
+    this.selectedFiles.forEach((file) => {
+      formData.append('entryAttachments', file);
+    });
 
-    let x = formData.get('entryContent');
-    console.log(x);
+    this.entryService.createEntry(formData).subscribe({
+      next: (response) => {
+        console.log(response);
+        this.appService.setToastMessage({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Entry created successfully',
+        });
+
+        this.form.reset({
+          entryDate: this.entryValues().entryDate,
+          entryTitle: '',
+          entryContent: '',
+        });
+        this.selectedFiles = [];
+        this.currentFileSize.set(0);
+        this.fileCount.set(0);
+      },
+      error: (error) => {
+        console.log(error);
+        this.appService.setToastMessage({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to create entry',
+        });
+      },
+    });
+
+    console.log(formData);
 
     this.formSubmitted = false;
-    this.closeEntry();
+    this.reset();
   }
+
+  onSaveAsDraft() {}
 
   isInvalid(controlName: string) {
     const control = this.form.get(controlName);
     return control?.invalid && (control.touched || this.formSubmitted);
   }
 
-  onFileSelect(event: any) {
-    this.selectedFile = event.files; // stored in browser memory
-  }
-
   private summonPaper() {
+    if (this.parentComponent() === 'add-entry') {
+      this.isExpanded.set(true);
+      return;
+    }
+
     this.paperState.set(this.access() === 'new' ? 'flying' : 'zoomin');
 
     // show paper lines and content
     setTimeout(
       () => {
         this.isExpanded.set(true);
-        // this.ref.detectChanges();
       },
       this.access() !== 'new' ? 100 : 500,
     );
@@ -216,6 +276,49 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   showAttachment() {
     this.isAttachmentOpen.update((value) => !value);
+  }
+
+  onAttachmentSelect(event: any, fileUpload: FileUpload) {
+    this.selectedFiles = event.currentFiles;
+    const files = event.currentFiles;
+    let fileSize = 0;
+    let isFileSizeExceeding = false;
+
+    for (let i = 0; i < files.length; i++) {
+      fileSize += files[i].size;
+      if (fileSize > this.maxFileSize) {
+        isFileSizeExceeding = true;
+        fileSize -= files[i].size;
+        fileUpload.remove(event, i);
+        i--;
+      }
+    }
+
+    this.currentFileSize.set(fileSize);
+    this.fileCount.set(this.selectedFiles.length);
+
+    if (isFileSizeExceeding) {
+      this.appService.setToastMessage({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'File size exceeds maximum limit',
+      });
+    }
+  }
+
+  onRemoveFile(event: any) {
+    let fileSize = 0;
+    for (let i = 0; i < this.selectedFiles.length; i++) {
+      fileSize += this.selectedFiles[i].size;
+    }
+    fileSize -= event.file.size;
+    this.currentFileSize.set(fileSize);
+    this.fileCount.set(this.selectedFiles.length - 1);
+  }
+
+  onClearFiles() {
+    this.currentFileSize.set(0);
+    this.fileCount.set(0);
   }
 
   backgroundClick() {
@@ -230,14 +333,13 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  closeEntry() {
-    this.reset();
-  }
-
-  private reset() {
-    this.isExpanded.set(false);
+  reset() {
     this.isAttachmentOpen.set(false);
     this.paperState.set('hidden');
-    this.appService.setIsEntryOpen(false);
+
+    if (this.parentComponent() !== 'add-entry') {
+      this.isExpanded.set(false);
+      this.appService.setIsEntryOpen(false);
+    }
   }
 }

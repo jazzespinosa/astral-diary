@@ -3,8 +3,12 @@
   [ngClass]="parentComponent() !== 'add-entry' ? 'blur' : ''"
   (click)="backgroundClick()"
 ></div>
-<section class="entry-header z-2" [ngClass]="[isExpanded() ? 'show' : '']">
-  <h4>{{ header() }}</h4>
+<section
+  class="entry-header d-flex flex-row align-items-center gap-1 z-2"
+  [ngClass]="[isExpanded() ? 'show' : '']"
+>
+  <i [class]="header().icon"></i>
+  <h4 class="my-2">{{ header().label }}</h4>
 </section>
 <div class="paper" [ngClass]="[paperState(), isExpanded() ? 'expanded' : 'not-expanded']">
   <div class="red-line position-absolute top-0 bottom-0"></div>
@@ -13,7 +17,7 @@
       [disabled]="parentComponent() === 'add-entry'"
       [hidden]="parentComponent() === 'add-entry'"
       class="position-absolute top-0 end-0 border-0 opacity-50 bg-transparent mt-1 me-2 p-0 z-2"
-      (click)="closeEntry()"
+      (click)="reset()"
     >
       <i class="fa-solid fa-xmark"></i>
     </button>
@@ -22,11 +26,12 @@
         <label class="me-2">Date:</label>
         <p-datepicker
           class="date-picker"
-          [ngClass]="{ 'icon-hidden': access() === 'view' }"
+          [ngClass]="{ 'icon-hidden': access() === 'view' || parentComponent() === 'home' }"
+          [readonlyInput]="parentComponent() === 'home'"
           formControlName="entryDate"
           dateFormat="D, mm/dd/yy"
-          [showIcon]="true"
-          [showOnFocus]="false"
+          showIcon="true"
+          showOnFocus="false"
         />
       </div>
       <div class="title-container d-flex flex-row align-items-center">
@@ -66,43 +71,97 @@
     class="lower-section d-flex flex-column w-100 z-2 mb-2 align-items-center"
     [ngClass]="[isExpanded() ? 'show' : '']"
   >
-    @if (isAttachmentOpen()) {
+    <p-dialog
+      [(visible)]="isAttachmentOpen"
+      modal="true"
+      dismissableMask="true"
+      draggable="false"
+      class="attachment-dialog"
+    >
+      <ng-template #header>
+        <div class="d-flex flex-column font-bold whitespace-nowrap">
+          <span><b>ATTACHMENTS</b></span>
+          @if (fileCount() > 0 || currentFileSize() > 0) {
+            <span
+              >{{
+                fileCount() > 0
+                  ? '(' + fileCount() + ' item' + (fileCount() > 1 ? 's' : '') + ')'
+                  : ''
+              }}
+              [{{ currentFileSize() / 1024 / 1024 | number: '1.0-2' }}MB / MAX
+              {{ maxFileSize / 1024 / 1024 | number: '1.0-2' }}MB]</span
+            >
+          }
+        </div>
+      </ng-template>
       <p-fileupload
+        #attachmentEntry
         name="attachmentEntry"
-        [multiple]="true"
-        [auto]="false"
-        [customUpload]="true"
+        multiple="true"
+        auto="false"
+        customUpload="true"
         chooseLabel="Add Attachment"
-        accept="image/*"
-        (onSelect)="onFileSelect($event)"
-        [showUploadButton]="false"
-        maxFileSize="10485760"
+        cancelLabel="Clear All"
+        accept=".jpg,.jpeg,.png"
+        showUploadButton="false"
+        [maxFileSize]="maxFileSize"
         mode="advanced"
+        (onSelect)="onAttachmentSelect($event, attachmentEntry)"
+        (onRemove)="onRemoveFile($event)"
+        (onClear)="onClearFiles()"
         class="attachment w-100 overflow-y-auto mt-2"
       >
         <ng-template #empty>
-          <div>Add files to here to upload.</div>
+          <div>Add images here to upload.</div>
         </ng-template>
       </p-fileupload>
-    }
-    <div class="d-flex flex-row w-100 align-items-center justify-content-between mt-3">
-      <button
-        class="attach-button ms-3 rounded-circle border-0 opacity-50 z-2"
+      <ng-template #footer>
+        <p-button label="OK" severity="primary" (click)="isAttachmentOpen.set(false)"></p-button>
+      </ng-template>
+    </p-dialog>
+    <div
+      class="position-relative d-flex flex-row w-100 justify-content-between align-items-center mt-3"
+    >
+      <p-button
+        rounded="true"
+        size="small"
+        class="d-flex align-items-center ms-3 z-2"
+        [ngClass]="fileCount() > 0 ? 'opacity-100' : 'opacity-50'"
         (click)="showAttachment()"
       >
         <i class="fa-solid fa-paperclip"></i>
-      </button>
+        <span class="rounded-circle ms-1"
+          ><b>{{ fileCount() }}</b></span
+        >
+      </p-button>
       <button
         pButton
         label="Submit"
         icon="fa-solid fa-paper-plane"
-        class="send-button p-2"
+        class="submit-button position-absolute p-2"
         severity="success"
-        [raised]="true"
-        [rounded]="true"
+        raised="true"
+        rounded="true"
         (click)="onSubmit()"
       ></button>
-      <div style="width: 32px"></div>
+      <p-button
+        icon="fa-solid fa-ellipsis-vertical"
+        severity="secondary"
+        rounded="true"
+        size="small"
+        class="me-3 opacity-50"
+        (click)="popover.toggle($event)"
+      ></p-button>
+      <p-popover #popover class="popover-container position-absolute"
+        ><ng-template #content>
+          <p-button
+            label="Save as Draft"
+            text="true"
+            severity="secondary"
+            (onClick)="onSaveAsDraft()"
+          ></p-button> </ng-template
+      ></p-popover>
+      <!-- <div style="width: 32px"></div> -->
     </div>
   </div>
 }

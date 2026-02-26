@@ -1,7 +1,6 @@
 <div class="navbar" [ngClass]="{ scrolled: isScrolled }">
   <button
     class="btn"
-    type="button"
     data-bs-toggle="offcanvas"
     data-bs-target="#offcanvasWithBothOptions"
     aria-controls="offcanvasWithBothOptions"
@@ -9,11 +8,10 @@
     <i class="fa-solid fa-bars"></i>
   </button>
   <i class="fa-solid fa-user-astronaut" (click)="menu.toggle($event)" role="button"></i>
-  <!-- <p-menu #menu [model]="items" [popup]="true" class="position-absolute top-0" /> -->
   <p-menu
     #menu
-    [model]="items"
-    [popup]="true"
+    [model]="items()"
+    popup="true"
     class="d-flex justify-content-center position-absolute top-0"
     styleClass="w-full md:w-60"
   >
@@ -40,7 +38,11 @@
     <ng-template #end>
       <div class="d-flex flex-row justify-content-between p-2">
         <label class="form-check-label" for="switchCheckDefault">Milky Way Background</label>
-        <p-toggleswitch [(ngModel)]="checked" (onChange)="toggleBackground()" />
+        <p-toggleswitch
+          [(ngModel)]="checked"
+          size="small"
+          (onChange)="appService.setIsBackgroundMilkyWay(!appService.isBackgroundMilkyWay())"
+        />
       </div>
     </ng-template>
   </p-menu>
@@ -69,7 +71,6 @@
       <a
         class="list-group-item list-group-item-action"
         [ngClass]="{ active: appService.activeLink().startsWith('/entry') }"
-        role="button"
         id="collapseEntryParent"
         href="#collapseEntry"
         data-bs-toggle="collapse"
@@ -122,6 +123,13 @@
       >
       <a
         class="list-group-item list-group-item-action"
+        routerLink="/account"
+        [ngClass]="{ active: appService.activeLink() === '/account' }"
+        data-bs-dismiss="offcanvas"
+        ><i class="fa-solid fa-user me-2"></i>Account</a
+      >
+      <a
+        class="list-group-item list-group-item-action"
         routerLink="/about"
         [ngClass]="{ active: appService.activeLink() === '/about' }"
         data-bs-dismiss="offcanvas"
@@ -141,27 +149,6 @@
         data-bs-dismiss="offcanvas"
         >Test2</a
       >
-      <a
-        class="list-group-item list-group-item-action"
-        routerLink="/account"
-        [ngClass]="{ active: appService.activeLink() === '/account' }"
-        data-bs-dismiss="offcanvas"
-        ><i class="fa-solid fa-user me-2"></i>Account</a
-      >
     </div>
-
-    <!-- <div
-      class="form-check form-switch form-check-reverse"
-      [hidden]="appService.activeLink() !== '/home'"
-    >
-      <label class="form-check-label" for="switchCheckDefault">Milky Way Background</label>
-      <input
-        class="form-check-input"
-        type="checkbox"
-        role="switch"
-        id="switchCheckDefault"
-        (change)="toggleBackground()"
-      />
-    </div> -->
   </div>
 </div>
