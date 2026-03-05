@@ -19,10 +19,11 @@ import { getAuth, provideAuth } from '@angular/fire/auth';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { AuthService } from './services/auth.service';
 import { environment } from 'environments/environment';
 import { AuthInterceptorService } from './pages/auth/auth-interceptor.service';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -35,7 +36,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([AuthInterceptorService]),
     ),
     provideRouter(routes),
-    provideAnimations(),
+    provideAnimationsAsync(),
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideAuth(() => getAuth()),
     providePrimeNG({
@@ -43,6 +44,8 @@ export const appConfig: ApplicationConfig = {
         preset: Aura,
       },
     }),
+    MessageService,
+    ConfirmationService,
   ],
 };
 

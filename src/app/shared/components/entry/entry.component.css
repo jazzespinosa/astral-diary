@@ -276,12 +276,11 @@ app-entry {
 
 .p-popover {
   font-family: 'Google Sans', sans-serif;
-  --p-popover-arrow-offset: 1rem;
 }
 
-.p-popover.p-popover-flipped {
-  --p-popover-arrow-offset: 1.7rem;
-  --p-popover-arrow-left: -11px !important;
+.p-popover::before,
+.p-popover::after {
+  visibility: hidden;
 }
 
 .p-popover-content {
@@ -320,17 +319,5 @@ app-entry {
   .p-fileupload-file {
     padding: 0.5rem !important;
     gap: 0.5rem !important;
-  }
-}
-
-@media (max-width: 920px) {
-  .p-popover {
-    --p-popover-arrow-offset: 1.3rem;
-    --p-popover-arrow-left: 89px !important;
-  }
-
-  .p-popover.p-popover-flipped {
-    --p-popover-arrow-offset: 1.7rem;
-    --p-popover-arrow-left: 83px !important;
   }
 }

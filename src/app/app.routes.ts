@@ -13,21 +13,28 @@ import { provideNgtRenderer } from 'angular-three/dom';
 import { AuthComponent } from './pages/auth/auth.component';
 import { AuthVerifyComponent } from './pages/auth-verify/auth-verify.component';
 import { ViewEntryComponent } from './pages/entries/view-entry/view-entry.component';
+import { HomeSceneComponent } from './pages/home/home-scene/home-scene.component';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
   {
     path: 'home',
     component: HomeComponent,
-    providers: [provideNgtRenderer()],
-    // loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent),
+    children: [{ path: '', component: HomeSceneComponent, providers: [provideNgtRenderer()] }],
   },
   {
     path: 'entry',
     children: [
       { path: '', redirectTo: 'search', pathMatch: 'full' },
-      { path: 'view', component: ViewEntryComponent },
-      { path: 'add', component: AddEntryComponent },
+      {
+        path: 'view/:id',
+        component: ViewEntryComponent,
+        children: [
+          { path: '', redirectTo: 'search', pathMatch: 'full' },
+          // { path: 'edit', component: EditEntryComponent },
+        ],
+      },
+      { path: 'new', component: AddEntryComponent },
       { path: 'search', component: SearchEntryComponent },
       { path: 'drafts', component: DraftsComponent },
       { path: '**', redirectTo: 'search', pathMatch: 'full' },

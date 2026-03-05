@@ -1,11 +1,19 @@
-import { Injectable, signal } from '@angular/core';
-import { ToastMessageOptions } from 'primeng/api';
+import { effect, inject, Injectable, signal } from '@angular/core';
+import { MessageService, ToastMessageOptions } from 'primeng/api';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AppService {
+  private messageService = inject(MessageService);
+
+  constructor() {
+    effect(() => {
+      this.messageService.add(this.toastMessage());
+    });
+  }
+
   private readonly _isBackgroundMilkyWay = signal(false);
   readonly isBackgroundMilkyWay = this._isBackgroundMilkyWay.asReadonly();
   setIsBackgroundMilkyWay(value: boolean) {

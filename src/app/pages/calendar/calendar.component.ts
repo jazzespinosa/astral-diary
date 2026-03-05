@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, effect, inject, OnInit, signal, ViewEncapsulation } from '@angular/core';
 import {
   DateAdapter,
   provideCalendar,
@@ -21,6 +21,7 @@ import { AppService } from 'app/services/app.service';
 import { DatePipe, NgClass } from '@angular/common';
 import { isSameDay, startOfDay } from 'date-fns';
 import { tap } from 'rxjs';
+import { EntryService } from 'app/services/entry.service';
 
 const Events = [
   {
@@ -119,16 +120,15 @@ const Events = [
       provide: DateAdapter,
       useFactory: adapterFactory,
     }),
-    ConfirmationService,
-    MessageService,
   ],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class CalendarComponent {
+export class CalendarComponent implements OnInit {
   // inject dependencies
   protected appService = inject(AppService);
+  private entryService = inject(EntryService);
   private confirmationService = inject(ConfirmationService);
 
   readonly CalendarView = CalendarView;
@@ -136,18 +136,42 @@ export class CalendarComponent {
 
   selectedMonthViewDay = signal<CalendarMonthViewDay | null>(null);
   selectedDate = signal<Date | null>(null);
-  todayDate = signal(new Date());
+  todayDate = signal(new Date()); // displayed month
+
+  constructor() {
+    effect(() => {
+      console.log('todayDate', this.todayDate());
+      this.onMonthChange();
+    });
+  }
 
   access = signal<'new' | 'view' | 'edit'>('new');
-  entryValues = signal({
-    entryDate: new Date(),
-    entryTitle: '',
-    entryContent: '',
+  values = signal({
+    date: new Date(),
+    title: '',
+    content: '',
   });
 
   events = signal<CalendarEvent[]>(Events);
   selectedEntries = signal<CalendarEvent[]>([]);
   selectedEntry = signal<CalendarEvent | null>(null);
+
+  ngOnInit(): void {
+    // this.onMonthChange();
+  }
+
+  private onMonthChange() {
+    this.entryService.getCalendarEntries(this.todayDate()).subscribe((response) => {
+      console.log('response', response);
+      this.events.set(
+        response.map((entry) => ({
+          start: startOfDay(new Date(entry.date)),
+          title: entry.title,
+          content: entry.content,
+        })),
+      );
+    });
+  }
 
   dayClicked(day: CalendarMonthViewDay): void {
     if (this.selectedMonthViewDay()) {
@@ -223,10 +247,10 @@ export class CalendarComponent {
   }
 
   private updateEntryValues(date: Date, title: string, content: string) {
-    this.entryValues.set({
-      entryDate: date,
-      entryTitle: title,
-      entryContent: content,
+    this.values.set({
+      date,
+      title,
+      content,
     });
   }
 

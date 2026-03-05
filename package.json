@@ -57,6 +57,7 @@
     "three-stdlib": "^2.36.1",
     "troika-three-text": "^0.52.0",
     "tslib": "^2.3.0",
+    "xxhash-wasm": "^1.1.0",
     "zone.js": "^0.15.1"
   },
   "devDependencies": {

@@ -20,7 +20,6 @@ import { AppService } from 'app/services/app.service';
     ButtonModule,
     ErrorMessageComponent,
   ],
-  providers: [MessageService],
   templateUrl: './auth.component.html',
   styleUrl: './auth.component.css',
 })

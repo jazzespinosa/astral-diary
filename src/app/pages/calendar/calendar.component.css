@@ -110,10 +110,9 @@ app-calendar {
 
 .confirm-delete-dialog .p-confirmdialog-message {
   display: -webkit-box;
-  -webkit-line-clamp: 5; /* number of lines */
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  /* font-weight: 600; */
 }
 
 .confirm-delete-dialog .p-confirmdialog-icon {

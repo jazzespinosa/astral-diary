@@ -1,0 +1,6 @@
+<ngt-canvas
+  [dpr]="appService.isMobileView() ? 1 : 2"
+  [gl]="{ antialias: !appService.isMobileView(), powerPreference: 'high-performance' }"
+>
+  <app-scene-graph *canvasContent />
+</ngt-canvas>

@@ -22,6 +22,10 @@ app-search-entry {
 }
 
 /* DATEPICKER */
+.search-date-picker-container {
+  width: 8.5rem;
+}
+
 .p-select-label,
 .date-select .p-datepicker-input.p-datepicker-input {
   font-size: 0.8rem !important;
@@ -30,6 +34,11 @@ app-search-entry {
 
 .date-select .p-datepicker-input.p-datepicker-input {
   width: 6rem;
+}
+
+p-select.p-select p-overlay {
+  position: fixed;
+  z-index: 1;
 }
 
 /* TEXT */
@@ -43,6 +52,29 @@ app-search-entry {
   width: 1px;
   height: 1.5rem;
   background-color: #000;
+}
+
+/* RESULTS */
+.p-card.p-component {
+  cursor: pointer;
+}
+
+.p-card.p-component .p-card-body {
+  gap: 0;
+}
+
+.search-p-card-content {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.attachment-thumbnail {
+  max-width: 50px;
+  max-height: 50px;
+  cursor: pointer;
+  border: 1px solid #e0e0e0;
 }
 
 .results {
@@ -71,5 +103,11 @@ app-search-entry {
 
   .results {
     padding-right: 0.3rem;
+  }
+
+  .attachment-thumbnail {
+    max-width: 40px;
+    max-height: 40px;
+    margin-right: 0.25rem !important;
   }
 }

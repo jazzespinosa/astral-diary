@@ -1,6 +1,6 @@
 <div
   class="entry-background position-fixed top-0 start-0 w-100 h-100 z-0"
-  [ngClass]="parentComponent() !== 'add-entry' ? 'blur' : ''"
+  [ngClass]="parentComponent() !== 'add-entry' && parentComponent() !== 'view-entry' ? 'blur' : ''"
   (click)="backgroundClick()"
 ></div>
 <section
@@ -14,8 +14,8 @@
   <div class="red-line position-absolute top-0 bottom-0"></div>
   <div #paperInnerRef class="paper-inner h-100 overflow-y-auto">
     <button
-      [disabled]="parentComponent() === 'add-entry'"
-      [hidden]="parentComponent() === 'add-entry'"
+      [disabled]="parentComponent() === 'add-entry' || parentComponent() === 'view-entry'"
+      [hidden]="parentComponent() === 'add-entry' || parentComponent() === 'view-entry'"
       class="position-absolute top-0 end-0 border-0 opacity-50 bg-transparent mt-1 me-2 p-0 z-2"
       (click)="reset()"
     >
@@ -25,10 +25,10 @@
       <div class="date-container d-flex flex-row align-items-center">
         <label class="me-2">Date:</label>
         <p-datepicker
-          class="date-picker"
+          class="entry-date-picker"
           [ngClass]="{ 'icon-hidden': access() === 'view' || parentComponent() === 'home' }"
           [readonlyInput]="parentComponent() === 'home'"
-          formControlName="entryDate"
+          formControlName="date"
           dateFormat="D, mm/dd/yy"
           showIcon="true"
           showOnFocus="false"
@@ -42,21 +42,14 @@
           type="text"
           pInputText
           (input)="entryTitleAutoGrow(titleRef, measuringSpan)"
-          formControlName="entryTitle"
-          [invalid]="isInvalid('entryTitle')"
+          formControlName="title"
           class="bg-transparent border-0 border-bottom border-black p-0 mt-2 rounded-0"
         /><span #measuringSpan class="measuringSpan"></span>
       </div>
-      <!-- <div
-        #paperContent
-        class="paper-content"
-        contenteditable="true"
-        (input)="onContentChange(paperContent.innerHTML)"
-      > -->
       <div class="paper-content">
         <textarea
           #contentRef
-          formControlName="entryContent"
+          formControlName="content"
           (input)="entryContentAutoGrow(paperInnerRef, contentRef)"
           [placeholder]="placeholder()"
           class="bg-transparent m-0 p-0 w-100 border-0 rounded-0 entry-textarea"
@@ -81,22 +74,26 @@
       <ng-template #header>
         <div class="d-flex flex-column font-bold whitespace-nowrap">
           <span><b>ATTACHMENTS</b></span>
-          @if (fileCount() > 0 || currentFileSize() > 0) {
+          @if (selectedFiles.length > 0 || fileSize() > 0) {
             <span
               >{{
-                fileCount() > 0
-                  ? '(' + fileCount() + ' item' + (fileCount() > 1 ? 's' : '') + ')'
+                selectedFiles.length > 0
+                  ? '(' +
+                    selectedFiles.length +
+                    ' item' +
+                    (selectedFiles.length > 1 ? 's' : '') +
+                    ')'
                   : ''
               }}
-              [{{ currentFileSize() / 1024 / 1024 | number: '1.0-2' }}MB / MAX
+              [{{ fileSize() / 1024 / 1024 | number: '1.0-2' }}MB / MAX
               {{ maxFileSize / 1024 / 1024 | number: '1.0-2' }}MB]</span
             >
           }
         </div>
       </ng-template>
       <p-fileupload
-        #attachmentEntry
-        name="attachmentEntry"
+        #attachment
+        name="attachment"
         multiple="true"
         auto="false"
         customUpload="true"
@@ -106,9 +103,9 @@
         showUploadButton="false"
         [maxFileSize]="maxFileSize"
         mode="advanced"
-        (onSelect)="onAttachmentSelect($event, attachmentEntry)"
-        (onRemove)="onRemoveFile($event)"
-        (onClear)="onClearFiles()"
+        (onSelect)="onAttachmentSelect($event, attachment)"
+        (onRemove)="onRemoveFile($event, attachment)"
+        (onClear)="onClearFiles(attachment)"
         class="attachment w-100 overflow-y-auto mt-2"
       >
         <ng-template #empty>
@@ -116,7 +113,11 @@
         </ng-template>
       </p-fileupload>
       <ng-template #footer>
-        <p-button label="OK" severity="primary" (click)="isAttachmentOpen.set(false)"></p-button>
+        <p-button
+          label="OK"
+          severity="primary"
+          (click)="onValidateAttachments(attachment)"
+        ></p-button>
       </ng-template>
     </p-dialog>
     <div
@@ -126,12 +127,12 @@
         rounded="true"
         size="small"
         class="d-flex align-items-center ms-3 z-2"
-        [ngClass]="fileCount() > 0 ? 'opacity-100' : 'opacity-50'"
+        [ngClass]="selectedFiles.length > 0 ? 'opacity-100' : 'opacity-50'"
         (click)="showAttachment()"
       >
         <i class="fa-solid fa-paperclip"></i>
         <span class="rounded-circle ms-1"
-          ><b>{{ fileCount() }}</b></span
+          ><b>{{ selectedFiles.length }}</b></span
         >
       </p-button>
       <button
@@ -142,7 +143,7 @@
         severity="success"
         raised="true"
         rounded="true"
-        (click)="onSubmit()"
+        (click)="onSubmitEntry()"
       ></button>
       <p-button
         icon="fa-solid fa-ellipsis-vertical"

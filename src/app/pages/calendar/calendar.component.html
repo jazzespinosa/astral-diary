@@ -1,6 +1,7 @@
 <div class="calendar-container container d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden">
   <h3 class="">Calendar</h3>
   <h4 class="m-0 align-self-end">
+    <!-- CHANGE TO MONTH DATE PICKER -->
     {{ todayDate() | calendarDate: CalendarView.Month + 'ViewTitle' : 'en' }}
   </h4>
   <div class="d-flex gap-1 align-self-end">
@@ -72,7 +73,7 @@
 
 @if (appService.isEntryOpen()) {
   <div class="calendar-entry-container">
-    <app-entry parentComponent="calendar" [access]="access()" [entryValues]="entryValues()" />
+    <app-entry parentComponent="calendar" [access]="access()" [values]="values()" />
   </div>
 }
 

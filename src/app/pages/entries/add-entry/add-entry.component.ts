@@ -12,15 +12,14 @@ import { AppService } from 'app/services/app.service';
   styleUrl: './add-entry.component.css',
 })
 export class AddEntryComponent implements OnInit {
-  // inject services
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
   private appService = inject(AppService);
 
-  entryValues = signal({
-    entryDate: new Date(),
-    entryTitle: '',
-    entryContent: '',
+  values = signal({
+    date: new Date(),
+    title: '',
+    content: '',
   });
 
   constructor() {}
@@ -34,7 +33,7 @@ export class AddEntryComponent implements OnInit {
       )
       .subscribe((event: NavigationEnd) => {
         const activeUrl = event.urlAfterRedirects;
-        if (activeUrl === '/entry/add') {
+        if (activeUrl === '/entry/new') {
           this.appService.setIsEntryOpen(true);
         }
       });

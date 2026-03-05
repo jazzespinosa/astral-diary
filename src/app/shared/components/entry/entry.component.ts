@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
@@ -35,10 +36,9 @@ import { filter } from 'rxjs';
 import { AppService } from 'app/services/app.service';
 import { DialogModule } from 'primeng/dialog';
 import { EntryService } from 'app/services/entry.service';
-import { EntryType } from 'app/models/entry.models';
 import { PopoverModule } from 'primeng/popover';
-
-export type EntryParentComponentInput = 'home' | 'add-entry' | 'calendar';
+import { HashService } from 'app/services/hash.service';
+import { EntryParentComponentInput } from 'app/models/entry.models';
 
 @Component({
   selector: 'app-entry',
@@ -61,12 +61,13 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
   // inject dependencies
   private appService = inject(AppService);
   private entryService = inject(EntryService);
+  private hashService = inject(HashService);
   private formBuilder = inject(FormBuilder);
 
   // inputs
   parentComponent = input.required<EntryParentComponentInput>();
   access = input.required<'new' | 'view' | 'edit'>();
-  entryValues = input.required<{ entryDate: Date; entryTitle: string; entryContent: string }>();
+  values = input.required<{ date: Date; title: string; content: string }>();
 
   header = computed(() => {
     switch (this.access()) {
@@ -99,17 +100,17 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // variables
   readonly maxFileSize = 10485760; // 10MB
-  currentFileSize = signal(0);
-  fileCount = signal(0);
+  fileSize = signal(0);
 
   titleRef = viewChild.required<ElementRef<HTMLInputElement>>('titleRef');
   measuringSpan = viewChild.required<ElementRef<HTMLSpanElement>>('measuringSpan');
   paperInnerRef = viewChild.required<ElementRef<HTMLDivElement>>('paperInnerRef');
   contentRef = viewChild.required<ElementRef<HTMLTextAreaElement>>('contentRef');
+  attachment = viewChild.required<FileUpload>('attachment');
 
   form!: FormGroup;
   private formSubmitted = false;
-  private selectedFiles: File[] = [];
+  selectedFiles: File[] = [];
 
   // paper state
   paperState = signal<'hidden' | 'flying' | 'zoomin'>('hidden');
@@ -126,23 +127,23 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (this.access()) {
       case 'new':
         this.form = this.formBuilder.group({
-          entryDate: [this.entryValues().entryDate, Validators.required],
-          entryTitle: ['', Validators.required],
-          entryContent: ['', Validators.required],
+          date: [this.values().date, Validators.required],
+          title: ['', Validators.required],
+          content: ['', Validators.required],
         });
         break;
       case 'view':
         this.form = this.formBuilder.group({
-          entryDate: [{ value: this.entryValues().entryDate, disabled: true }],
-          entryTitle: [{ value: this.entryValues().entryTitle, disabled: true }],
-          entryContent: [{ value: this.entryValues().entryContent, disabled: true }],
+          date: [{ value: this.values().date, disabled: true }],
+          title: [{ value: this.values().title, disabled: true }],
+          content: [{ value: this.values().content, disabled: true }],
         });
         break;
       case 'edit':
         this.form = this.formBuilder.group({
-          entryDate: [this.entryValues().entryDate],
-          entryTitle: [this.entryValues().entryTitle],
-          entryContent: [this.entryValues().entryContent],
+          date: [this.values().date],
+          title: [this.values().title],
+          content: [this.values().content],
         });
         break;
       default:
@@ -171,7 +172,7 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
   entryTitleAutoGrow(titleRef: HTMLInputElement, measuringSpan: HTMLSpanElement) {
     measuringSpan.textContent = titleRef.value;
     const pixelWidth = measuringSpan.offsetWidth;
-    titleRef.style.width = pixelWidth + 'px';
+    titleRef.style.width = pixelWidth + 2 + 'px';
   }
 
   entryContentAutoGrow(container: HTMLElement, textarea: HTMLTextAreaElement) {
@@ -194,71 +195,114 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  onSubmit() {
+  async onSubmitEntry() {
     this.formSubmitted = true;
+    let entryFormData = new FormData();
+    entryFormData = await this.appendFormData(entryFormData);
 
     if (this.form.invalid) {
       this.appService.setToastMessage({
         severity: 'error',
         summary: 'Error',
-        detail: 'Please fill out all required fields',
+        detail: 'Please fill out all fields.',
       });
       return;
     }
 
-    let formData = new FormData();
-    const formattedDate = formatDate(this.form.value.entryDate, 'yyyy-MM-dd', 'en-US');
-    formData.append('entryDate', formattedDate);
-    formData.append('entryTitle', this.form.value.entryTitle);
-    formData.append('entryContent', this.form.value.entryContent);
-    formData.append('entryType', EntryType.Entry);
-    this.selectedFiles.forEach((file) => {
-      formData.append('entryAttachments', file);
-    });
-
-    this.entryService.createEntry(formData).subscribe({
+    this.entryService.createEntry(entryFormData).subscribe({
       next: (response) => {
         console.log(response);
         this.appService.setToastMessage({
           severity: 'success',
           summary: 'Success',
-          detail: 'Entry created successfully',
+          detail: 'Entry created successfully.',
         });
 
-        this.form.reset({
-          entryDate: this.entryValues().entryDate,
-          entryTitle: '',
-          entryContent: '',
-        });
-        this.selectedFiles = [];
-        this.currentFileSize.set(0);
-        this.fileCount.set(0);
+        this.resetForm();
       },
       error: (error) => {
         console.log(error);
         this.appService.setToastMessage({
           severity: 'error',
           summary: 'Error',
-          detail: 'Failed to create entry',
+          detail: 'Failed to create entry.',
         });
       },
     });
-
-    console.log(formData);
 
     this.formSubmitted = false;
     this.reset();
   }
 
-  onSaveAsDraft() {}
+  async onSaveAsDraft() {
+    this.formSubmitted = true;
+    let draftFormData = new FormData();
+    draftFormData = await this.appendFormData(draftFormData);
 
-  isInvalid(controlName: string) {
-    const control = this.form.get(controlName);
-    return control?.invalid && (control.touched || this.formSubmitted);
+    if (this.form.get('entryDate')?.invalid) {
+      this.appService.setToastMessage({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Please fill out required fields.',
+      });
+      return;
+    }
+
+    this.entryService.createDraft(draftFormData).subscribe({
+      next: (response) => {
+        console.log(response);
+        this.appService.setToastMessage({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Draft saved successfully.',
+        });
+
+        this.resetForm();
+      },
+      error: (error) => {
+        console.log(error);
+        this.appService.setToastMessage({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to create draft.',
+        });
+      },
+    });
+
+    this.formSubmitted = false;
+    this.reset();
+  }
+
+  private async appendFormData(formData: FormData): Promise<FormData> {
+    const formattedDate = formatDate(this.form.value.date, 'yyyy-MM-dd', 'en-US');
+    formData.append('Date', formattedDate);
+    formData.append('Title', this.form.value.title);
+    formData.append('Content', this.form.value.content);
+
+    for (let i = 0; i < this.selectedFiles.length; i++) {
+      const file = this.selectedFiles[i];
+      const hash = await this.hashService.hashFile(file);
+
+      formData.append(`Attachments[${i}].ContentHash`, hash);
+      formData.append(`Attachments[${i}].File`, file);
+    }
+
+    return formData;
+  }
+
+  private resetForm() {
+    this.form.reset({
+      date: this.values().date,
+      title: '',
+      content: '',
+    });
+    this.attachment().clear();
+    this.selectedFiles = [];
+    this.updateFileSize();
   }
 
   private summonPaper() {
-    if (this.parentComponent() === 'add-entry') {
+    if (this.parentComponent() === 'add-entry' || this.parentComponent() === 'view-entry') {
       this.isExpanded.set(true);
       return;
     }
@@ -278,7 +322,7 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isAttachmentOpen.update((value) => !value);
   }
 
-  onAttachmentSelect(event: any, fileUpload: FileUpload) {
+  async onAttachmentSelect(event: any, fileUpload: FileUpload) {
     this.selectedFiles = event.currentFiles;
     const files = event.currentFiles;
     let fileSize = 0;
@@ -294,31 +338,67 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    this.currentFileSize.set(fileSize);
-    this.fileCount.set(this.selectedFiles.length);
+    this.updateFileSize();
 
     if (isFileSizeExceeding) {
       this.appService.setToastMessage({
         severity: 'error',
         summary: 'Error',
-        detail: 'File size exceeds maximum limit',
+        detail: 'File size exceeds maximum limit.',
       });
     }
   }
 
-  onRemoveFile(event: any) {
-    let fileSize = 0;
-    for (let i = 0; i < this.selectedFiles.length; i++) {
-      fileSize += this.selectedFiles[i].size;
+  async onValidateAttachments(fileUpload: FileUpload) {
+    const files = fileUpload.files;
+    const uniqueFiles: File[] = [];
+    const seenHashes = new Set<string>();
+    const removedFiles: File[] = [];
+    let totalSize = 0;
+
+    for (const file of files) {
+      const hash = await this.hashService.hashFile(file);
+      if (!seenHashes.has(hash)) {
+        seenHashes.add(hash);
+        uniqueFiles.push(file);
+        totalSize += file.size;
+      } else {
+        removedFiles.push(file);
+      }
     }
-    fileSize -= event.file.size;
-    this.currentFileSize.set(fileSize);
-    this.fileCount.set(this.selectedFiles.length - 1);
+
+    if (removedFiles.length > 0) {
+      for (let i = 0; i < removedFiles.length; i++) {
+        setTimeout(() => {
+          this.appService.setToastMessage({
+            severity: 'error',
+            summary: 'Error',
+            detail: `Duplicate file(s) detected. Removed "${removedFiles[i].name}".`,
+          });
+        }, 200);
+      }
+    }
+
+    fileUpload.files = uniqueFiles;
+    this.selectedFiles = [...uniqueFiles];
+    this.updateFileSize();
+    this.isAttachmentOpen.set(false);
   }
 
-  onClearFiles() {
-    this.currentFileSize.set(0);
-    this.fileCount.set(0);
+  private updateFileSize() {
+    this.fileSize.set(this.selectedFiles.reduce((total, file) => total + file.size, 0));
+  }
+
+  onRemoveFile(event: any, fileUpload: FileUpload = this.attachment()) {
+    this.selectedFiles = fileUpload.files;
+    const currentFileSize = this.fileSize();
+    this.fileSize.set(currentFileSize - event.file.size);
+    // this.updateFileSize();
+  }
+
+  onClearFiles(fileUpload: FileUpload) {
+    this.selectedFiles = fileUpload.files;
+    this.updateFileSize();
   }
 
   backgroundClick() {
@@ -328,6 +408,7 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
         this.reset();
         break;
       case 'add-entry':
+      case 'view-entry':
       default:
         break;
     }
@@ -337,7 +418,7 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isAttachmentOpen.set(false);
     this.paperState.set('hidden');
 
-    if (this.parentComponent() !== 'add-entry') {
+    if (this.parentComponent() !== 'add-entry' && this.parentComponent() !== 'view-entry') {
       this.isExpanded.set(false);
       this.appService.setIsEntryOpen(false);
     }
