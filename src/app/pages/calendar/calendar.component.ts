@@ -1,4 +1,13 @@
-import { Component, effect, inject, OnInit, signal, ViewEncapsulation } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  OnInit,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import {
   DateAdapter,
   provideCalendar,
@@ -17,90 +26,14 @@ import { DialogModule } from 'primeng/dialog';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { EntryComponent } from 'app/shared/components/entry/entry.component';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 import { DatePipe, NgClass } from '@angular/common';
 import { isSameDay, startOfDay } from 'date-fns';
-import { tap } from 'rxjs';
-import { EntryService } from 'app/services/entry.service';
-
-const Events = [
-  {
-    start: startOfDay(new Date()),
-    title:
-      'A very long title for an event to test the calendar view. Event 1 - With my current stay in Accenture, I have received 2 Awards, namely Malikhain and Agila Award.',
-    content: `id,word_length,word_value
-1,4,AAHS
-2,4,AALS
-3,4,ABAS
-4,4,ABBA
-5,4,ABBE
-6,4,ABED
-7,4,ABET
-8,4,ABLE
-9,4,ABLY
-10,4,ABRI
-11,4,ABUT
-12,4,ABYE
-13,4,ABYS
-14,4,ACAI
-15,4,ACED
-16,4,ACES
-17,4,ACHE
-18,4,ACHY
-19,4,ACID
-20,4,ACME
-21,4,ACNE
-22,4,ACRE
-23,4,ACRO
-24,4,ACTA
-25,4,ACTS
-26,4,ACYL
-27,4,ADDS
-28,4,ADIT
-29,4,ADOS
-30,4,ADZE
-31,4,AEON
-32,4,AERO
-33,4,AERY
-34,4,AFAR
-35,4,AFRO
-36,4,AGAR
-37,4,AGAS
-38,4,AGED
-39,4,AGEE
-40,4,AGER`,
-  },
-  {
-    start: startOfDay(new Date('2026-02-07')),
-    title: 'Event 2',
-    content: 'Content 2',
-  },
-  {
-    start: startOfDay(new Date('2026-02-02')),
-    title: 'Event 3',
-    content: 'Content 3',
-  },
-  {
-    start: startOfDay(new Date('2026-03-06')),
-    title: 'Event 4',
-    content: 'Content 4',
-  },
-  {
-    start: startOfDay(new Date('2026-02-19')),
-    title: 'Event 5',
-    content: 'Content 5',
-  },
-  {
-    start: startOfDay(new Date('2025-12-19')),
-    title: 'Event 6',
-    content: 'Content 6',
-  },
-  {
-    start: startOfDay(new Date('2026-04-03')),
-    title: '',
-    content: '',
-  },
-];
+import { map, Subject, tap } from 'rxjs';
+import { ApiClientService } from 'app/services/api-client.service';
+import { AttachmentObjResponse } from 'app/models/entry.models';
+import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-calendar',
@@ -127,23 +60,19 @@ const Events = [
 })
 export class CalendarComponent implements OnInit {
   // inject dependencies
-  protected appService = inject(AppService);
-  private entryService = inject(EntryService);
+  protected appService = inject(GeneralAppService);
+  private entryService = inject(ApiClientService);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
   private confirmationService = inject(ConfirmationService);
 
   readonly CalendarView = CalendarView;
   visibleDialog = signal<boolean>(false);
+  refresh = new Subject<void>();
 
   selectedMonthViewDay = signal<CalendarMonthViewDay | null>(null);
   selectedDate = signal<Date | null>(null);
   todayDate = signal(new Date()); // displayed month
-
-  constructor() {
-    effect(() => {
-      console.log('todayDate', this.todayDate());
-      this.onMonthChange();
-    });
-  }
 
   access = signal<'new' | 'view' | 'edit'>('new');
   values = signal({
@@ -151,62 +80,69 @@ export class CalendarComponent implements OnInit {
     title: '',
     content: '',
   });
+  sourceId = signal<string | null>(null);
+  attachments = signal<AttachmentObjResponse[]>([]);
 
-  events = signal<CalendarEvent[]>(Events);
+  events = signal<CalendarEvent[]>([]);
   selectedEntries = signal<CalendarEvent[]>([]);
   selectedEntry = signal<CalendarEvent | null>(null);
 
+  constructor() {
+    effect(() => {
+      this.onMonthChange();
+    });
+  }
+
   ngOnInit(): void {
-    // this.onMonthChange();
+    this.selectDateProgrammatically(new Date());
+
+    this.appService.refreshCalendarEvents.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.onMonthChange();
+      },
+    });
   }
 
   private onMonthChange() {
     this.entryService.getCalendarEntries(this.todayDate()).subscribe((response) => {
-      console.log('response', response);
       this.events.set(
         response.map((entry) => ({
+          entryId: entry.entryId,
           start: startOfDay(new Date(entry.date)),
           title: entry.title,
           content: entry.content,
+          attachments: entry.attachments,
         })),
       );
     });
   }
 
   dayClicked(day: CalendarMonthViewDay): void {
-    if (this.selectedMonthViewDay()) {
-      delete this.selectedMonthViewDay()?.cssClass;
+    if (this.selectedDate() && isSameDay(this.selectedDate()!, day.date)) {
+      this.selectedDate.set(null);
+    } else {
+      this.selectedDate.set(day.date);
     }
-
-    if (this.selectedMonthViewDay() === day) {
-      this.selectedMonthViewDay.set(null);
-      return;
-    }
-
-    this.selectedMonthViewDay.set(day);
-    this.selectedDate.set(day.date);
-    day.cssClass = 'cal-day-selected';
-
-    this.selectedEntries.set(this.events().filter((event) => isSameDay(event.start, day.date)));
+    this.refresh.next();
   }
 
   addEntry(day: CalendarMonthViewDay) {
     this.access.set('new');
     this.updateEntryValues(day.date, '', '');
     this.appService.setIsEntryOpen(true);
-    this.dayClicked(day);
+    this.selectDateProgrammatically(day.date);
   }
 
   viewEntry(entry: any) {
+    this.sourceId.set(entry.entryId);
+    this.attachments.set(entry.attachments);
     this.access.set('view');
     this.updateEntryValues(entry.start, entry.title, entry.content);
     this.appService.setIsEntryOpen(true);
   }
 
   editEntry(entry: any) {
-    this.access.set('edit');
-    this.updateEntryValues(entry.start, entry.title, entry.content);
-    this.appService.setIsEntryOpen(true);
+    this.router.navigate(['/entry/edit/', entry.entryId]);
   }
 
   deleteEntry(entry: any) {
@@ -230,6 +166,12 @@ export class CalendarComponent implements OnInit {
       },
 
       accept: () => {
+        this.entryService.deleteEntry(entry.entryId).subscribe({
+          next: () => {
+            this.onMonthChange();
+          },
+        });
+
         this.appService.setToastMessage({
           severity: 'success',
           summary: 'Confirmed',
@@ -255,14 +197,33 @@ export class CalendarComponent implements OnInit {
   }
 
   clearSelectedDay() {
-    this.selectedMonthViewDay.set(null);
-    // this.selectedDate.set(new Date());
+    this.selectedDate.set(null);
+    this.refresh.next();
   }
 
   beforeMonthViewRender({ body }: { body: CalendarMonthViewDay[] }): void {
+    const selected = this.selectedDate();
+    let foundSelectedDay = false;
+
     body.forEach((day) => {
-      // day.badgeTotal = 0;
+      if (selected && isSameDay(day.date, selected)) {
+        day.cssClass = 'cal-day-selected';
+        this.selectedMonthViewDay.set(day);
+        this.selectedEntries.set(this.events().filter((event) => isSameDay(event.start, day.date)));
+        foundSelectedDay = true;
+      } else {
+        delete day.cssClass;
+      }
     });
+
+    if (!foundSelectedDay) {
+      this.selectedMonthViewDay.set(null);
+    }
+  }
+
+  selectDateProgrammatically(date: Date) {
+    this.selectedDate.set(date);
+    this.refresh.next();
   }
 
   entryClicked(entry: any) {

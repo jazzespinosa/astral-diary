@@ -1,21 +1,56 @@
 <div
   class="entry-background position-fixed top-0 start-0 w-100 h-100 z-0"
-  [ngClass]="parentComponent() !== 'add-entry' && parentComponent() !== 'view-entry' ? 'blur' : ''"
   (click)="backgroundClick()"
 ></div>
 <section
-  class="entry-header d-flex flex-row align-items-center gap-1 z-2"
+  class="entry-header w-100 d-flex flex-row align-items-center justify-content-around z-1"
   [ngClass]="[isExpanded() ? 'show' : '']"
 >
-  <i [class]="header().icon"></i>
-  <h4 class="my-2">{{ header().label }}</h4>
+  @if (access() === 'view') {
+    <div class="position-absolute end-0 me-2">
+      <i
+        role="button"
+        class="fa-solid fa-ellipsis-vertical opacity-50"
+        (click)="popoverEditEntry.toggle($event)"
+      ></i>
+      <p-popover
+        #popoverEditEntry
+        class="popover-container top-0 start-0 position-fixed"
+        [focusOnShow]="false"
+        [appendTo]="popoverEditEntry"
+      >
+        <div class="d-flex flex-column align-items-center">
+          <button
+            pButton
+            fluid="true"
+            label="Edit Entry"
+            text="true"
+            severity="secondary"
+            (click)="toEditFromView()"
+          ></button
+          ><button
+            pButton
+            fluid="true"
+            label="Delete Entry"
+            text="true"
+            severity="secondary"
+            (click)="deleteEntry()"
+          ></button>
+        </div>
+      </p-popover>
+    </div>
+  }
+  <div class="d-flex flex-row align-items-center gap-1">
+    <i [class]="header().icon"></i>
+    <h4 class="my-2">{{ header().label }}</h4>
+  </div>
 </section>
-<div class="paper" [ngClass]="[paperState(), isExpanded() ? 'expanded' : 'not-expanded']">
+<div class="paper" [ngClass]="[paperTransitionState(), isExpanded() ? 'expanded' : 'not-expanded']">
   <div class="red-line position-absolute top-0 bottom-0"></div>
   <div #paperInnerRef class="paper-inner h-100 overflow-y-auto">
     <button
-      [disabled]="parentComponent() === 'add-entry' || parentComponent() === 'view-entry'"
-      [hidden]="parentComponent() === 'add-entry' || parentComponent() === 'view-entry'"
+      [disabled]="isParentFullEntryPage()"
+      [hidden]="isParentFullEntryPage()"
       class="position-absolute top-0 end-0 border-0 opacity-50 bg-transparent mt-1 me-2 p-0 z-2"
       (click)="reset()"
     >
@@ -43,9 +78,17 @@
           pInputText
           (input)="entryTitleAutoGrow(titleRef, measuringSpan)"
           formControlName="title"
-          class="bg-transparent border-0 border-bottom border-black p-0 mt-2 rounded-0"
+          class="entryTitle bg-transparent border-0 border-bottom border-black p-0 mt-2 rounded-0"
         /><span #measuringSpan class="measuringSpan"></span>
       </div>
+      @if (isInvalid(form, 'title')) {
+        @if (form.get('title')?.errors?.['required'] && sourceId()?.startsWith('entry')) {
+          <app-error-message message="Title is required." />
+        }
+        @if (form.get('title')?.errors?.['maxlength']) {
+          <app-error-message message="Title must be at most 100 characters long." />
+        }
+      }
       <div class="paper-content">
         <textarea
           #contentRef
@@ -56,6 +99,14 @@
           rows="5"
         ></textarea>
       </div>
+      @if (isInvalid(form, 'content')) {
+        @if (form.get('content')?.errors?.['required'] && sourceId()?.startsWith('entry')) {
+          <app-error-message message="Content is required." />
+        }
+        @if (form.get('content')?.errors?.['maxlength']) {
+          <app-error-message message="Content must be at most 5000 characters long." />
+        }
+      }
     </form>
   </div>
 </div>
@@ -70,6 +121,7 @@
       dismissableMask="true"
       draggable="false"
       class="attachment-dialog"
+      (onHide)="onValidateAttachments(attachment)"
     >
       <ng-template #header>
         <div class="d-flex flex-column font-bold whitespace-nowrap">
@@ -137,32 +189,77 @@
       </p-button>
       <button
         pButton
-        label="Submit"
         icon="fa-solid fa-paper-plane"
         class="submit-button position-absolute p-2"
         severity="success"
         raised="true"
         rounded="true"
         (click)="onSubmitEntry()"
-      ></button>
+      >
+        {{ access() === 'edit' ? 'Update' : 'Submit' }}
+      </button>
       <p-button
         icon="fa-solid fa-ellipsis-vertical"
         severity="secondary"
         rounded="true"
         size="small"
         class="me-3 opacity-50"
-        (click)="popover.toggle($event)"
+        (click)="popoverSaveAsDraft.toggle($event)"
       ></p-button>
-      <p-popover #popover class="popover-container position-absolute"
-        ><ng-template #content>
-          <p-button
+      <p-popover
+        #popoverSaveAsDraft
+        class="popover-container top-0 start-0 position-fixed"
+        [appendTo]="popoverSaveAsDraft"
+      >
+        <div class="d-flex flex-column align-items-center">
+          <button
+            pButton
+            fluid="true"
             label="Save as Draft"
             text="true"
             severity="secondary"
-            (onClick)="onSaveAsDraft()"
-          ></p-button> </ng-template
-      ></p-popover>
-      <!-- <div style="width: 32px"></div> -->
+            (click)="onSaveAsDraft()"
+          ></button>
+          <button
+            pButton
+            fluid="true"
+            label="Delete Entry"
+            text="true"
+            severity="secondary"
+            (click)="deleteEntry()"
+          ></button>
+        </div>
+      </p-popover>
     </div>
+  </div>
+} @else if (access() === 'view' && attachments() && attachments().length > 0) {
+  <div class="attachment-gallery w-100 d-flex justify-content-center mt-3 z-1">
+    <div>
+      @for (attachment of attachments(); track $index) {
+        <img
+          [src]="
+            sourceId() ?? '' | getImage: attachment.internalFileName : 'entry-thumbnail' | async
+          "
+          [alt]="attachment.internalFileName"
+          class="gallery-thumbnail me-2"
+          (click)="imageClick($index)"
+        />
+      }
+    </div>
+    <p-galleria
+      [value]="gallery()"
+      [(visible)]="displayCustom"
+      [(activeIndex)]="activeIndex"
+      [containerStyle]="{ 'max-width': '850px' }"
+      [numVisible]="7"
+      [circular]="true"
+      [fullScreen]="true"
+      [showItemNavigators]="true"
+      [showThumbnails]="false"
+    >
+      <ng-template #item let-item>
+        <img [src]="item.localUrl" style="max-height: calc(100vh - 7rem); max-width: 85vw" />
+      </ng-template>
+    </p-galleria>
   </div>
 }

@@ -1,11 +1,11 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { MessageService, ToastMessageOptions } from 'primeng/api';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
-export class AppService {
+export class GeneralAppService {
   private messageService = inject(MessageService);
 
   constructor() {
@@ -38,9 +38,28 @@ export class AppService {
     this._activeLink.set(value);
   }
 
+  readonly refreshCalendarEvents = new Subject<void>();
+  triggerRefreshCalendarEvents() {
+    this.refreshCalendarEvents.next();
+  }
+
   private readonly _toastMessage = signal<ToastMessageOptions>({});
   readonly toastMessage = this._toastMessage.asReadonly();
   setToastMessage(value: ToastMessageOptions) {
     this._toastMessage.set(value);
+  }
+  setSuccessToast(message: string) {
+    this._toastMessage.set({
+      severity: 'success',
+      summary: 'Success',
+      detail: message,
+    });
+  }
+  setErrorToast(message: string) {
+    this._toastMessage.set({
+      severity: 'error',
+      summary: 'Error',
+      detail: message,
+    });
   }
 }

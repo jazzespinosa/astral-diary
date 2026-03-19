@@ -3,7 +3,7 @@ import { EntryComponent } from 'app/shared/components/entry/entry.component';
 import { NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, startWith } from 'rxjs';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 
 @Component({
   selector: 'app-add-entry',
@@ -14,7 +14,7 @@ import { AppService } from 'app/services/app.service';
 export class AddEntryComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
-  private appService = inject(AppService);
+  private appService = inject(GeneralAppService);
 
   values = signal({
     date: new Date(),

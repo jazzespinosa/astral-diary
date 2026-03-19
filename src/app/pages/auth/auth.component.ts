@@ -9,7 +9,7 @@ import { AuthService } from 'app/services/auth.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { AuthError } from 'app/models/auth.models';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 
 @Component({
   selector: 'app-auth',
@@ -24,7 +24,7 @@ import { AppService } from 'app/services/app.service';
   styleUrl: './auth.component.css',
 })
 export class AuthComponent {
-  private appService = inject(AppService);
+  private appService = inject(GeneralAppService);
   private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
@@ -66,7 +66,6 @@ export class AuthComponent {
     }
 
     const loginData = this.loginForm.value;
-    console.log(this.loginForm.value);
     this.authService
       .login(loginData.email, loginData.password)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -110,7 +109,6 @@ export class AuthComponent {
     }
 
     const registerData = this.registerForm.value;
-    console.log(this.registerForm.value);
     this.authService
       .register(registerData.name, registerData.email, registerData.password)
       .pipe(takeUntilDestroyed(this.destroyRef))

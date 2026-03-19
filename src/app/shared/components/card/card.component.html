@@ -1,0 +1,28 @@
+<p-card
+  subheader="{{ normalizedEntry().date | date: 'longDate' }}"
+  (click)="onEntryClick(normalizedEntry())"
+>
+  <ng-template pTemplate="title">
+    @if (normalizedEntry().title) {
+      {{ normalizedEntry().title }}
+    } @else {
+      <span style="font-style: italic; font-weight: 400">(No Title)</span>
+    }
+  </ng-template>
+  <p class="result-p-card-content mt-3 mb-0">
+    {{ normalizedEntry().content }}
+  </p>
+  @if (normalizedEntry().attachments !== null && normalizedEntry().attachments!.length > 0) {
+    <div class="attachments mt-3">
+      @for (attachment of entry().attachments; track $index) {
+        <img
+          [src]="
+            normalizedEntry().id | getImage: attachment.internalFileName : 'entry-thumbnail' | async
+          "
+          [alt]="attachment.internalFileName"
+          class="attachment-thumbnail me-2"
+        />
+      }
+    </div>
+  }
+</p-card>

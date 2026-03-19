@@ -4,7 +4,7 @@ import { getAuth } from '@angular/fire/auth';
 import { environment } from 'environments/environment';
 import { from, switchMap } from 'rxjs';
 
-export const AuthInterceptorService: HttpInterceptorFn = (req, next) => {
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = getAuth(initializeApp(environment.firebaseConfig));
 
   // Skip if Authorization header already exists

@@ -34,6 +34,7 @@
     (dayClicked)="dayClicked($event.day)"
     (beforeViewRender)="beforeMonthViewRender($event)"
     [events]="events()"
+    [refresh]="refresh"
   />
   @if (selectedMonthViewDay()) {
     <section class="bg-secondary rounded-2 p-2 overflow-y-auto">
@@ -55,7 +56,7 @@
                 (click)="entryClicked(entry)"
               >
                 <div class="entry-title align-content-center m-2">{{ entry.title }}</div>
-                <div class="m-2">
+                <div class="m-2 d-flex flex-row align-items-center">
                   <i class="fa-solid fa-file m-2" role="button" (click)="viewEntry(entry)"></i>
                   <i class="fa-solid fa-pencil m-2" role="button" (click)="editEntry(entry)"></i>
                   <i class="fa-solid fa-trash m-2" role="button" (click)="deleteEntry(entry)"></i>
@@ -73,7 +74,13 @@
 
 @if (appService.isEntryOpen()) {
   <div class="calendar-entry-container">
-    <app-entry parentComponent="calendar" [access]="access()" [values]="values()" />
+    <app-entry
+      parentComponent="calendar"
+      [access]="access()"
+      [values]="values()"
+      [sourceId]="sourceId()"
+      [attachments]="attachments()"
+    />
   </div>
 }
 

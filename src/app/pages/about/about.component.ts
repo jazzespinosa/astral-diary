@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 
 @Component({
   selector: 'app-about',
@@ -14,7 +14,7 @@ import { AppService } from 'app/services/app.service';
   styleUrl: './about.component.css',
 })
 export class AboutComponent implements OnInit {
-  private appService = inject(AppService);
+  private appService = inject(GeneralAppService);
   private fb = inject(FormBuilder);
 
   feedbackForm!: FormGroup;

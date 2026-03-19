@@ -17,9 +17,6 @@ app-entry {
 .entry-background {
   /* background-color: rgba(0, 0, 0, 0.25); */
   background-color: rgba(255, 255, 255, 0.25);
-}
-
-.entry-background.blur {
   backdrop-filter: blur(5px);
 }
 
@@ -204,7 +201,7 @@ app-entry {
   /* margin-left: 2.5rem; */
 }
 
-#entryTitle {
+.entryTitle {
   min-width: 10rem;
   width: 10rem;
 }
@@ -268,6 +265,31 @@ app-entry {
   scrollbar-width: thin;
 }
 
+.attachment-gallery {
+  max-height: 6rem;
+}
+
+.gallery-thumbnail {
+  cursor: pointer;
+  max-height: 80px;
+  max-width: 80px;
+}
+
+.p-galleria-mask {
+  top: 4.5rem !important;
+  max-height: calc(100vh - 4.5rem);
+  backdrop-filter: blur(5px);
+}
+
+.p-galleria-close-button {
+  z-index: 1;
+}
+
+.p-galleria {
+  max-height: calc(100vh - 4.5rem);
+  max-width: 90vw !important;
+}
+
 .submit-button {
   width: 15rem;
   left: 50%;
@@ -276,6 +298,7 @@ app-entry {
 
 .p-popover {
   font-family: 'Google Sans', sans-serif;
+  width: max-content;
 }
 
 .p-popover::before,
@@ -319,5 +342,23 @@ app-entry {
   .p-fileupload-file {
     padding: 0.5rem !important;
     gap: 0.5rem !important;
+  }
+
+  .attachment-gallery {
+    max-height: 5rem;
+  }
+
+  .gallery-thumbnail {
+    max-height: 60px;
+    max-width: 60px;
+  }
+
+  .p-galleria-mask {
+    top: 4rem !important;
+    max-height: calc(100vh - 4rem);
+  }
+
+  .p-galleria {
+    max-height: calc(100vh - 4rem);
   }
 }

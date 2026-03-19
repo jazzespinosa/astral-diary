@@ -9,7 +9,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
@@ -25,7 +25,7 @@ import { AuthService } from 'app/services/auth.service';
   encapsulation: ViewEncapsulation.None,
 })
 export class NavbarComponent {
-  protected appService = inject(AppService);
+  protected appService = inject(GeneralAppService);
   protected authService = inject(AuthService);
   private router = inject(Router);
 

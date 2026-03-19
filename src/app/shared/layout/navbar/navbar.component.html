@@ -82,7 +82,11 @@
         <ul class="sub-list">
           <li
             class="list-group-item"
-            [ngClass]="{ active: appService.activeLink() === '/entry/search' }"
+            [ngClass]="{
+              active:
+                appService.activeLink().startsWith('/entry/search') ||
+                appService.activeLink().startsWith('/entry/view'),
+            }"
             routerLink="entry/search"
             data-bs-dismiss="offcanvas"
           >
@@ -91,7 +95,7 @@
           </li>
           <li
             class="list-group-item"
-            [ngClass]="{ active: appService.activeLink() === '/entry/new' }"
+            [ngClass]="{ active: appService.activeLink().startsWith('/entry/new') }"
             routerLink="entry/new"
             data-bs-dismiss="offcanvas"
           >
@@ -101,7 +105,7 @@
           <li
             class="list-group-item"
             routerLink="entry/drafts"
-            [ngClass]="{ active: appService.activeLink() === '/entry/drafts' }"
+            [ngClass]="{ active: appService.activeLink().startsWith('/entry/drafts') }"
             data-bs-dismiss="offcanvas"
           >
             <i class="fa-regular fa-pen-to-square me-2"></i>

@@ -32,13 +32,23 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { NavigationEnd, Router } from '@angular/router';
-import { filter } from 'rxjs';
-import { AppService } from 'app/services/app.service';
+import { filter, lastValueFrom, map } from 'rxjs';
+import { GeneralAppService } from 'app/services/general-app.service';
 import { DialogModule } from 'primeng/dialog';
-import { EntryService } from 'app/services/entry.service';
-import { PopoverModule } from 'primeng/popover';
+import { ApiClientService } from 'app/services/api-client.service';
+import { Popover, PopoverModule } from 'primeng/popover';
+import { GalleriaModule } from 'primeng/galleria';
 import { HashService } from 'app/services/hash.service';
-import { EntryParentComponentInput } from 'app/models/entry.models';
+import {
+  AttachmentObjResponse,
+  EntryParentComponentInput,
+  EntryValues,
+  GalleryItem,
+} from 'app/models/entry.models';
+import { ErrorMessageComponent } from '../error-message/error-message.component';
+import { GetImagePipe } from '../../pipes/get-image.pipe';
+import { AttachmentService } from 'app/services/attachment.service';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-entry',
@@ -52,6 +62,9 @@ import { EntryParentComponentInput } from 'app/models/entry.models';
     TextareaModule,
     DialogModule,
     PopoverModule,
+    GalleriaModule,
+    ErrorMessageComponent,
+    GetImagePipe,
   ],
   templateUrl: './entry.component.html',
   styleUrl: './entry.component.css',
@@ -59,15 +72,21 @@ import { EntryParentComponentInput } from 'app/models/entry.models';
 })
 export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
   // inject dependencies
-  private appService = inject(AppService);
-  private entryService = inject(EntryService);
+  private appService = inject(GeneralAppService);
+  private entryService = inject(ApiClientService);
+  private attachmentService = inject(AttachmentService);
   private hashService = inject(HashService);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+
   private formBuilder = inject(FormBuilder);
+  private domSanitizer = inject(DomSanitizer);
 
   // inputs
   parentComponent = input.required<EntryParentComponentInput>();
+  sourceId = input<string | null>();
   access = input.required<'new' | 'view' | 'edit'>();
-  values = input.required<{ date: Date; title: string; content: string }>();
+  values = input.required<EntryValues>();
 
   header = computed(() => {
     switch (this.access()) {
@@ -98,6 +117,13 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.access() === 'new' ? 'Start writing your thoughts here...' : '',
   );
 
+  isParentFullEntryPage = computed(
+    () =>
+      this.parentComponent() === 'add-entry' ||
+      this.parentComponent() === 'edit-entry' ||
+      this.parentComponent() === 'view-entry',
+  );
+
   // variables
   readonly maxFileSize = 10485760; // 10MB
   fileSize = signal(0);
@@ -106,30 +132,35 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
   measuringSpan = viewChild.required<ElementRef<HTMLSpanElement>>('measuringSpan');
   paperInnerRef = viewChild.required<ElementRef<HTMLDivElement>>('paperInnerRef');
   contentRef = viewChild.required<ElementRef<HTMLTextAreaElement>>('contentRef');
-  attachment = viewChild.required<FileUpload>('attachment');
+  attachmentRef = viewChild.required<FileUpload>('attachment');
 
   form!: FormGroup;
   private formSubmitted = false;
   selectedFiles: File[] = [];
 
+  attachments = input<AttachmentObjResponse[]>([]);
+  gallery = signal<GalleryItem[]>([]);
+  displayCustom = signal(false);
+  activeIndex = signal(0);
+
   // paper state
-  paperState = signal<'hidden' | 'flying' | 'zoomin'>('hidden');
+  paperTransitionState = signal<'hidden' | 'flying' | 'zoomin'>('hidden');
   isExpanded = signal(false);
   isAttachmentOpen = model(false);
 
-  constructor() {}
+  constructor() {
+    effect(() => {
+      if (this.appService.isEntryOpen()) this.summonPaper();
+    });
+  }
 
   ngOnInit(): void {
-    if (this.appService.isEntryOpen()) {
-      this.summonPaper();
-    }
-
     switch (this.access()) {
       case 'new':
         this.form = this.formBuilder.group({
           date: [this.values().date, Validators.required],
-          title: ['', Validators.required],
-          content: ['', Validators.required],
+          title: ['', [Validators.required, Validators.maxLength(100)]],
+          content: ['', [Validators.required, Validators.maxLength(5000)]],
         });
         break;
       case 'view':
@@ -138,13 +169,17 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
           title: [{ value: this.values().title, disabled: true }],
           content: [{ value: this.values().content, disabled: true }],
         });
+
+        // this.loadViewGallery();
         break;
       case 'edit':
         this.form = this.formBuilder.group({
-          date: [this.values().date],
-          title: [this.values().title],
-          content: [this.values().content],
+          date: [this.values().date, Validators.required],
+          title: [this.values().title, [Validators.required, Validators.maxLength(100)]],
+          content: [this.values().content, [Validators.required, Validators.maxLength(5000)]],
         });
+
+        this.loadEditAttachment();
         break;
       default:
         break;
@@ -201,34 +236,71 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     entryFormData = await this.appendFormData(entryFormData);
 
     if (this.form.invalid) {
-      this.appService.setToastMessage({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Please fill out all fields.',
-      });
+      this.appService.setErrorToast('There are error(s) in the form. Please review and try again.');
       return;
     }
 
-    this.entryService.createEntry(entryFormData).subscribe({
-      next: (response) => {
-        console.log(response);
-        this.appService.setToastMessage({
-          severity: 'success',
-          summary: 'Success',
-          detail: 'Entry created successfully.',
-        });
+    if (this.sourceId() && this.sourceId()?.startsWith('entry-')) {
+      entryFormData.append('id', this.sourceId()!);
+      this.entryService
+        .updateEntry(this.sourceId()!, entryFormData)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.appService.setSuccessToast('Entry updated successfully.');
 
-        this.resetForm();
-      },
-      error: (error) => {
-        console.log(error);
-        this.appService.setToastMessage({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to create entry.',
+            this.resetForm();
+            if (this.isParentFullEntryPage()) {
+              this.router.navigate(['entry/search']);
+            } else {
+              this.appService.setIsEntryOpen(false);
+            }
+          },
+          error: (error) => {
+            console.log(error);
+            this.appService.setErrorToast('Failed to update entry.');
+          },
         });
-      },
-    });
+    } else if (this.sourceId() && this.sourceId()?.startsWith('draft-')) {
+      entryFormData.append('id', this.sourceId()!);
+      this.entryService
+        .updateDraft(this.sourceId()!, entryFormData)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.appService.setSuccessToast('Draft updated successfully.');
+
+            this.resetForm();
+            if (this.isParentFullEntryPage()) {
+              this.router.navigate(['entry/drafts']);
+            } else {
+              this.appService.setIsEntryOpen(false);
+            }
+          },
+          error: (error) => {
+            console.log(error);
+            this.appService.setErrorToast('Failed to update draft.');
+          },
+        });
+    } else {
+      this.entryService
+        .createEntry(entryFormData)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (response) => {
+            this.appService.setSuccessToast('Entry created successfully.');
+
+            this.resetForm();
+            const location = response.headers.get('Location');
+            const entryId = location?.split('/').pop();
+            this.router.navigate([`entry/view/${entryId}`]);
+          },
+          error: (error) => {
+            console.log(error);
+            this.appService.setErrorToast('Failed to create entry.');
+          },
+        });
+    }
 
     this.formSubmitted = false;
     this.reset();
@@ -236,41 +308,177 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   async onSaveAsDraft() {
     this.formSubmitted = true;
+
+    this.entryService
+      .countUserDrafts()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.count >= 10) {
+            this.appService.setErrorToast('You have reached the maximum number of drafts (10).');
+            return;
+          }
+        },
+        error: (error) => {
+          console.log(error);
+        },
+      });
+
     let draftFormData = new FormData();
     draftFormData = await this.appendFormData(draftFormData);
 
     if (this.form.get('entryDate')?.invalid) {
-      this.appService.setToastMessage({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Please fill out required fields.',
-      });
+      this.appService.setErrorToast('Please fill out required fields.');
       return;
     }
 
-    this.entryService.createDraft(draftFormData).subscribe({
-      next: (response) => {
-        console.log(response);
-        this.appService.setToastMessage({
-          severity: 'success',
-          summary: 'Success',
-          detail: 'Draft saved successfully.',
-        });
+    this.entryService
+      .createDraft(draftFormData)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.appService.setSuccessToast('Draft saved successfully.');
 
-        this.resetForm();
-      },
-      error: (error) => {
-        console.log(error);
-        this.appService.setToastMessage({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to create draft.',
-        });
-      },
-    });
+          this.resetForm();
+          this.router.navigate(['entry/drafts']);
+        },
+        error: (error) => {
+          console.log(error);
+          this.appService.setErrorToast('Failed to create draft.');
+        },
+      });
 
     this.formSubmitted = false;
     this.reset();
+  }
+
+  deleteEntry() {
+    const entityId = this.sourceId();
+    if (!entityId) {
+      this.appService.setErrorToast('No entry ID found.');
+      return;
+    }
+
+    if (this.sourceId()?.startsWith('draft-')) {
+      this.entryService
+        .deleteDraft(entityId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.appService.setSuccessToast('Draft deleted successfully.');
+
+            if (this.isParentFullEntryPage()) {
+              this.router.navigate(['entry/drafts']);
+            } else {
+              this.appService.setIsEntryOpen(false);
+            }
+          },
+          error: (error) => {
+            console.log(error);
+            this.appService.setErrorToast('Failed to delete draft.');
+          },
+        });
+    } else if (this.sourceId()?.startsWith('entry-')) {
+      this.entryService
+        .deleteEntry(entityId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.appService.setSuccessToast('Entry deleted successfully.');
+
+            this.appService.triggerRefreshCalendarEvents();
+
+            if (this.isParentFullEntryPage()) {
+              this.router.navigate(['entry/search']);
+            } else {
+              this.appService.setIsEntryOpen(false);
+            }
+          },
+          error: (error) => {
+            console.log(error);
+            this.appService.setErrorToast('Failed to delete entry.');
+          },
+        });
+    }
+  }
+
+  async loadViewGallery() {
+    const entityId = this.sourceId();
+    if (!entityId) return;
+
+    // this.isLoading.set(true);
+
+    try {
+      const fileList = this.attachments();
+      const processedItems = await Promise.all(
+        fileList.map(async (file) => {
+          const blob = await lastValueFrom(
+            this.attachmentService.getAttachment(entityId, file.internalFileName),
+          );
+          const url = URL.createObjectURL(blob);
+
+          return {
+            internalFileName: file.internalFileName,
+            objectUrl: url,
+            localUrl: this.domSanitizer.bypassSecurityTrustUrl(url),
+          };
+        }),
+      );
+      this.gallery.set(processedItems);
+    } catch (error) {
+      console.error('Failed to load gallery', error);
+    } finally {
+      // this.isLoading.set(false);
+    }
+  }
+
+  async loadEditAttachment() {
+    const entityId = this.sourceId();
+    if (!entityId) return;
+
+    const fileList = this.attachments();
+    if (!fileList || fileList.length === 0) return;
+
+    try {
+      const files: File[] = [];
+      for (let i = 0; i < fileList.length; i++) {
+        const file = await lastValueFrom(
+          this.attachmentService.getAttachment(entityId, fileList[i].internalFileName).pipe(
+            map((blob: Blob) => {
+              const newFile = new File([blob], fileList[i].originalFileName, {
+                type: blob.type,
+                lastModified: Date.now(),
+              });
+              (newFile as any).objectURL = this.domSanitizer.bypassSecurityTrustUrl(
+                URL.createObjectURL(newFile),
+              );
+              return newFile;
+            }),
+          ),
+        );
+        files.push(file);
+      }
+
+      this.selectedFiles = files;
+      this.attachmentRef().files = files;
+      this.updateFileSize();
+    } catch (error) {
+      console.error('Failed to load attachments', error);
+    } finally {
+      // this.isLoading.set(false);
+    }
+  }
+
+  imageClick(index: number) {
+    if (this.gallery().length === 0) {
+      this.loadViewGallery();
+    }
+    this.activeIndex.set(index);
+    this.displayCustom.set(true);
+  }
+
+  toEditFromView() {
+    this.router.navigate(['entry/edit', this.sourceId()]);
   }
 
   private async appendFormData(formData: FormData): Promise<FormData> {
@@ -290,24 +498,29 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     return formData;
   }
 
+  isInvalid(form: FormGroup, controlName: string) {
+    const control = form.get(controlName);
+    return control?.invalid && (control.touched || this.formSubmitted);
+  }
+
   private resetForm() {
     this.form.reset({
       date: this.values().date,
       title: '',
       content: '',
     });
-    this.attachment().clear();
+    this.attachmentRef().clear();
     this.selectedFiles = [];
     this.updateFileSize();
   }
 
   private summonPaper() {
-    if (this.parentComponent() === 'add-entry' || this.parentComponent() === 'view-entry') {
+    if (this.isParentFullEntryPage()) {
       this.isExpanded.set(true);
       return;
     }
 
-    this.paperState.set(this.access() === 'new' ? 'flying' : 'zoomin');
+    this.paperTransitionState.set(this.access() === 'new' ? 'flying' : 'zoomin');
 
     // show paper lines and content
     setTimeout(
@@ -341,11 +554,7 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.updateFileSize();
 
     if (isFileSizeExceeding) {
-      this.appService.setToastMessage({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'File size exceeds maximum limit.',
-      });
+      this.appService.setErrorToast('File size exceeds maximum limit.');
     }
   }
 
@@ -370,11 +579,9 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     if (removedFiles.length > 0) {
       for (let i = 0; i < removedFiles.length; i++) {
         setTimeout(() => {
-          this.appService.setToastMessage({
-            severity: 'error',
-            summary: 'Error',
-            detail: `Duplicate file(s) detected. Removed "${removedFiles[i].name}".`,
-          });
+          this.appService.setErrorToast(
+            `Duplicate file(s) detected. Removed "${removedFiles[i].name}".`,
+          );
         }, 200);
       }
     }
@@ -389,7 +596,7 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.fileSize.set(this.selectedFiles.reduce((total, file) => total + file.size, 0));
   }
 
-  onRemoveFile(event: any, fileUpload: FileUpload = this.attachment()) {
+  onRemoveFile(event: any, fileUpload: FileUpload = this.attachmentRef()) {
     this.selectedFiles = fileUpload.files;
     const currentFileSize = this.fileSize();
     this.fileSize.set(currentFileSize - event.file.size);
@@ -407,8 +614,6 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'calendar':
         this.reset();
         break;
-      case 'add-entry':
-      case 'view-entry':
       default:
         break;
     }
@@ -416,9 +621,9 @@ export class EntryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   reset() {
     this.isAttachmentOpen.set(false);
-    this.paperState.set('hidden');
+    this.paperTransitionState.set('hidden');
 
-    if (this.parentComponent() !== 'add-entry' && this.parentComponent() !== 'view-entry') {
+    if (!this.isParentFullEntryPage()) {
       this.isExpanded.set(false);
       this.appService.setIsEntryOpen(false);
     }

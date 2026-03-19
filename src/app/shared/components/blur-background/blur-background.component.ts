@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, ElementRef, inject, viewChild } from '@angular/core';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 
 @Component({
   selector: 'app-blur-background',
@@ -8,7 +8,7 @@ import { AppService } from 'app/services/app.service';
   styleUrl: './blur-background.component.css',
 })
 export class BlurBackgroundComponent implements AfterViewInit {
-  protected appService = inject(AppService);
+  protected appService = inject(GeneralAppService);
 
   videoPlayer = viewChild<ElementRef<HTMLVideoElement>>('videoPlayer');
 

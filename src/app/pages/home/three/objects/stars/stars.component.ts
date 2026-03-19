@@ -33,7 +33,6 @@ export class StarsComponent implements OnInit {
     // Animation loop - runs every frame
     beforeRender(({ delta }) => {
       const points = this.pointsRef()?.pointsRef()?.nativeElement;
-      // console.log(points);
       if (points) {
         points.rotation.y += this.rotationSpeedY * delta * 60;
         points.rotation.x += this.rotationSpeedX * delta * 60;

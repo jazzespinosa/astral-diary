@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { NavbarComponent } from './shared/layout/navbar/navbar.component';
-import { AppService } from './services/app.service';
+import { GeneralAppService } from './services/general-app.service';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { BlurBackgroundComponent } from './shared/components/blur-background/blur-background.component';
@@ -24,7 +24,7 @@ import { ToastModule } from 'primeng/toast';
   styleUrl: './app.css',
 })
 export class App implements OnInit {
-  private appService = inject(AppService);
+  private appService = inject(GeneralAppService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 

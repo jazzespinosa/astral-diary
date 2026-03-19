@@ -14,6 +14,7 @@ import { AuthComponent } from './pages/auth/auth.component';
 import { AuthVerifyComponent } from './pages/auth-verify/auth-verify.component';
 import { ViewEntryComponent } from './pages/entries/view-entry/view-entry.component';
 import { HomeSceneComponent } from './pages/home/home-scene/home-scene.component';
+import { EditEntryComponent } from './pages/entries/edit-entry/edit-entry.component';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -29,10 +30,14 @@ export const routes: Routes = [
       {
         path: 'view/:id',
         component: ViewEntryComponent,
-        children: [
-          { path: '', redirectTo: 'search', pathMatch: 'full' },
-          // { path: 'edit', component: EditEntryComponent },
-        ],
+        // children: [
+        //   { path: '', redirectTo: 'search', pathMatch: 'full' },
+        //   // { path: 'edit', component: EditEntryComponent },
+        // ],
+      },
+      {
+        path: 'edit/:id',
+        component: EditEntryComponent,
       },
       { path: 'new', component: AddEntryComponent },
       { path: 'search', component: SearchEntryComponent },

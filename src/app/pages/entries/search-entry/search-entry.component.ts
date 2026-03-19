@@ -23,21 +23,22 @@ import {
 } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
-import { EntryService } from 'app/services/entry.service';
-import { EntryQueryParams, GetEntriesResponse } from 'app/models/entry.models';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { ApiClientService } from 'app/services/api-client.service';
+import {
+  DateFilter,
+  EntrySearchQueryParam,
+  GetEntryResponse,
+  GetSearchEntriesResponse,
+  Sort,
+} from 'app/models/entry.models';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { DatePipe, formatDate } from '@angular/common';
+import { AsyncPipe, DatePipe, formatDate } from '@angular/common';
 import { distinctUntilChanged, map, switchMap } from 'rxjs';
-
-type CaseInsensitive<T extends string> =
-  | T
-  | Uppercase<T>
-  | Lowercase<T>
-  | Capitalize<T>
-  | Uncapitalize<T>;
-type DateFilter = CaseInsensitive<'any' | 'exact' | 'before' | 'after'>;
-type Sort = CaseInsensitive<'asc' | 'desc'>;
+import { GetImagePipe } from 'app/shared/pipes/get-image.pipe';
+import { CardComponent } from 'app/shared/components/card/card.component';
+import { LoadingComponent } from 'app/shared/components/loading/loading.component';
 
 @Component({
   selector: 'app-search-entry',
@@ -50,15 +51,17 @@ type Sort = CaseInsensitive<'asc' | 'desc'>;
     SelectModule,
     DatePickerModule,
     ReactiveFormsModule,
-    DatePipe,
+    CardComponent,
+    LoadingComponent,
+    PaginatorModule,
   ],
   templateUrl: './search-entry.component.html',
   styleUrl: './search-entry.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class SearchEntryComponent implements OnInit {
+export class SearchEntryComponent {
   private formBuilder = inject(FormBuilder);
-  private entryService = inject(EntryService);
+  private entryService = inject(ApiClientService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
@@ -66,6 +69,8 @@ export class SearchEntryComponent implements OnInit {
   searchForm = this.formBuilder.group({
     searchValue: [''],
   });
+
+  searchedValue = signal<string>('');
 
   selectedSort = model<Sort>('desc');
   dateFilterOptions = [
@@ -76,264 +81,187 @@ export class SearchEntryComponent implements OnInit {
   ];
   selectedDateFilter = model<DateFilter>('any');
   selectedDate = model<Date>(new Date());
-  entriesSearchResult = signal<GetEntriesResponse[]>([]);
-  displayedResults = signal<GetEntriesResponse[]>([]);
-  recentEntries = signal<GetEntriesResponse[]>([]);
+  fullEntrySearchResult = signal<GetSearchEntriesResponse | null>(null);
+  entriesSearchResult = signal<GetEntryResponse[]>([]);
+  recentEntries = signal<GetEntryResponse[]>([]);
 
   searchClicked = signal<boolean>(false);
+  isLoading = signal<boolean>(false);
 
   queryParams = toSignal(this.route.queryParamMap, {
     initialValue: this.route.snapshot.queryParamMap,
   });
-
-  q = computed(() => this.queryParams().get('q') ?? '');
-
-  filter = computed(() => {
-    const filter = this.queryParams().get('filter')?.toLowerCase() ?? null;
-    return this.isValidDateFilter(filter) ? (filter as DateFilter) : 'any';
+  currentPage = computed(() => {
+    const params = this.queryParams();
+    return Number(params.get('page') ?? 1);
+  });
+  currentFirst = computed(() => {
+    return (this.currentPage() - 1) * this.pageRows;
   });
 
-  date = computed(() => {
-    const date = this.queryParams().get('date');
-    return this.isValidDate(date) ? new Date(date!) : new Date();
-  });
-
-  sort = computed(() => {
-    const sort = this.queryParams().get('sort')?.toLowerCase() ?? null;
-    return this.isValidSort(sort) ? (sort as Sort) : 'desc';
-  });
-
-  searchQuery = computed(() => ({
-    q: this.q(),
-    filter: this.filter(),
-    date: this.date(),
-    sort: this.sort(),
-  }));
+  pageRows: number = 20;
 
   constructor() {
-    // effect(() => {
-    //   const sort = this.xSort();
-
-    //   if (sort) {
-    //     console.log('Sort changed:', sort);
-    //     // this.loadData();
-    //   }
-    // });
-
-    // effect(() => {
-    //   const sort = this.sort();
-    //   // this.sortEntries(sort); // local sorting only
-    //   console.log('Sort changed:', sort);
-    // });
-
     effect(() => {
-      const query = this.searchQuery();
-      console.log('Search query:', query);
+      const params = this.queryParams();
+      const q = params.get('q');
+      const filter = params.get('filter')?.toLowerCase() ?? null;
+      const date = params.get('date') ?? null;
+      const sort = params.get('sort')?.toLowerCase() ?? null;
+      const page = params.get('page') ?? null;
 
-      if (!query.q || query.q === '') {
-        console.log('No search query');
+      if (!q && !filter && !date && !sort) {
         this.searchClicked.set(false);
         this.getRecentEntries();
         return;
       }
 
-      this.searchClicked.set(true);
-      this.searchForm.get('searchValue')?.setValue(query.q);
-      this.selectedDateFilter.set(query.filter);
-      // this.selectedDate.set(this.isValidDate(query.date) ? new Date(query.date) : new Date());
-      this.selectedDate.set(query.date);
-      this.selectedSort.set(query.sort);
+      const validSort: Sort = this.isValidSort(sort) ? (sort as Sort) : 'desc';
 
-      this.searchEntries();
+      const validPage = Number(page) > 0 ? Number(page) : 1;
+
+      let validFilter: DateFilter;
+      let validDate: string | null;
+
+      if (this.isNonAnyDateFilter(filter)) {
+        if (this.isValidDate(date)) {
+          validFilter = filter as DateFilter;
+          validDate = date!;
+        } else {
+          validFilter = 'any';
+          validDate = null;
+        }
+      } else {
+        validFilter = 'any';
+        validDate = null;
+      }
+
+      const corrections: Record<string, string | null> = {};
+
+      if (filter !== null && filter !== validFilter) {
+        corrections['filter'] = validFilter;
+      }
+      if (sort !== null && sort !== validSort) {
+        corrections['sort'] = validSort;
+      }
+      if (date !== null && date !== validDate) {
+        corrections['date'] = validDate;
+      }
+      if (page !== null && Number(page) !== validPage) {
+        corrections['page'] = validPage.toString();
+      }
+
+      if (Object.keys(corrections).length > 0) {
+        this.router.navigate([], {
+          queryParams: corrections,
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+        return;
+      }
+
+      this.searchClicked.set(true);
+      this.selectedSort.set(validSort);
+      this.selectedDateFilter.set(validFilter);
+      this.searchForm.get('searchValue')?.setValue(q);
+      this.searchedValue.set(q!);
+      if (validDate) {
+        this.selectedDate.set(new Date(validDate));
+      }
+
+      this.searchEntries({
+        q,
+        filter: validFilter,
+        date: validDate ? new Date(validDate) : null,
+        sort: validSort,
+        page: validPage,
+      });
     });
   }
 
-  ngOnInit(): void {}
-  // ngOnInit(): void {
-  //   // const queryParams = this.route.snapshot.queryParamMap;
-  //   // this.lastSearchQuery.set({
-  //   //   q: queryParams.get('q') || '',
-  //   //   filter: (queryParams.get('filter') as DateFilter) || 'Any',
-  //   //   date: queryParams.get('date') ? new Date(queryParams.get('date')!) : null,
-  //   //   sort: (queryParams.get('sort') as Sort) || 'desc',
-  //   // });
-
-  //   // console.log(this.lastSearchQuery());
-
-  //   // this.route.queryParams
-  //   //   .pipe(
-  //   //     map((params) => params['sort']),
-  //   //     distinctUntilChanged(),
-  //   //   )
-  //   //   .subscribe((sort) => {
-  //   //     console.log('Sort changed:', sort);
-  //   //     // this.loadData();
-
-  //   //     return;
-  //   //   });
-
-  //   this.route.queryParamMap
-  //     .pipe(
-  //       map((params) => params.get('sort')),
-  //       distinctUntilChanged(),
-  //       switchMap((sort) => {
-  //         console.log('Sort changed:', sort);
-  //         return this.route.queryParamMap;
-  //       }),
-  //       takeUntilDestroyed(this.destroyRef),
-  //     )
-  //     .subscribe((params) => {
-  //       if (params.get('q') === null || params.get('q') === '') {
-  //         this.searchClicked.set(false); // fix search click logic
-  //         this.resetQueryParams();
-  //         this.getRecentEntries();
-  //         return;
-  //       }
-
-  //       this.searchClicked.set(true);
-  //       this.searchForm.get('searchValue')?.setValue(params.get('q'));
-  //       const dateFilter = params.get('filter')?.toLowerCase() ?? null;
-  //       const date = params.get('date');
-  //       const sort = params.get('sort')?.toLowerCase() ?? null;
-
-  //       this.selectedDateFilter.set(
-  //         this.isValidDateFilter(dateFilter) ? (dateFilter as DateFilter) : 'any',
-  //       );
-  //       this.selectedDate.set(this.isValidDate(date) ? new Date(date!) : new Date());
-
-  //       if (this.sort() !== sort) {
-  //         this.sort.set(this.isValidSort(sort) ? (sort as Sort) : 'desc');
-  //       }
-  //       this.searchEntries();
-  //     });
-
-  //   // this.entryService.getEntriesAll().subscribe((entriesResponse) => {
-  //   //   this.entriesSearchResult.set(entriesResponse);
-  //   // });
-  // }
-
   onSearchClicked() {
+    this.searchClicked.set(true);
+
     const searchValue = this.searchForm.value.searchValue;
-    if (searchValue && searchValue !== '') {
-      const filter = this.selectedDateFilter();
-      this.router.navigate(['entry/search'], {
-        queryParams: {
-          q: searchValue,
-          filter: filter,
-          date: filter !== 'any' ? this.formattedDate(this.selectedDate()) : null,
-          sort: this.sort(),
-        },
-        queryParamsHandling: 'merge',
-      });
-    } else {
-      this.searchClicked.set(false);
-      this.resetQueryParams();
-    }
-  }
-
-  onEntryClick(entry: GetEntriesResponse) {
-    console.log(entry);
-    const entryQueryParams: EntryQueryParams = {
-      mode: 'view',
-    };
-    this.router.navigate(['entry/view', entry.entryId], { queryParams: entryQueryParams });
-  }
-
-  onChangeSort(sort: Sort) {
-    this.selectedSort.set(sort);
-    this.router.navigate([], {
-      // relativeTo: this.route,
+    const filter = this.selectedDateFilter();
+    this.router.navigate(['entry/search'], {
       queryParams: {
-        sort: sort,
+        q: searchValue,
+        filter: filter,
+        date: filter !== 'any' ? this.formattedDate(this.selectedDate()) : null,
+        sort: this.selectedSort(),
+        page: 1,
+        sid: crypto.randomUUID(), // Search ID to trigger search effect
       },
       queryParamsHandling: 'merge',
     });
   }
 
-  private applySort(sort: Sort) {
-    this.displayedResults.set(
-      [...this.entriesSearchResult()].sort((a, b) => {
-        return sort === 'asc' ? (a.date > b.date ? 1 : -1) : a.date < b.date ? 1 : -1;
-      }),
-    );
-  }
+  private searchEntries(params: EntrySearchQueryParam) {
+    this.isLoading.set(true);
 
-  private searchEntries() {
     this.entryService
-      .getSearchEntries(this.searchForm.value.searchValue!)
+      .getSearchEntries(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (entriesResponse) => {
-          this.entriesSearchResult.set(entriesResponse);
+          this.isLoading.set(false);
+          this.fullEntrySearchResult.set(entriesResponse);
+          this.entriesSearchResult.set(entriesResponse.items);
         },
         error: (error) => {
+          this.isLoading.set(false);
           console.error(error);
         },
       });
   }
 
   private getRecentEntries() {
+    this.isLoading.set(true);
+
     this.entryService
       .getRecentEntries()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((entriesResponse) => {
-        this.recentEntries.set(entriesResponse);
+      .subscribe({
+        next: (entriesResponse) => {
+          this.isLoading.set(false);
+          this.recentEntries.set(entriesResponse);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          console.error(error);
+        },
       });
   }
 
-  private isValidDateFilter(value: string | null) {
+  private isNonAnyDateFilter(value: string | null): boolean {
+    if (!value || value === 'any') return false;
+    const validNonAny = this.dateFilterOptions.map((options) => options.value);
+    return validNonAny.includes(value as DateFilter);
+  }
+
+  private isValidDate(value: string | null): boolean {
     if (!value) return false;
-    if (
-      !this.dateFilterOptions.map((option) => option.value).includes(value as DateFilter) ||
-      value === 'any'
-    ) {
-      this.router.navigate([], {
-        queryParams: { filter: 'any', date: null },
-        queryParamsHandling: 'merge',
-        replaceUrl: true,
-      });
-      return false;
-    }
-    return true;
+    return /^(19[0-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/.test(value); // 1900-2099
   }
 
-  private isValidDate(value: string | null) {
+  private isValidSort(value: string | null): boolean {
     if (!value) return false;
-    const isValidDate =
-      /^(19[0-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/.test(value); // 1900-2099
-    if (!isValidDate) {
-      this.router.navigate([], {
-        queryParams: { filter: 'any', date: null },
-        queryParamsHandling: 'merge',
-        replaceUrl: true,
-      });
-      return false;
-    }
-    return true;
-  }
-
-  private isValidSort(value: string | null) {
-    if (!value) return false;
-    if (!['asc', 'desc'].includes(value as Sort)) {
-      this.router.navigate([], {
-        queryParams: { sort: 'desc' },
-        queryParamsHandling: 'merge',
-        replaceUrl: true,
-      });
-      return false;
-    }
-    return true;
-  }
-
-  private resetQueryParams() {
-    this.router.navigate([], {
-      queryParams: {},
-      queryParamsHandling: 'replace',
-      replaceUrl: true,
-    });
+    return ['asc', 'desc'].includes(value as Sort);
   }
 
   private formattedDate(date: Date) {
     return formatDate(date, 'yyyy-MM-dd', 'en-US');
+  }
+
+  onPageChange(event: PaginatorState) {
+    const page = Math.floor((event.first ?? 0) / (event.rows ?? 20)) + 1;
+    this.router.navigate(['entry/search'], {
+      queryParams: {
+        page: page,
+        sid: crypto.randomUUID(),
+      },
+      queryParamsHandling: 'merge',
+    });
   }
 }

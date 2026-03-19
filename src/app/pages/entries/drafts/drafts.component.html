@@ -1,34 +1,28 @@
-<div class="drafts-container container-sm d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden">
+<div
+  class="drafts-container container mh-100 d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden"
+>
   <div class="drafts-header d-flex flex-row align-items-center gap-2">
     <h5 class="m-0">Drafts</h5>
-    <p-button
+    <!-- <p-button
       size="small"
       icon="fa-solid fa-plus"
       raised="true"
       rounded="true"
       severity="secondary"
-    />
+    /> -->
   </div>
   <hr class="border-top border-2 border-black m-0" />
-  <div class="drafts-list flex-fill gap-2 overflow-y-auto">
-    @if (drafts().length === 0) {
-      <p class="m-0 text-center">No drafts found</p>
-    }
-    @for (draft of drafts(); track $index) {
-      <div class="draft mb-3">
-        <p-card subheader="{{ draft.date }}">
-          <ng-template pTemplate="title">
-            @if (draft.title) {
-              {{ draft.title }}
-            } @else {
-              <span style="font-style: italic; font-weight: 400">(No Title)</span>
-            }
-          </ng-template>
-          <p class="m-0">
-            {{ draft.content }}
-          </p>
-        </p-card>
-      </div>
+  <div class="drafts-list flex-fill overflow-y-auto">
+    @if (isLoading()) {
+      <app-loading message="Getting drafts" />
+    } @else if (drafts().length === 0) {
+      <p class="text-center mt-3">No drafts found</p>
+    } @else {
+      @for (draft of drafts(); track $index) {
+        <div class="draft mb-3">
+          <app-card [entry]="draft" />
+        </div>
+      }
     }
   </div>
 </div>

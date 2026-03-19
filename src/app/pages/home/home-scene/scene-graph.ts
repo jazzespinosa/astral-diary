@@ -27,7 +27,7 @@ import * as THREE from 'three';
 import { StarsComponent } from 'app/pages/home/three/objects/stars/stars.component';
 import { CloudsComponent } from 'app/pages/home/three/objects/clouds/clouds.component';
 import { MainStarComponent } from 'app/pages/home/three/objects/main-star/main-star.component';
-import { AppService } from '../../../services/app.service';
+import { GeneralAppService } from '../../../services/general-app.service';
 
 import blueNebulaPC from 'assets/blue-nebula-pc.hdr' with { loader: 'file' }; // for PC
 import blueNebulaMobile from 'assets/blue-nebula-mobile.jpg' with { loader: 'file' }; // for Mobile
@@ -129,7 +129,7 @@ const Clouds = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SceneGraph implements OnInit {
-  protected appService = inject(AppService);
+  protected appService = inject(GeneralAppService);
 
   clouds = signal<any>(Clouds);
   isMobileView = signal(window.innerWidth < 768);

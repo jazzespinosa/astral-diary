@@ -63,26 +63,14 @@ p-select.p-select p-overlay {
   gap: 0;
 }
 
-.search-p-card-content {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.attachment-thumbnail {
-  max-width: 50px;
-  max-height: 50px;
-  cursor: pointer;
-  border: 1px solid #e0e0e0;
-}
-
-.results {
+.results,
+.recents {
   scrollbar-width: thin;
   padding-right: 0.1rem;
 }
 
-.results .result-entry:last-child {
+.results .result-entry:last-child,
+.recents .recent-entry:last-child {
   margin-bottom: 0 !important;
 }
 
@@ -101,13 +89,8 @@ p-select.p-select p-overlay {
     gap: 0.25rem !important;
   }
 
-  .results {
+  .results,
+  .recents {
     padding-right: 0.3rem;
-  }
-
-  .attachment-thumbnail {
-    max-width: 40px;
-    max-height: 40px;
-    margin-right: 0.25rem !important;
   }
 }

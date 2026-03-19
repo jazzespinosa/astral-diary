@@ -20,7 +20,6 @@ import {
 import { environment } from 'environments/environment';
 import {
   catchError,
-  delay,
   firstValueFrom,
   from,
   map,
@@ -59,7 +58,6 @@ export class AuthService {
     }
 
     try {
-      console.log('[Auth] Checking for redirect result...');
       const redirectResult = await getRedirectResult(this.auth);
 
       if (redirectResult && redirectResult.user) {
@@ -98,7 +96,6 @@ export class AuthService {
       const unsubscribe = onAuthStateChanged(
         this.auth,
         (user) => {
-          console.log('[Auth] Auth state changed:', user || 'null');
           if (user) {
             const email = user.email || '';
             const name =
@@ -132,8 +129,6 @@ export class AuthService {
       switchMap((userCredential) => this.validateWithBackend(userCredential)),
       catchError((error) => throwError(() => this.mapLoginError(error))),
       tap((userData) => {
-        console.log('[Auth] User data:', userData);
-        console.log(this.auth.currentUser);
         this.setActiveUser(userData);
       }),
     );
@@ -156,9 +151,6 @@ export class AuthService {
         );
       }),
       catchError((error) => throwError(() => this.mapRegisterError(error))),
-      tap((user) => {
-        console.log('Register user:', user);
-      }),
     );
   }
 

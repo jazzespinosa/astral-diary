@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { EntryComponent } from 'app/shared/components/entry/entry.component';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
@@ -10,7 +10,7 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './home.component.css',
 })
 export class HomeComponent {
-  protected appService = inject(AppService);
+  protected appService = inject(GeneralAppService);
 
   values = signal({
     date: new Date(),

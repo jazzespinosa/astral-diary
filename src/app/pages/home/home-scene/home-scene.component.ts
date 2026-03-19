@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { NgtCanvas } from 'angular-three/dom';
 import { SceneGraph } from './scene-graph';
-import { AppService } from 'app/services/app.service';
+import { GeneralAppService } from 'app/services/general-app.service';
 
 @Component({
   selector: 'app-home-scene',
@@ -10,5 +10,5 @@ import { AppService } from 'app/services/app.service';
   styleUrl: './home-scene.component.css',
 })
 export class HomeSceneComponent {
-  appService = inject(AppService);
+  appService = inject(GeneralAppService);
 }

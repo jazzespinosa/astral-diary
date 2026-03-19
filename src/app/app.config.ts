@@ -7,7 +7,7 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { provideRouter } from '@angular/router';
+import { provideRouter, RouteReuseStrategy, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
 import {
   provideHttpClient,
@@ -22,20 +22,19 @@ import Aura from '@primeuix/themes/aura';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { AuthService } from './services/auth.service';
 import { environment } from 'environments/environment';
-import { AuthInterceptorService } from './pages/auth/auth-interceptor.service';
+import { authInterceptor } from './interceptors/auth.interceptor';
+import { errorInterceptor } from './interceptors/error.interceptor';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { CustomReuseStrategy } from './strategies/custom-reuse-strategy';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAppInitializer(initializeAuthFactory),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(
-      withFetch(),
-      withInterceptorsFromDi(),
-      withInterceptors([AuthInterceptorService]),
-    ),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
     provideRouter(routes),
+    { provide: RouteReuseStrategy, useClass: CustomReuseStrategy },
     provideAnimationsAsync(),
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideAuth(() => getAuth()),
