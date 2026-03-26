@@ -1,0 +1,30 @@
+<div class="d-flex flex-column align-items-center my-3">
+  @if (access() !== 'view') {
+    <span>How are you feeling?</span>
+  }
+  <div class="d-flex flex-row align-items-center gap-2">
+    @for (mood of moods; track mood.value) {
+      <button
+        class="mood-btn"
+        [disabled]="access() === 'view'"
+        [class.active]="rating() >= mood.value && hovered() === 0"
+        [class.hover-active]="hovered() >= mood.value"
+        [class.hover-inactive]="hovered() > 0 && hovered() < mood.value"
+        [pTooltip]="mood.label"
+        tooltipPosition="top"
+        (click)="select(mood.value)"
+        (mouseenter)="hovered.set(mood.value)"
+        (mouseleave)="hovered.set(0)"
+      >
+        @if (displayIcon(mood.value); as iconSrc) {
+          <img [src]="iconSrc" [alt]="mood.label" class="mood-icon" />
+        } @else {
+          <span class="mood-placeholder">○</span>
+        }
+      </button>
+    }
+  </div>
+  @if (access() !== 'view') {
+    <span class="text-muted">{{ label() }}</span>
+  }
+</div>

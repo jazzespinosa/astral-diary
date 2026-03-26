@@ -1,4 +1,12 @@
-import { Component, DestroyRef, inject, OnInit, signal, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { GetDraftResponse } from 'app/models/entry.models';
@@ -22,6 +30,7 @@ export class DraftsComponent implements OnInit {
 
   drafts = signal<GetDraftResponse[]>([]);
   isLoading = signal<boolean>(false);
+  draftsCount = computed(() => this.drafts().length);
 
   ngOnInit(): void {
     this.isLoading.set(true);

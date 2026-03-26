@@ -1,0 +1,13 @@
+:host {
+  z-index: 1;
+}
+
+.entry-header {
+  font-family: 'Google Sans', sans-serif;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.entry-header.show {
+  opacity: 1;
+}

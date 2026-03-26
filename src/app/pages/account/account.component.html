@@ -1,27 +1,119 @@
-<div class="container d-flex flex-column gap-3 rounded-3 p-3 h-100">
-  <section class="user-details">
-    <h4>Player Name</h4>
-    <p>Email</p>
-  </section>
-  <section class="user-entries">
-    <h5>Entries</h5>
-    <div class="d-flex flex-column gap-2 ms-2">
-      <div>
-        <div class="entry-stat-label">Total Entries</div>
-        <div class="entry-stat-value">100</div>
+<div class="account-wrapper">
+  <div class="account-container d-flex flex-column gap-4 rounded-4 p-4 shadow-sm">
+    <!-- Profile Header -->
+    <section class="profile-header text-center py-3">
+      <div class="avatar-ring mx-auto mb-3">
+        <div class="avatar-placeholder" (click)="onAvatarClick()">
+          @if (displayedAvatar()) {
+            <img [src]="displayedAvatar()" alt="" />
+          } @else {
+            <i class="fa-solid fa-user fa-xl"></i>
+          }
+        </div>
       </div>
-      <div>
-        <div class="entry-stat-label">Latest Entry</div>
-        <div class="entry-stat-value">2/10/2026</div>
+      <h2 class="display-name">{{ userInfo()?.displayName ?? '—' }}</h2>
+      <p class="user-email text-muted">{{ userInfo()?.email ?? '—' }}</p>
+      <div class="divider mx-auto mt-2"></div>
+    </section>
+
+    <!-- Stats Cards -->
+    <section class="stats-section">
+      <h5 class="section-label"><i class="fa-solid fa-chart-simple me-2"></i>Your Journey</h5>
+      <div class="stats-grid">
+        <div
+          class="stat-card"
+          [routerLink]="['/entry/search']"
+          [queryParams]="{ q: '', filter: 'any' }"
+        >
+          <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
+          <div class="stat-value">{{ userInfo()?.totalEntries ?? '—' }}</div>
+          <div class="stat-label">Total Entries</div>
+        </div>
+        <div class="stat-card" (click)="onFirstEntryClick()">
+          <div class="stat-icon"><i class="fa-solid fa-seedling"></i></div>
+          <div class="stat-value">{{ userInfo()?.firstEntryDate | date: 'mediumDate' }}</div>
+          <div class="stat-label">First Saved Entry</div>
+        </div>
+        <div class="stat-card" (click)="onLatestEntryClick()">
+          <div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div class="stat-value">
+            {{ userInfo()?.latestEntryDate | date: 'mediumDate' }}
+          </div>
+          <div class="stat-label">Latest Saved Entry</div>
+        </div>
+        <div class="stat-card streak-card" [routerLink]="'/calendar'">
+          <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
+          <div class="stat-value">{{ userInfo()?.currentStreak ?? '0' }} days</div>
+          <div class="stat-label">Current Streak</div>
+        </div>
       </div>
-      <div>
-        <div class="entry-stat-label">First Entry</div>
-        <div class="entry-stat-value">12/19/2025</div>
+    </section>
+
+    <!-- Heatmap -->
+    <section class="heatmap-section p-3 rounded-3">
+      <h5 class="section-label mb-3"><i class="fa-solid fa-calendar-days me-2"></i>Mood Heatmap</h5>
+      <div class="heatmap-scroll">
+        <div class="heatmap-content-wrapper">
+          <div class="heatmap-months">
+            @for (month of heatmapMonths; track month) {
+              <span class="month-label">{{ month }}</span>
+            }
+          </div>
+          <div class="heatmap-grid">
+            @for (day of heatmapDays(); track day.date) {
+              <div class="heatmap-cell" [class]="'level-' + day.level" [title]="day.date"></div>
+            }
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
-  <section class="user-footer d-flex justify-content-center mt-auto">
-    <p-button label="Logout" icon="fa-solid fa-right-from-bracket" />
-  </section>
-  <!-- <div>Continue with Google</div> -->
+      <div class="heatmap-legend mt-2">
+        <span class="legend-label">Sad</span>
+        <div class="legend-cell level-1"></div>
+        <div class="legend-cell level-2"></div>
+        <div class="legend-cell level-3"></div>
+        <div class="legend-cell level-4"></div>
+        <div class="legend-cell level-5"></div>
+        <span class="legend-label">Happy</span>
+      </div>
+    </section>
+
+    <!-- Logout -->
+    <section class="d-flex justify-content-center mt-auto gap-3 pb-1">
+      <p-button
+        label="Save"
+        severity="primary"
+        icon="fa-solid fa-floppy-disk"
+        [disabled]="!isSaveEnable()"
+        (click)="onSave()"
+      />
+      <p-button
+        label="Logout"
+        icon="fa-solid fa-right-from-bracket"
+        styleClass="logout-btn"
+        severity="secondary"
+      />
+    </section>
+  </div>
+  <p-dialog
+    [(visible)]="isAvatarDialogOpen"
+    [modal]="true"
+    [dismissableMask]="true"
+    [draggable]="false"
+  >
+    <ng-template #header>
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="m-0">Select Avatar</h5>
+      </div>
+    </ng-template>
+    <app-avatar-selection
+      [avatarChoices]="avatarChoices()"
+      [initialSelectedAvatar]="userInfo()?.avatar ?? ''"
+      (selectedAvatarOutput)="onAvatarSelect($event)"
+    ></app-avatar-selection>
+    <ng-template #footer>
+      <div class="w-100 d-flex justify-content-center">
+        <p-button label="Confirm" severity="primary" (click)="confirmAvatarSelection()"></p-button>
+      </div>
+    </ng-template>
+  </p-dialog>
 </div>

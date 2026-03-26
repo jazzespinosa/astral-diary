@@ -20,6 +20,7 @@ export class AddEntryComponent implements OnInit {
     date: new Date(),
     title: '',
     content: '',
+    mood: null,
   });
 
   constructor() {}

@@ -16,5 +16,6 @@ export class HomeComponent {
     date: new Date(),
     title: '',
     content: '',
+    mood: null,
   });
 }

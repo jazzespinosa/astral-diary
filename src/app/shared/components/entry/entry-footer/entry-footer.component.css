@@ -1,0 +1,150 @@
+:host,
+app-entry-footer {
+  width: 100%;
+  z-index: 1;
+}
+
+.lower-section {
+  font-family: 'Google Sans', sans-serif;
+  opacity: 0;
+  transition: opacity 0.5s ease 1s;
+}
+
+.lower-section.show {
+  opacity: 1;
+}
+
+/* ENTRY FORM FILE UPLOAD */
+.p-fileupload-header,
+.p-fileupload-content {
+  padding: 0.5rem !important;
+}
+
+.p-button.p-fileupload-choose-button,
+.p-button.p-fileupload-cancel-button {
+  font-size: 0.8rem !important;
+  padding: 0.5rem !important;
+}
+
+.p-fileupload-file-badge.p-badge.p-badge-warn.p-component {
+  display: none;
+}
+
+.p-component.p-progressbar.p-progressbar-determinate {
+  display: none;
+}
+
+.attachment-dialog .p-dialog {
+  max-height: calc(100vh - 6.5rem);
+  min-width: 500px;
+  max-width: clamp(500px, 90%, 1200px);
+  margin-top: 5.5rem;
+  margin-bottom: 1rem;
+}
+
+.attachment-dialog .p-dialog-header {
+  padding: 0.5rem 1rem 0 1rem !important;
+}
+
+.attachment-dialog .p-dialog-content {
+  padding: 0 1rem 1rem 1rem !important;
+}
+
+.attachment {
+  background: #e8e8e8 !important;
+  border-radius: 8px;
+  max-height: 10rem;
+  scrollbar-width: thin;
+}
+
+.attachment-gallery {
+  max-height: 6rem;
+}
+
+.gallery-thumbnail {
+  cursor: pointer;
+  max-height: 80px;
+  max-width: 80px;
+}
+
+.p-galleria-mask {
+  top: 4.5rem !important;
+  max-height: calc(100vh - 4.5rem);
+  backdrop-filter: blur(5px);
+}
+
+.p-galleria-close-button {
+  z-index: 1;
+}
+
+.p-galleria {
+  max-height: calc(100vh - 4.5rem);
+  max-width: 90vw !important;
+}
+
+.submit-button {
+  width: 15rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.p-popover {
+  font-family: 'Google Sans', sans-serif;
+  width: max-content;
+}
+
+.p-popover::before,
+.p-popover::after {
+  visibility: hidden;
+}
+
+.p-popover-content {
+  padding: 0rem !important;
+}
+
+@media (max-width: 768px) {
+  .lower-section {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    font-size: 0.9rem;
+  }
+
+  .submit-button {
+    width: 10rem;
+  }
+
+  .p-fileupload-header,
+  .p-fileupload-content,
+  .p-button.p-fileupload-choose-button,
+  .p-button.p-fileupload-cancel-button {
+    padding: 0.25rem !important;
+  }
+
+  .attachment-dialog .p-dialog {
+    min-width: 300px;
+    max-width: clamp(300px, 90%, 1200px);
+  }
+
+  .p-fileupload-file {
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .attachment-gallery {
+    max-height: 5rem;
+  }
+
+  .gallery-thumbnail {
+    max-height: 60px;
+    max-width: 60px;
+  }
+
+  .p-galleria-mask {
+    top: 4rem !important;
+    max-height: calc(100vh - 4rem);
+  }
+
+  .p-galleria {
+    max-height: calc(100vh - 4rem);
+  }
+}

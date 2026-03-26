@@ -52,11 +52,9 @@
         label="Login"
         severity="secondary"
         class="login-btn"
-        (click)="router.navigate(['/auth'])"
-      >
-        <!-- <img class="google-icon me-2" src="./google-colored.svg" alt="Google" /> -->
-      </button>
-      <a routerLink="/home" class="text-white">Visit Homepage</a>
+        [routerLink]="['/auth']"
+      ></button>
+      <a [routerLink]="['/home']" class="text-white">Visit Homepage</a>
     </div>
   </div>
 </div>

@@ -44,6 +44,7 @@ export class CardComponent {
       date: new Date(),
       title: '',
       content: '',
+      mood: null,
       attachments: null,
       createdAt: new Date(),
       modifiedAt: new Date(),

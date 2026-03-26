@@ -31,7 +31,7 @@ import { DatePipe, NgClass } from '@angular/common';
 import { isSameDay, startOfDay } from 'date-fns';
 import { map, Subject, tap } from 'rxjs';
 import { ApiClientService } from 'app/services/api-client.service';
-import { AttachmentObjResponse } from 'app/models/entry.models';
+import { AttachmentObjResponse, EntryAccess } from 'app/models/entry.models';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -60,7 +60,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class CalendarComponent implements OnInit {
   // inject dependencies
-  protected appService = inject(GeneralAppService);
+  protected generalAppService = inject(GeneralAppService);
   private entryService = inject(ApiClientService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -74,17 +74,18 @@ export class CalendarComponent implements OnInit {
   selectedDate = signal<Date | null>(null);
   todayDate = signal(new Date()); // displayed month
 
-  access = signal<'new' | 'view' | 'edit'>('new');
+  access = signal<EntryAccess>('new');
   values = signal({
     date: new Date(),
     title: '',
     content: '',
+    mood: null as number | null,
   });
   sourceId = signal<string | null>(null);
   attachments = signal<AttachmentObjResponse[]>([]);
 
   events = signal<CalendarEvent[]>([]);
-  selectedEntries = signal<CalendarEvent[]>([]);
+  selectedCalendarDateEntries = signal<CalendarEvent[]>([]);
   selectedEntry = signal<CalendarEvent | null>(null);
 
   constructor() {
@@ -96,11 +97,13 @@ export class CalendarComponent implements OnInit {
   ngOnInit(): void {
     this.selectDateProgrammatically(new Date());
 
-    this.appService.refreshCalendarEvents.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.onMonthChange();
-      },
-    });
+    this.generalAppService.refreshCalendarEvents
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.onMonthChange();
+        },
+      });
   }
 
   private onMonthChange() {
@@ -111,6 +114,7 @@ export class CalendarComponent implements OnInit {
           start: startOfDay(new Date(entry.date)),
           title: entry.title,
           content: entry.content,
+          mood: entry.mood,
           attachments: entry.attachments,
         })),
       );
@@ -127,9 +131,10 @@ export class CalendarComponent implements OnInit {
   }
 
   addEntry(day: CalendarMonthViewDay) {
+    this.sourceId.set(null);
     this.access.set('new');
-    this.updateEntryValues(day.date, '', '');
-    this.appService.setIsEntryOpen(true);
+    this.updateEntryValues(day.date, '', '', null);
+    this.generalAppService.setIsEntryOpen(true);
     this.selectDateProgrammatically(day.date);
   }
 
@@ -137,8 +142,8 @@ export class CalendarComponent implements OnInit {
     this.sourceId.set(entry.entryId);
     this.attachments.set(entry.attachments);
     this.access.set('view');
-    this.updateEntryValues(entry.start, entry.title, entry.content);
-    this.appService.setIsEntryOpen(true);
+    this.updateEntryValues(entry.start, entry.title, entry.content, entry.mood);
+    this.generalAppService.setIsEntryOpen(true);
   }
 
   editEntry(entry: any) {
@@ -170,29 +175,28 @@ export class CalendarComponent implements OnInit {
           next: () => {
             this.onMonthChange();
           },
+          error: (error) => {
+            console.log(error);
+            this.generalAppService.setErrorToast('Failed to delete entry.');
+          },
         });
 
-        this.appService.setToastMessage({
+        this.generalAppService.setToastMessage({
           severity: 'success',
           summary: 'Confirmed',
           detail: 'Record deleted',
         });
       },
-      reject: () => {
-        // this.appService.setToastMessage({
-        //   severity: 'error',
-        //   summary: 'Rejected',
-        //   detail: 'You have rejected',
-        // });
-      },
+      reject: () => {},
     });
   }
 
-  private updateEntryValues(date: Date, title: string, content: string) {
+  private updateEntryValues(date: Date, title: string, content: string, mood: number | null) {
     this.values.set({
       date,
       title,
       content,
+      mood,
     });
   }
 
@@ -209,7 +213,9 @@ export class CalendarComponent implements OnInit {
       if (selected && isSameDay(day.date, selected)) {
         day.cssClass = 'cal-day-selected';
         this.selectedMonthViewDay.set(day);
-        this.selectedEntries.set(this.events().filter((event) => isSameDay(event.start, day.date)));
+        this.selectedCalendarDateEntries.set(
+          this.events().filter((event) => isSameDay(event.start, day.date)),
+        );
         foundSelectedDay = true;
       } else {
         delete day.cssClass;

@@ -1,0 +1,11 @@
+<div class="avatar-selection-wrapper">
+  <div class="avatar-grid">
+    @for (avatar of avatarChoices(); track avatar) {
+      <div class="avatar-item-ring" [class]="avatar === selectedAvatar() ? 'selected' : ''">
+        <div class="avatar-item" (click)="onAvatarClick(avatar)">
+          <img [src]="avatar" alt="" />
+        </div>
+      </div>
+    }
+  </div>
+</div>

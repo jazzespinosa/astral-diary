@@ -1,7 +1,8 @@
 <div
   class="search-container container mh-100 d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden"
 >
-  <section>
+  <section class="d-flex flex-row align-items-center gap-2">
+    <h4 class="mb-0">AD</h4>
     <form
       [formGroup]="searchForm"
       (ngSubmit)="onSearchClicked()"
@@ -12,8 +13,8 @@
         formControlName="searchValue"
         type="text"
         class=""
-        placeholder="Search entries..."
         fluid
+        placeholder="Search entries..."
       />
       <p-button
         class=""
@@ -67,7 +68,7 @@
   </section>
   <section class="d-flex flex-column h-100 overflow-hidden">
     @if (searchClicked()) {
-      <h5>Search Results for "{{ searchedValue() }}"</h5>
+      <h4>{{ searchLabel() }}</h4>
       <div class="results overflow-y-auto flex-fill">
         @if (isLoading()) {
           <app-loading message="Getting search results" />
@@ -88,7 +89,7 @@
         }
       </div>
     } @else {
-      <h5>Recent Entries</h5>
+      <h4>Recent Entries</h4>
       <div class="recents overflow-y-auto flex-fill">
         @if (isLoading()) {
           <app-loading message="Getting recent entries" />

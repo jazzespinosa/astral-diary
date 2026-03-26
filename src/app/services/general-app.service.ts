@@ -38,7 +38,7 @@ export class GeneralAppService {
     this._activeLink.set(value);
   }
 
-  readonly refreshCalendarEvents = new Subject<void>();
+  readonly refreshCalendarEvents = new Subject<void>(); // change to signal
   triggerRefreshCalendarEvents() {
     this.refreshCalendarEvents.next();
   }

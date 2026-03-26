@@ -11,7 +11,6 @@ import { AccountComponent } from './pages/account/account.component';
 import { LandingComponent } from './pages/landing/landing.component';
 import { provideNgtRenderer } from 'angular-three/dom';
 import { AuthComponent } from './pages/auth/auth.component';
-import { AuthVerifyComponent } from './pages/auth-verify/auth-verify.component';
 import { ViewEntryComponent } from './pages/entries/view-entry/view-entry.component';
 import { HomeSceneComponent } from './pages/home/home-scene/home-scene.component';
 import { EditEntryComponent } from './pages/entries/edit-entry/edit-entry.component';
@@ -49,7 +48,6 @@ export const routes: Routes = [
   { path: 'account', component: AccountComponent },
   { path: 'about', component: AboutComponent },
   { path: 'auth', component: AuthComponent },
-  { path: 'auth/verify', component: AuthVerifyComponent },
   {
     path: 'test',
     component: TestComponent,

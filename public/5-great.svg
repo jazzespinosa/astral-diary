@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 100 100"
+     width="200" height="200"
+     role="img"
+     aria-label="green happy emoji">
+
+  <!-- Face (green circle) -->
+  <circle cx="50" cy="50" r="45"
+          fill="#2ecc71"
+          stroke="#27ae60"
+          stroke-width="2"/>
+
+  <!-- Eyebrows – slightly raised/up for happiness -->
+  <path d="M 28 26 Q 35 22 42 26"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+  <path d="M 58 26 Q 65 22 72 26"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+
+  <!-- Eyes -->
+  <ellipse cx="35" cy="42" rx="6" ry="7" fill="#2c3e50"/>
+  <ellipse cx="65" cy="42" rx="6" ry="7" fill="#2c3e50"/>
+
+  <!-- Eye highlights -->
+  <circle cx="33" cy="40" r="2" fill="white"/>
+  <circle cx="63" cy="40" r="2" fill="white"/>
+
+  <!-- Bigger, happier smile (upward curve, deeper) -->
+  <path d="M 28 62 Q 50 90 72 62"
+          stroke="#2c3e50"
+          stroke-width="3"
+          fill="none"
+          stroke-linecap="round"/>
+</svg>

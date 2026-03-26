@@ -135,12 +135,25 @@ app-navbar {
   transform: rotate(90deg);
 }
 
-.form-switch {
-  position: absolute;
-  bottom: 0.5rem;
-  right: 1rem;
-  color: #ffffff;
-  font-size: 0.8rem;
+.offcanvas-footer {
+  height: 8rem;
+}
+
+.new-entry-button {
+  height: 3.5rem;
+  font-size: 1.2rem !important;
+  background-color: #0ea5e9 !important;
+  border: 1px solid #d5e6f7 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.new-entry-button:hover {
+  background-color: #00aeff !important;
+  box-shadow:
+    0 0 10px #8fd2ff,
+    0 0 20px #8fd2ff,
+    0 0 40px #8fd2ff;
+  transform: scale(1.05);
 }
 
 @media (max-width: 768px) {
@@ -154,5 +167,17 @@ app-navbar {
 
   .offcanvas {
     top: 4rem !important;
+  }
+
+  .offcanvas-footer {
+    height: 5rem;
+  }
+
+  .new-entry-button {
+    height: 3rem;
+    font-size: 1rem !important;
+    box-shadow:
+      0 0 10px #8fd2ff,
+      0 0 20px #8fd2ff;
   }
 }

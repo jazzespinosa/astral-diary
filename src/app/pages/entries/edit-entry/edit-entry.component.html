@@ -1,8 +1,8 @@
 <div class="edit-entry-container">
   @if (sourceId()) {
     <app-entry
-      parentComponent="edit-entry"
-      access="edit"
+      [parentComponent]="'edit-entry'"
+      [access]="access()"
       [values]="values()"
       [sourceId]="sourceId()"
       [attachments]="attachments()"

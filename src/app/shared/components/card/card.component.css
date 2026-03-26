@@ -12,10 +12,27 @@
   border: 1px solid #e0e0e0;
 }
 
+app-card .p-card-title {
+  font-size: 1.3rem;
+}
+
+app-card .p-card-subtitle {
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
   .attachment-thumbnail {
     max-width: 40px;
     max-height: 40px;
     margin-right: 0.25rem !important;
+  }
+
+  app-card .p-card-title {
+    font-size: 1.1rem !important;
+  }
+
+  app-card .p-card-subtitle {
+    font-size: 0.8rem !important;
   }
 }

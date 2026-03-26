@@ -28,7 +28,7 @@
     </button>
   </div>
   <mwl-calendar-month-view
-    [headerTemplate]="appService.isMobileView() ? headerTemplateMobile : headerTemplate"
+    [headerTemplate]="generalAppService.isMobileView() ? headerTemplateMobile : headerTemplate"
     [cellTemplate]="customCellTemplate"
     [viewDate]="todayDate()"
     (dayClicked)="dayClicked($event.day)"
@@ -39,17 +39,17 @@
   @if (selectedMonthViewDay()) {
     <section class="bg-secondary rounded-2 p-2 overflow-y-auto">
       <div class="d-flex flex-column gap-1">
-        @if (selectedEntries().length > 0) {
+        @if (selectedCalendarDateEntries().length > 0) {
           <div class="d-flex flex-row justify-content-between">
             <div class="d-flex flex-row gap-1">
               <div>Entries</div>
-              <div>({{ selectedEntries().length }})</div>
+              <div>({{ selectedCalendarDateEntries().length }})</div>
             </div>
             <div>{{ selectedMonthViewDay()?.date | date: 'mediumDate' }}</div>
           </div>
           <hr class="border-top border-2 border-black m-0" />
           <div class="entries-list">
-            @for (entry of selectedEntries(); track $index) {
+            @for (entry of selectedCalendarDateEntries(); track $index) {
               <div
                 class="entry d-flex flex-row justify-content-between rounded-1"
                 [class.selected]="entry === selectedEntry()"
@@ -72,10 +72,10 @@
   }
 </div>
 
-@if (appService.isEntryOpen()) {
+@if (generalAppService.isEntryOpen()) {
   <div class="calendar-entry-container">
     <app-entry
-      parentComponent="calendar"
+      [parentComponent]="'calendar'"
       [access]="access()"
       [values]="values()"
       [sourceId]="sourceId()"
@@ -113,7 +113,7 @@
   <div class="cal-cell-top">
     <span class="cal-day-number">{{ day.date | calendarDate: 'monthViewDayNumber' : locale }}</span>
   </div>
-  @if (appService.isMobileView()) {
+  @if (generalAppService.isMobileView()) {
     <div
       class="cal-add-button-container position-absolute bottom-0 start-0 w-100 d-flex flex-row align-items-center justify-content-around overflow-hidden"
       [class.show]="day.cssClass === 'cal-day-selected'"

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 100 100"
+     width="200" height="200"
+     role="img"
+     aria-label="red sad emoji">
+
+  <!-- Face (red circle) -->
+  <circle cx="50" cy="50" r="45"
+          fill="#ff4757"
+          stroke="#c0392b"
+          stroke-width="2"/>
+
+  <!-- Eyebrows – angled down to show sadness -->
+  <path d="M 28 30 Q 35 24 42 30"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+  <path d="M 58 30 Q 65 24 72 30"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+
+  <!-- Eyes (sad, slightly droopy) -->
+  <ellipse cx="35" cy="42" rx="6" ry="7" fill="#2c3e50"/>
+  <ellipse cx="65" cy="42" rx="6" ry="7" fill="#2c3e50"/>
+
+  <!-- Eye highlights -->
+  <circle cx="33" cy="40" r="2" fill="white"/>
+  <circle cx="63" cy="40" r="2" fill="white"/>
+
+  <!-- Sadder mouth (deeper frown, more droop) -->
+  <path d="M 28 75 Q 50 40 72 75"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+</svg>

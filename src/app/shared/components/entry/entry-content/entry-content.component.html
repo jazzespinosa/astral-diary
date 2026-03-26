@@ -1,0 +1,71 @@
+<div class="red-line position-absolute top-0 bottom-0"></div>
+<div #paperInnerRef class="paper-inner h-100 overflow-y-auto">
+  @if (!isParentFullEntryPage()) {
+    <button
+      class="position-absolute top-0 end-0 border-0 opacity-50 bg-transparent mt-1 me-2 p-0 z-2"
+      (click)="onCloseEntry()"
+    >
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  }
+  @if (values().mood !== null || access() !== 'view') {
+    @if (values().mood! > 0 || access() === 'new') {
+      <app-mood-rating
+        [mood]="values().mood"
+        (moodChange)="onMoodChange($event)"
+        [access]="access()"
+      ></app-mood-rating>
+    }
+  }
+  <form [formGroup]="form" action="Submit">
+    <div class="date-container d-flex flex-row align-items-center">
+      <label class="me-2">Date:</label>
+      <p-datepicker
+        class="entry-date-picker"
+        [readonlyInput]="parentComponent() === 'home'"
+        formControlName="date"
+        dateFormat="D, mm/dd/yy"
+        [showIcon]="access() !== 'view' && parentComponent() !== 'home'"
+        showOnFocus="false"
+      />
+    </div>
+    <div class="title-container d-flex flex-row align-items-center">
+      <label class="me-2" for="entryTitle">Title:</label>
+      <input
+        id="entryTitle"
+        #titleRef
+        type="text"
+        pInputText
+        (input)="entryTitleAutoGrow(titleRef, measuringSpan)"
+        formControlName="title"
+        class="entry-title bg-transparent border-0 border-bottom border-black p-0 mt-2 rounded-0"
+      /><span #measuringSpan class="measuring-span"></span>
+    </div>
+    @if (isInvalid(form, 'title')) {
+      @if (form.get('title')?.errors?.['required'] && sourceId()?.startsWith('entry')) {
+        <app-error-message message="Title is required." />
+      }
+      @if (form.get('title')?.errors?.['maxlength']) {
+        <app-error-message message="Title must be at most 100 characters long." />
+      }
+    }
+    <div class="paper-content">
+      <textarea
+        #contentRef
+        formControlName="content"
+        (input)="entryContentAutoGrow(paperInnerRef, contentRef)"
+        [placeholder]="placeholder()"
+        class="entry-textarea bg-transparent m-0 p-0 w-100 border-0 rounded-0"
+        rows="5"
+      ></textarea>
+    </div>
+    @if (isInvalid(form, 'content')) {
+      @if (form.get('content')?.errors?.['required'] && sourceId()?.startsWith('entry')) {
+        <app-error-message message="Content is required." />
+      }
+      @if (form.get('content')?.errors?.['maxlength']) {
+        <app-error-message message="Content must be at most 5000 characters long." />
+      }
+    }
+  </form>
+</div>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 100 100"
+     width="200" height="200"
+     role="img"
+     aria-label="yellow neutral emoji">
+
+  <!-- Face (yellow circle) -->
+  <circle cx="50" cy="50" r="45"
+          fill="#ffd32a"
+          stroke="#f39c12"
+          stroke-width="2"/>
+
+  <!-- Eyebrows – straight/neutral -->
+  <path d="M 26 28 Q 35 28 44 28"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+  <path d="M 56 28 Q 65 28 74 28"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+
+  <!-- Eyes (neutral, normal shape) -->
+  <ellipse cx="35" cy="42" rx="6" ry="7" fill="#2c3e50"/>
+  <ellipse cx="65" cy="42" rx="6" ry="7" fill="#2c3e50"/>
+
+  <!-- Eye highlights -->
+  <circle cx="33" cy="40" r="2" fill="white"/>
+  <circle cx="63" cy="40" r="2" fill="white"/>
+
+  <!-- Neutral mouth (straight line - neither smile nor frown) -->
+  <path d="M 30 70 L 70 70"
+        stroke="#2c3e50"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"/>
+</svg>

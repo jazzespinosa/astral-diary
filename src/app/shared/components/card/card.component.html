@@ -16,9 +16,7 @@
     <div class="attachments mt-3">
       @for (attachment of entry().attachments; track $index) {
         <img
-          [src]="
-            normalizedEntry().id | getImage: attachment.internalFileName : 'entry-thumbnail' | async
-          "
+          [src]="normalizedEntry().id | getImage: attachment.internalFileName | async"
           [alt]="attachment.internalFileName"
           class="attachment-thumbnail me-2"
         />

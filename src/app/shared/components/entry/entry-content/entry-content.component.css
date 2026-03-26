@@ -1,0 +1,81 @@
+:host,
+app-entry-content {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Parisienne', cursive;
+  width: 100%;
+  overflow: hidden;
+}
+
+.red-line {
+  left: 1.5rem;
+  width: 2px;
+  background: #ffb3b3;
+  pointer-events: none;
+}
+
+.paper-inner {
+  padding: 1rem 1rem 1rem 2rem;
+  scrollbar-width: thin;
+  overflow-anchor: none;
+}
+
+.date-container .p-datepicker-input.p-inputtext,
+.date-container .p-datepicker .p-datepicker-dropdown {
+  background: transparent;
+  border: none;
+}
+
+.date-container .p-datepicker-input.p-inputtext {
+  border-bottom: 1px solid #000000;
+  border-radius: 0;
+  padding: 0 0 0 2px;
+}
+
+.date-container .p-datepicker-input.p-datepicker-input {
+  width: 10rem;
+}
+
+.entry-title {
+  min-width: 10rem;
+  width: 10rem;
+}
+
+.measuring-span {
+  visibility: hidden !important;
+  position: fixed !important;
+}
+
+.paper-content {
+  width: 100%;
+  height: auto;
+  /* min-height: 60vh; */
+  position: relative;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.2rem;
+  color: #333;
+  outline: none;
+  opacity: 0;
+  /* transition: opacity 0.5s ease 1s; */
+}
+
+.entry-textarea {
+  min-height: 40vh;
+  overflow: hidden;
+  resize: none;
+  font-size: 0.9rem;
+  background: repeating-linear-gradient(
+    transparent 0rem,
+    transparent calc(1.2rem - 1px),
+    #8d8d8d calc(1.2rem - 1px),
+    #8d8d8d 1.2rem
+  );
+}
+
+.entry-textarea:focus-visible {
+  outline: none;
+}
+
+@media (max-width: 768px) {
+}

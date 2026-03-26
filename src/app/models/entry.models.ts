@@ -14,7 +14,15 @@ type CaseInsensitive<T extends string> =
   | Capitalize<T>
   | Uncapitalize<T>;
 export type DateFilter = CaseInsensitive<'any' | 'exact' | 'before' | 'after'>;
+
 export type Sort = CaseInsensitive<'asc' | 'desc'>;
+
+export type EntryAccess = 'new' | 'view' | 'edit-entry' | 'edit-draft';
+
+export interface GetUserMoodMapResponse {
+  date: Date;
+  mood: number;
+}
 
 export interface EntrySearchQueryParam {
   q: string | null;
@@ -29,6 +37,7 @@ interface BaseEntry {
   date: Date;
   title: string | null;
   content: string | null;
+  mood: number | null;
   createdAt: Date;
   modifiedAt: Date;
 }
@@ -37,6 +46,7 @@ export class EntryValues {
   date: Date = new Date();
   title: string = '';
   content: string = '';
+  mood: number | null = null;
 }
 
 export interface AttachmentObjResponse {
@@ -73,6 +83,12 @@ export interface GetDraftCountResponse {
   count: number;
 }
 
+export interface UpdatePublishResponse {
+  id: string;
+  date: Date;
+  title: string | null;
+}
+
 export interface GetSearchEntriesResponse {
   items: GetEntryResponse[];
   page: number;
@@ -88,8 +104,4 @@ export interface GetEntriesCalendarResponse extends BaseEntry {
   attachments: AttachmentObjResponse[] | null;
 }
 
-export type AttachmentType =
-  | 'entry-thumbnail'
-  | 'entry-attachment'
-  | 'draft-thumbnail'
-  | 'draft-attachment';
+export type SubmitAction = 'create' | 'update-entry' | 'update-draft';

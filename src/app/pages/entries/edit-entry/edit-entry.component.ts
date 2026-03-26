@@ -1,7 +1,7 @@
 import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AttachmentObjResponse, EntryValues } from 'app/models/entry.models';
+import { AttachmentObjResponse, EntryAccess, EntryValues } from 'app/models/entry.models';
 import { GeneralAppService } from 'app/services/general-app.service';
 import { ApiClientService } from 'app/services/api-client.service';
 import { EntryComponent } from 'app/shared/components/entry/entry.component';
@@ -18,8 +18,8 @@ export class EditEntryComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
-  private appService = inject(GeneralAppService);
-  private entryService = inject(ApiClientService);
+  private generalAppService = inject(GeneralAppService);
+  private apiClientService = inject(ApiClientService);
 
   inputValues = input(new EntryValues());
   values = signal(new EntryValues());
@@ -32,6 +32,7 @@ export class EditEntryComponent {
   });
 
   isLoading = signal<boolean>(false);
+  access = signal<EntryAccess>('edit-entry');
 
   constructor() {
     effect(() => {
@@ -41,16 +42,18 @@ export class EditEntryComponent {
       this.isLoading.set(true);
 
       if (sourceId?.startsWith('draft-')) {
-        this.entryService
+        this.access.set('edit-draft');
+        this.apiClientService
           .getDraft(sourceId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (draft) => {
-              this.appService.setIsEntryOpen(true);
+              this.generalAppService.setIsEntryOpen(true);
               this.values.set({
                 date: new Date(draft.date),
                 title: draft.title ?? '',
                 content: draft.content ?? '',
+                mood: draft.mood,
               });
 
               this.attachments.set(draft.attachments ?? []);
@@ -63,13 +66,15 @@ export class EditEntryComponent {
             },
           });
       } else if (sourceId?.startsWith('entry-')) {
-        this.entryService.getEntry(sourceId).subscribe({
+        this.access.set('edit-entry');
+        this.apiClientService.getEntry(sourceId).subscribe({
           next: (entry) => {
-            this.appService.setIsEntryOpen(true);
+            this.generalAppService.setIsEntryOpen(true);
             this.values.set({
               date: new Date(entry.date),
               title: entry.title ?? '',
               content: entry.content ?? '',
+              mood: entry.mood,
             });
 
             this.attachments.set(entry.attachments ?? []);

@@ -3,7 +3,7 @@ import { RouteReuseStrategy, ActivatedRouteSnapshot, DetachedRouteHandle } from 
 export class CustomReuseStrategy implements RouteReuseStrategy {
   private storedHandles = new Map<string, DetachedRouteHandle>();
 
-  private routesToCache = ['search', 'drafts', 'calendar'];
+  private routesToCache = ['calendar'];
 
   private getPath(route: ActivatedRouteSnapshot): string {
     return route.routeConfig?.path ?? '';

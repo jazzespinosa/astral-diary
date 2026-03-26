@@ -2,264 +2,37 @@
   class="entry-background position-fixed top-0 start-0 w-100 h-100 z-0"
   (click)="backgroundClick()"
 ></div>
-<section
-  class="entry-header w-100 d-flex flex-row align-items-center justify-content-around z-1"
-  [ngClass]="[isExpanded() ? 'show' : '']"
->
-  @if (access() === 'view') {
-    <div class="position-absolute end-0 me-2">
-      <i
-        role="button"
-        class="fa-solid fa-ellipsis-vertical opacity-50"
-        (click)="popoverEditEntry.toggle($event)"
-      ></i>
-      <p-popover
-        #popoverEditEntry
-        class="popover-container top-0 start-0 position-fixed"
-        [focusOnShow]="false"
-        [appendTo]="popoverEditEntry"
-      >
-        <div class="d-flex flex-column align-items-center">
-          <button
-            pButton
-            fluid="true"
-            label="Edit Entry"
-            text="true"
-            severity="secondary"
-            (click)="toEditFromView()"
-          ></button
-          ><button
-            pButton
-            fluid="true"
-            label="Delete Entry"
-            text="true"
-            severity="secondary"
-            (click)="deleteEntry()"
-          ></button>
-        </div>
-      </p-popover>
-    </div>
-  }
-  <div class="d-flex flex-row align-items-center gap-1">
-    <i [class]="header().icon"></i>
-    <h4 class="my-2">{{ header().label }}</h4>
-  </div>
-</section>
-<div class="paper" [ngClass]="[paperTransitionState(), isExpanded() ? 'expanded' : 'not-expanded']">
-  <div class="red-line position-absolute top-0 bottom-0"></div>
-  <div #paperInnerRef class="paper-inner h-100 overflow-y-auto">
-    <button
-      [disabled]="isParentFullEntryPage()"
-      [hidden]="isParentFullEntryPage()"
-      class="position-absolute top-0 end-0 border-0 opacity-50 bg-transparent mt-1 me-2 p-0 z-2"
-      (click)="reset()"
-    >
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-    <form [formGroup]="form" action="Submit">
-      <div class="date-container d-flex flex-row align-items-center">
-        <label class="me-2">Date:</label>
-        <p-datepicker
-          class="entry-date-picker"
-          [ngClass]="{ 'icon-hidden': access() === 'view' || parentComponent() === 'home' }"
-          [readonlyInput]="parentComponent() === 'home'"
-          formControlName="date"
-          dateFormat="D, mm/dd/yy"
-          showIcon="true"
-          showOnFocus="false"
-        />
-      </div>
-      <div class="title-container d-flex flex-row align-items-center">
-        <label class="me-2" for="entryTitle">Title:</label>
-        <input
-          id="entryTitle"
-          #titleRef
-          type="text"
-          pInputText
-          (input)="entryTitleAutoGrow(titleRef, measuringSpan)"
-          formControlName="title"
-          class="entryTitle bg-transparent border-0 border-bottom border-black p-0 mt-2 rounded-0"
-        /><span #measuringSpan class="measuringSpan"></span>
-      </div>
-      @if (isInvalid(form, 'title')) {
-        @if (form.get('title')?.errors?.['required'] && sourceId()?.startsWith('entry')) {
-          <app-error-message message="Title is required." />
-        }
-        @if (form.get('title')?.errors?.['maxlength']) {
-          <app-error-message message="Title must be at most 100 characters long." />
-        }
-      }
-      <div class="paper-content">
-        <textarea
-          #contentRef
-          formControlName="content"
-          (input)="entryContentAutoGrow(paperInnerRef, contentRef)"
-          [placeholder]="placeholder()"
-          class="bg-transparent m-0 p-0 w-100 border-0 rounded-0 entry-textarea"
-          rows="5"
-        ></textarea>
-      </div>
-      @if (isInvalid(form, 'content')) {
-        @if (form.get('content')?.errors?.['required'] && sourceId()?.startsWith('entry')) {
-          <app-error-message message="Content is required." />
-        }
-        @if (form.get('content')?.errors?.['maxlength']) {
-          <app-error-message message="Content must be at most 5000 characters long." />
-        }
-      }
-    </form>
-  </div>
-</div>
-@if (access() === 'new' || access() === 'edit') {
-  <div
-    class="lower-section d-flex flex-column w-100 z-2 mb-2 align-items-center"
-    [ngClass]="[isExpanded() ? 'show' : '']"
-  >
-    <p-dialog
-      [(visible)]="isAttachmentOpen"
-      modal="true"
-      dismissableMask="true"
-      draggable="false"
-      class="attachment-dialog"
-      (onHide)="onValidateAttachments(attachment)"
-    >
-      <ng-template #header>
-        <div class="d-flex flex-column font-bold whitespace-nowrap">
-          <span><b>ATTACHMENTS</b></span>
-          @if (selectedFiles.length > 0 || fileSize() > 0) {
-            <span
-              >{{
-                selectedFiles.length > 0
-                  ? '(' +
-                    selectedFiles.length +
-                    ' item' +
-                    (selectedFiles.length > 1 ? 's' : '') +
-                    ')'
-                  : ''
-              }}
-              [{{ fileSize() / 1024 / 1024 | number: '1.0-2' }}MB / MAX
-              {{ maxFileSize / 1024 / 1024 | number: '1.0-2' }}MB]</span
-            >
-          }
-        </div>
-      </ng-template>
-      <p-fileupload
-        #attachment
-        name="attachment"
-        multiple="true"
-        auto="false"
-        customUpload="true"
-        chooseLabel="Add Attachment"
-        cancelLabel="Clear All"
-        accept=".jpg,.jpeg,.png"
-        showUploadButton="false"
-        [maxFileSize]="maxFileSize"
-        mode="advanced"
-        (onSelect)="onAttachmentSelect($event, attachment)"
-        (onRemove)="onRemoveFile($event, attachment)"
-        (onClear)="onClearFiles(attachment)"
-        class="attachment w-100 overflow-y-auto mt-2"
-      >
-        <ng-template #empty>
-          <div>Add images here to upload.</div>
-        </ng-template>
-      </p-fileupload>
-      <ng-template #footer>
-        <p-button
-          label="OK"
-          severity="primary"
-          (click)="onValidateAttachments(attachment)"
-        ></p-button>
-      </ng-template>
-    </p-dialog>
-    <div
-      class="position-relative d-flex flex-row w-100 justify-content-between align-items-center mt-3"
-    >
-      <p-button
-        rounded="true"
-        size="small"
-        class="d-flex align-items-center ms-3 z-2"
-        [ngClass]="selectedFiles.length > 0 ? 'opacity-100' : 'opacity-50'"
-        (click)="showAttachment()"
-      >
-        <i class="fa-solid fa-paperclip"></i>
-        <span class="rounded-circle ms-1"
-          ><b>{{ selectedFiles.length }}</b></span
-        >
-      </p-button>
-      <button
-        pButton
-        icon="fa-solid fa-paper-plane"
-        class="submit-button position-absolute p-2"
-        severity="success"
-        raised="true"
-        rounded="true"
-        (click)="onSubmitEntry()"
-      >
-        {{ access() === 'edit' ? 'Update' : 'Submit' }}
-      </button>
-      <p-button
-        icon="fa-solid fa-ellipsis-vertical"
-        severity="secondary"
-        rounded="true"
-        size="small"
-        class="me-3 opacity-50"
-        (click)="popoverSaveAsDraft.toggle($event)"
-      ></p-button>
-      <p-popover
-        #popoverSaveAsDraft
-        class="popover-container top-0 start-0 position-fixed"
-        [appendTo]="popoverSaveAsDraft"
-      >
-        <div class="d-flex flex-column align-items-center">
-          <button
-            pButton
-            fluid="true"
-            label="Save as Draft"
-            text="true"
-            severity="secondary"
-            (click)="onSaveAsDraft()"
-          ></button>
-          <button
-            pButton
-            fluid="true"
-            label="Delete Entry"
-            text="true"
-            severity="secondary"
-            (click)="deleteEntry()"
-          ></button>
-        </div>
-      </p-popover>
-    </div>
-  </div>
-} @else if (access() === 'view' && attachments() && attachments().length > 0) {
-  <div class="attachment-gallery w-100 d-flex justify-content-center mt-3 z-1">
-    <div>
-      @for (attachment of attachments(); track $index) {
-        <img
-          [src]="
-            sourceId() ?? '' | getImage: attachment.internalFileName : 'entry-thumbnail' | async
-          "
-          [alt]="attachment.internalFileName"
-          class="gallery-thumbnail me-2"
-          (click)="imageClick($index)"
-        />
-      }
-    </div>
-    <p-galleria
-      [value]="gallery()"
-      [(visible)]="displayCustom"
-      [(activeIndex)]="activeIndex"
-      [containerStyle]="{ 'max-width': '850px' }"
-      [numVisible]="7"
-      [circular]="true"
-      [fullScreen]="true"
-      [showItemNavigators]="true"
-      [showThumbnails]="false"
-    >
-      <ng-template #item let-item>
-        <img [src]="item.localUrl" style="max-height: calc(100vh - 7rem); max-width: 85vw" />
-      </ng-template>
-    </p-galleria>
-  </div>
-}
+<app-entry-header
+  [sourceId]="sourceId()"
+  [access]="access()"
+  [isEntryPaperExpanded]="isEntryPaperExpanded()"
+  (delete)="onDelete('entry')"
+></app-entry-header>
+
+<app-entry-content
+  [sourceId]="sourceId()"
+  [access]="access()"
+  [values]="values()"
+  [isParentFullEntryPage]="isParentFullEntryPage()"
+  [parentComponent]="parentComponent()"
+  [paperTransitionState]="paperTransitionState()"
+  [isEntryPaperExpanded]="isEntryPaperExpanded()"
+  class="paper"
+  [ngClass]="[paperTransitionState(), isEntryPaperExpanded() ? 'expanded' : 'not-expanded']"
+  (formValuesChange)="onFormValuesChange($event)"
+  (moodChange)="onMoodChange($event)"
+  (closeEntry)="closeEntry()"
+></app-entry-content>
+
+<app-entry-footer
+  [access]="access()"
+  [isEntryPaperExpanded]="isEntryPaperExpanded()"
+  [sourceId]="sourceId()"
+  [files]="selectedFiles"
+  [attachments]="attachments()"
+  (submit)="onSubmit($event)"
+  (saveAsDraft)="onSaveAsDraft()"
+  (publishDraft)="onPublishDraft()"
+  (delete)="onDelete($event)"
+  (attachmentsChange)="onAttachmentsChange($event)"
+></app-entry-footer>

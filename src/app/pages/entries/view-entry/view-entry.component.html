@@ -1,7 +1,7 @@
 <div class="view-entry-container">
   @if (sourceId()) {
     <app-entry
-      parentComponent="view-entry"
+      [parentComponent]="'view-entry'"
       access="view"
       [values]="values()"
       [sourceId]="sourceId()"

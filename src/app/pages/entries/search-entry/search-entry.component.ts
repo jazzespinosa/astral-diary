@@ -61,7 +61,7 @@ import { LoadingComponent } from 'app/shared/components/loading/loading.componen
 })
 export class SearchEntryComponent {
   private formBuilder = inject(FormBuilder);
-  private entryService = inject(ApiClientService);
+  private apiClientService = inject(ApiClientService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
@@ -71,6 +71,15 @@ export class SearchEntryComponent {
   });
 
   searchedValue = signal<string>('');
+  searchLabel = computed(() => {
+    if (this.searchClicked()) {
+      if (this.searchedValue() === '') {
+        return 'Showing all entries';
+      }
+      return `Showing search results for '${this.searchedValue()}'`;
+    }
+    return 'Recent Entries';
+  });
 
   selectedSort = model<Sort>('desc');
   dateFilterOptions = [
@@ -200,7 +209,7 @@ export class SearchEntryComponent {
   private searchEntries(params: EntrySearchQueryParam) {
     this.isLoading.set(true);
 
-    this.entryService
+    this.apiClientService
       .getSearchEntries(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -219,7 +228,7 @@ export class SearchEntryComponent {
   private getRecentEntries() {
     this.isLoading.set(true);
 
-    this.entryService
+    this.apiClientService
       .getRecentEntries()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

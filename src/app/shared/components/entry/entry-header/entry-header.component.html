@@ -1,0 +1,42 @@
+<div
+  class="entry-header w-100 d-flex flex-row align-items-center justify-content-around z-1"
+  [ngClass]="[isEntryPaperExpanded() ? 'show' : '']"
+>
+  @if (access() === 'view') {
+    <div class="position-absolute end-0 me-2">
+      <i
+        role="button"
+        class="fa-solid fa-ellipsis-vertical opacity-50"
+        (click)="popoverEditEntry.toggle($event)"
+      ></i>
+      <p-popover
+        #popoverEditEntry
+        class="popover-container top-0 start-0 position-fixed"
+        [appendTo]="popoverEditEntry"
+      >
+        <div class="d-flex flex-column align-items-center">
+          <button
+            pButton
+            fluid="true"
+            label="Edit Entry"
+            text="true"
+            severity="secondary"
+            (click)="toEditFromView()"
+          ></button
+          ><button
+            pButton
+            fluid="true"
+            label="Delete Entry"
+            text="true"
+            severity="secondary"
+            (click)="deleteEntry()"
+          ></button>
+        </div>
+      </p-popover>
+    </div>
+  }
+  <div class="d-flex flex-row align-items-center gap-1">
+    <i [class]="header().icon"></i>
+    <h4 class="my-2">{{ header().label }}</h4>
+  </div>
+</div>

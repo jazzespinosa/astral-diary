@@ -19,8 +19,8 @@ export class ViewEntryComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
-  private appService = inject(GeneralAppService);
-  private entryService = inject(ApiClientService);
+  private generalAppService = inject(GeneralAppService);
+  private apiClientService = inject(ApiClientService);
 
   values = signal(new EntryValues());
   sourceId = signal<string | null>(null);
@@ -38,16 +38,17 @@ export class ViewEntryComponent implements OnInit {
       const sourceId = params.get('id');
       if (sourceId) {
         this.isLoading.set(true);
-        this.entryService
+        this.apiClientService
           .getEntry(sourceId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (entry) => {
-              this.appService.setIsEntryOpen(true);
+              this.generalAppService.setIsEntryOpen(true);
               this.values.set({
                 date: new Date(entry.date),
                 title: entry.title,
                 content: entry.content,
+                mood: entry.mood,
               });
               this.attachments.set(entry.attachments ?? []);
               this.sourceId.set(sourceId);

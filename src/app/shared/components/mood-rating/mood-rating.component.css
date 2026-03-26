@@ -1,0 +1,64 @@
+.mood-btn {
+  font-size: 2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  filter: grayscale(1) opacity(0.35);
+  transform: scale(0.85);
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: normal;
+}
+
+.mood-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.mood-btn.active {
+  filter: none;
+}
+
+.mood-btn.hover-active {
+  filter: none;
+}
+
+.mood-btn.hover-inactive {
+  filter: grayscale(1) opacity(0.2);
+}
+
+.mood-btn:disabled {
+  pointer-events: none;
+}
+
+.mood-icon {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.mood-placeholder {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .mood-btn {
+    font-size: 1.5rem;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .mood-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}

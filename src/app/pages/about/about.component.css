@@ -8,7 +8,7 @@
 }
 
 .about-container {
-  max-width: 900px;
+  max-width: 1000px;
   background: rgba(255, 255, 255, 0.85); /* Mostly white, slight translucent */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);

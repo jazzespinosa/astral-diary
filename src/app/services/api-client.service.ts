@@ -2,8 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { formatDate } from '@angular/common';
 import { environment } from 'environments/environment';
-import { from, map, switchMap } from 'rxjs';
-import { AuthService } from './auth.service';
 import {
   EntrySearchQueryParam,
   GetDraftCountResponse,
@@ -11,7 +9,10 @@ import {
   GetEntriesCalendarResponse,
   GetEntryResponse,
   GetSearchEntriesResponse,
+  GetUserMoodMapResponse,
+  UpdatePublishResponse,
 } from 'app/models/entry.models';
+import { GetUserInfoResponse } from 'app/models/auth.models';
 
 @Injectable({
   providedIn: 'root',
@@ -21,6 +22,26 @@ export class ApiClientService {
 
   private readonly BASE_URL = environment.backendUrl;
 
+  getUserInfo(date: Date) {
+    return this.http.get<GetUserInfoResponse>(`${this.BASE_URL}/user/get-user-info`, {
+      params: {
+        currentDate: formatDate(date, 'yyyy-MM-dd', 'en-US'),
+      },
+    });
+  }
+
+  getUserMoodMap(date: Date) {
+    return this.http.get<GetUserMoodMapResponse[]>(`${this.BASE_URL}/user/get-mood-map`, {
+      params: {
+        currentDate: formatDate(date, 'yyyy-MM-dd', 'en-US'),
+      },
+    });
+  }
+
+  saveUserAvatar(avatar: string) {
+    return this.http.patch<{ avatar: string }>(`${this.BASE_URL}/user/save-avatar`, { avatar });
+  }
+
   createEntry(formData: FormData) {
     return this.http.post(`${this.BASE_URL}/entry/create`, formData, { observe: 'response' });
   }
@@ -29,9 +50,12 @@ export class ApiClientService {
     return this.http.post(`${this.BASE_URL}/draft/create`, formData);
   }
 
-  // getEntriesAll() {
-  //   return this.http.get<GetEntriesResponse[]>(`${this.BASE_URL}/entry/get-all`);
-  // }
+  publishDraft(draftId: string, formData: FormData) {
+    return this.http.post<UpdatePublishResponse>(
+      `${this.BASE_URL}/draft/publish/${draftId}`,
+      formData,
+    );
+  }
 
   getDrafts() {
     return this.http.get<GetDraftResponse[]>(`${this.BASE_URL}/draft/get-all`);
@@ -79,11 +103,17 @@ export class ApiClientService {
   }
 
   updateEntry(entryId: string, formData: FormData) {
-    return this.http.put(`${this.BASE_URL}/entry/update/${entryId}`, formData);
+    return this.http.put<UpdatePublishResponse>(
+      `${this.BASE_URL}/entry/update/${entryId}`,
+      formData,
+    );
   }
 
   updateDraft(draftId: string, formData: FormData) {
-    return this.http.put(`${this.BASE_URL}/draft/update/${draftId}`, formData);
+    return this.http.put<UpdatePublishResponse>(
+      `${this.BASE_URL}/draft/update/${draftId}`,
+      formData,
+    );
   }
 
   deleteEntry(entryId: string) {
