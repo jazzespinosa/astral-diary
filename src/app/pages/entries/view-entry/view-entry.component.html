@@ -1,19 +1,13 @@
 <div class="view-entry-container">
-  @if (sourceId()) {
-    <app-entry
-      [parentComponent]="'view-entry'"
-      access="view"
-      [values]="values()"
-      [sourceId]="sourceId()"
-      [attachments]="attachments()"
-    />
+  @if (document()) {
+    <app-entry parentComponent="view-entry" access="view" [document]="document()" />
   } @else {
     @if (isLoading()) {
-      <div class="mt-3">
+      <div class="mt-4">
         <app-loading message="Getting entry" />
       </div>
     } @else {
-      <app-not-found />
+      <app-error-entry [errorCode]="errorCode()" />
     }
   }
 </div>

@@ -1,0 +1,19 @@
+<div class="info-container">
+  <fieldset class="border rounded-3 p-3">
+    <legend class="float-none w-auto px-3">
+      <div class="d-flex flex-row align-items-center gap-1">
+        <i class="fa-solid fa-circle-info"></i>
+        <h5 class="mb-0">{{ typeComputed() }} Info</h5>
+      </div>
+    </legend>
+    <div class="d-flex flex-column gap-1">
+      <span class="text-truncate">Title: {{ title() }}</span>
+      <span>Date: {{ date() | date: 'mediumDate' }}</span>
+      <span>Created: {{ created() + 'Z' | date: 'medium' }}</span>
+      <span>Last Modified: {{ lastModified() + 'Z' | date: 'medium' }}</span>
+      <span>Published: {{ publishedAt() ? (publishedAt() + 'Z' | date: 'medium') : 'N/A' }}</span>
+      <br />
+      <small>*Published details will only appear after the draft is saved as the main entry.</small>
+    </div>
+  </fieldset>
+</div>

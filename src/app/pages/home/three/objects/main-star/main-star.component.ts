@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, viewChildren } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, inject, viewChildren } from '@angular/core';
 import { beforeRender, NgtArgs } from 'angular-three';
 import { NgtsBillboard } from 'angular-three-soba/abstractions';
 import { textureResource } from 'angular-three-soba/loaders';
@@ -11,12 +11,15 @@ import starMapRed from 'assets/star-map-red.jpg' with { loader: 'file' };
 import starMapGreen from 'assets/star-map-green.png' with { loader: 'file' };
 import starMapYellow from 'assets/star-map-yellow.png' with { loader: 'file' };
 import starMapBlueGreen from 'assets/star-map-bluegreen.jpg' with { loader: 'file' };
+import { EntryService } from 'app/services/entry.service';
 
 function createStarShape(
   spikes = 8,
   outerMajor = 0.48,
-  outerMinor = 0.34,
-  innerRadius = 0.14,
+  // outerMinor = 0.34,
+  // innerRadius = 0.14,
+  outerMinor = 0.3,
+  innerRadius = 0.07,
   cx = 0.5,
   cy = 0.5,
 ): THREE.Shape {
@@ -50,7 +53,9 @@ function createStarShape(
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class MainStarComponent {
-  readonly starShape = createStarShape(8, 0.5, 0.25, 0.05, 0.5, 0.5);
+  private entryService = inject(EntryService);
+
+  readonly starShape = createStarShape();
   private scaleAmp = 0.2;
   private minOpacity = 0.2;
   private maxOpacity = 1.0;
@@ -127,7 +132,7 @@ export class MainStarComponent {
     });
   }
 
-  mainStarClicked(event: any) {
-    console.log(event);
+  mainStarClicked() {
+    this.entryService.triggerStarClick();
   }
 }

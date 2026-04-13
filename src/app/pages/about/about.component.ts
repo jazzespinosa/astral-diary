@@ -1,10 +1,12 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { GeneralAppService } from 'app/services/general-app.service';
+import { ApiClientService } from 'app/services/api-client.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-about',
@@ -15,7 +17,8 @@ import { GeneralAppService } from 'app/services/general-app.service';
 })
 export class AboutComponent implements OnInit {
   private appService = inject(GeneralAppService);
-  private fb = inject(FormBuilder);
+  private apiClientService = inject(ApiClientService);
+  private formBuilder = inject(FormBuilder);
 
   feedbackForm!: FormGroup;
   categories = [
@@ -26,19 +29,21 @@ export class AboutComponent implements OnInit {
   ];
 
   ngOnInit() {
-    this.feedbackForm = this.fb.group({
+    this.feedbackForm = this.formBuilder.group({
       category: [null, Validators.required],
       message: ['', [Validators.required, Validators.minLength(10)]],
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.feedbackForm.valid) {
-      console.log('Feedback submitted:', this.feedbackForm.value);
-      this.appService.setToastMessage({
+      const response = await firstValueFrom(
+        this.apiClientService.submitFeedback(this.feedbackForm.value),
+      );
+      this.appService.setCustomToastMessage({
         severity: 'success',
         summary: 'Feedback Received',
-        detail: 'Thank you for your thoughts among the stars!',
+        detail: 'Thank you for sharing your thoughts!',
       });
       this.feedbackForm.reset();
     }

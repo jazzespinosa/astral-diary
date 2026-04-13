@@ -1,63 +1,85 @@
-import { AsyncPipe, CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component,
-  computed,
   effect,
   inject,
   input,
+  OnDestroy,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { GenericEntry, GetDraftResponse, GetEntryResponse } from 'app/models/entry.models';
-import { GetImagePipe } from 'app/shared/pipes/get-image.pipe';
+import { DecryptedDocument, GalleryItem } from 'app/models/entry.models';
+import { AttachmentService } from 'app/services/attachment.service';
 import { CardModule } from 'primeng/card';
+import { ThumbnailViewerComponent } from '../thumbnail-viewer/thumbnail-viewer.component';
 
 @Component({
   selector: 'app-card',
-  imports: [CardModule, DatePipe, GetImagePipe, AsyncPipe],
+  imports: [CommonModule, CardModule, DatePipe, ThumbnailViewerComponent],
   templateUrl: './card.component.html',
   styleUrl: './card.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class CardComponent {
+export class CardComponent implements OnInit, OnDestroy {
   private router = inject(Router);
+  private attachmentService = inject(AttachmentService);
 
-  entry = input.required<GetEntryResponse | GetDraftResponse>();
-  normalizedEntry = computed<GenericEntry>(() => {
-    const value = this.entry();
+  document = input.required<DecryptedDocument>();
+  compactView = input<boolean>(false);
 
-    if ('entryId' in value) {
-      return {
-        id: value.entryId,
-        ...value,
-      };
-    } else if ('draftId' in value) {
-      return {
-        id: value.draftId,
-        ...value,
-      };
-    }
+  thumbnails = signal<GalleryItem[]>([]);
 
-    return {
-      id: '',
-      date: new Date(),
-      title: '',
-      content: '',
-      mood: null,
-      attachments: null,
-      createdAt: new Date(),
-      modifiedAt: new Date(),
-    };
-  });
+  constructor() {}
 
-  onEntryClick(entry: GenericEntry) {
-    if (entry.id.startsWith('draft')) {
-      this.router.navigate(['entry/edit', entry.id]);
-    } else if (entry.id.startsWith('entry')) {
-      this.router.navigate(['entry/view', entry.id]);
+  ngOnInit(): void {
+    this.getThumbnailsFromServer(this.document().attachmentId ?? '');
+  }
+
+  ngOnDestroy(): void {
+    this.attachmentService.cleanupImageUrls(this.thumbnails());
+  }
+
+  onItemClick(document: DecryptedDocument) {
+    if (document.type === 'draft') {
+      this.router.navigate(['entry/edit', document.id]);
+    } else if (document.type === 'entry') {
+      this.router.navigate(['entry/view', document.id]);
     } else {
       this.router.navigate(['entry/search']);
+    }
+  }
+
+  private async getThumbnailsFromServer(attachmentId: string) {
+    const entityId = this.document().id;
+    if (!entityId || !attachmentId) return;
+
+    try {
+      const cachedFiles = this.attachmentService.getFilesFromCache(entityId, 'thumbnail');
+      if (cachedFiles && cachedFiles.length > 0) {
+        this.thumbnails.set(cachedFiles);
+        return;
+      }
+
+      const items: GalleryItem[] = await this.attachmentService
+        .processIncomingAttachments(entityId, 'thumbnail', attachmentId)
+        .then((item) => {
+          let files = item.map((item) => item.file);
+          this.attachmentService.saveFilesToCache(entityId, files, 'thumbnail');
+
+          return item.map((item) => {
+            return {
+              fileName: item.fileName,
+              objectUrl: item.objectUrl,
+              localUrl: item.localUrl,
+            };
+          });
+        });
+
+      this.thumbnails.set(items);
+    } catch (error) {
+      console.error('Failed to load files', error);
     }
   }
 }

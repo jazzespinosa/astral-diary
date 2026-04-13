@@ -1,6 +1,5 @@
-:host {
-  /* position: absolute; */
-  /* top: 10vh; */
+:host,
+app-root {
   width: 100%;
   height: 100%;
   display: flex;
@@ -13,4 +12,8 @@
 /* TOAST */
 .toast-container {
   top: 5rem !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 768px) {
 }

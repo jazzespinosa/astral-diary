@@ -2,70 +2,76 @@ import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import {
   Component,
   computed,
-  DestroyRef,
   effect,
   inject,
   model,
   OnInit,
-  output,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { GetUserInfoResponse } from 'app/models/auth.models';
-import { GetUserMoodMapResponse } from 'app/models/entry.models';
+import { DecryptedDocument, GetUserMoodMapResponse } from 'app/models/entry.models';
 import { ApiClientService } from 'app/services/api-client.service';
+import { AuthService } from 'app/services/auth.service';
 import { GeneralAppService } from 'app/services/general-app.service';
-import { AvatarSelectionComponent } from 'app/shared/components/avatar-selection/avatar-selection.component';
+import { RecycleBinComponent } from 'app/shared/components/recycle-bin/recycle-bin.component';
 import { endOfYear, startOfYear } from 'date-fns';
-import { Button } from 'primeng/button';
+import { Button, ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { firstValueFrom } from 'rxjs';
 
 interface HeatmapDay {
   date: string;
   level: number; // 1-5
 }
 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const avatars = [
-  'avatar/avatar-bull.svg',
-  'avatar/avatar-butterfly.svg',
   'avatar/avatar-cat.svg',
-  'avatar/avatar-chicken.svg',
-  'avatar/avatar-cow.svg',
-  'avatar/avatar-dog.svg',
-  'avatar/avatar-fish.svg',
-  'avatar/avatar-frog.svg',
-  'avatar/avatar-giraffe.svg',
-  'avatar/avatar-goat.svg',
-  'avatar/avatar-mouse.svg',
-  'avatar/avatar-pig.svg',
   'avatar/avatar-rabbit.svg',
-  'avatar/avatar-sheep.svg',
+  'avatar/avatar-dog.svg',
+  'avatar/avatar-frog.svg',
+  'avatar/avatar-mouse.svg',
+  'avatar/avatar-butterfly.svg',
+  'avatar/avatar-giraffe.svg',
   'avatar/avatar-starfish.svg',
+  'avatar/avatar-bull.svg',
+  'avatar/avatar-goat.svg',
+  'avatar/avatar-pig.svg',
+  'avatar/avatar-cow.svg',
+  'avatar/avatar-fish.svg',
+  'avatar/avatar-sheep.svg',
+  'avatar/avatar-chicken.svg',
 ];
+
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 @Component({
   selector: 'app-account',
-  imports: [CommonModule, Button, DatePipe, RouterLink, DialogModule, AvatarSelectionComponent],
+  imports: [CommonModule, Button, DatePipe, DialogModule, RecycleBinComponent, ButtonModule],
   templateUrl: './account.component.html',
   styleUrl: './account.component.css',
+  encapsulation: ViewEncapsulation.None,
 })
 export class AccountComponent implements OnInit {
   private apiClientService = inject(ApiClientService);
+  private authService = inject(AuthService);
   private generalAppService = inject(GeneralAppService);
   private router = inject(Router);
-  private destroyRef = inject(DestroyRef);
 
   readonly heatmapMonths = months;
   heatmapDays = signal<HeatmapDay[]>([]);
+  displayYear = signal(new Date().getFullYear());
   userInfo = signal<GetUserInfoResponse | null>(null);
 
+  avatarChoices = avatars;
   isAvatarDialogOpen = model(false);
-  avatarChoices = signal<string[]>(avatars);
-
-  dialogSelectedAvatar = signal<string>('');
   displayedAvatar = signal<string>('');
+  dialogSelectedAvatar = signal<string>('');
+
+  isRecycleBinDialogOpen = model(false);
+  deletedEntries = signal<DecryptedDocument[]>([]);
+  selectedEntryIds = signal<string[]>([]);
 
   isSaveEnable = computed(() => {
     return this.displayedAvatar() !== this.userInfo()?.avatar;
@@ -78,24 +84,39 @@ export class AccountComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.apiClientService
-      .getUserInfo(new Date())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.userInfo.set(response);
-        },
-      });
+    this.updateUserInfo();
+    this.onChangeYear(this.displayYear());
+  }
 
-    this.apiClientService
-      .getUserMoodMap(new Date())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          const days = this.generateHeatmap(response);
-          this.heatmapDays.set(days);
-        },
-      });
+  confirmAvatarSelection() {
+    this.isAvatarDialogOpen.set(false);
+    this.displayedAvatar.set(this.dialogSelectedAvatar());
+  }
+
+  onHeaderAvatarClick() {
+    this.dialogSelectedAvatar.set(this.displayedAvatar());
+    this.isAvatarDialogOpen.set(true);
+  }
+
+  onSelectionAvatarClick(avatar: string) {
+    if (this.dialogSelectedAvatar() === avatar) {
+      this.dialogSelectedAvatar.set('');
+    } else {
+      this.dialogSelectedAvatar.set(avatar);
+    }
+  }
+
+  async updateUserInfo() {
+    try {
+      const response = await firstValueFrom(this.apiClientService.getUserInfo(new Date()));
+      this.userInfo.set(response);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  onTotalEntriesClick() {
+    this.router.navigate(['entry/search'], { queryParams: { q: '' } });
   }
 
   onFirstEntryClick() {
@@ -108,47 +129,57 @@ export class AccountComponent implements OnInit {
     this.router.navigate([`entry/view/${this.userInfo()?.latestEntryId}`]);
   }
 
-  onAvatarClick() {
-    this.isAvatarDialogOpen.set(true);
+  onCurrentStreakClick() {
+    this.router.navigate(['calendar']);
   }
 
-  confirmAvatarSelection() {
-    this.isAvatarDialogOpen.set(false);
-    this.displayedAvatar.set(this.dialogSelectedAvatar());
+  async onChangeYear(year: number) {
+    this.displayYear.set(year);
+    try {
+      const response = await firstValueFrom(
+        this.apiClientService.getUserMoodMap(this.displayYear()),
+      );
+      const days = this.generateHeatmap(response, this.displayYear());
+      this.heatmapDays.set(days);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  onAvatarSelect(avatar: string) {
-    this.dialogSelectedAvatar.set(avatar);
+  onHeatMapCellClick(day: HeatmapDay) {
+    const date = formatDate(day.date, 'yyyy-MM-dd', 'en-US');
+    this.router.navigate(['entry/search'], { queryParams: { q: '', filter: 'exact', date: date } });
   }
 
-  onSave() {
-    this.apiClientService
-      .saveUserAvatar(this.displayedAvatar())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.userInfo.update((user) => {
-            if (!user) return user;
-            return {
-              ...user,
-              avatar: response.avatar,
-            };
-          });
-
-          this.generalAppService.setSuccessToast('Avatar updated successfully');
-        },
-        error: (error) => {
-          console.error(error);
-          this.generalAppService.setErrorToast(error.message);
-        },
+  async onSave() {
+    try {
+      const response = await firstValueFrom(
+        this.apiClientService.saveUserAvatar(this.displayedAvatar()),
+      );
+      this.userInfo.update((user) => {
+        if (!user) return user;
+        return {
+          ...user,
+          avatar: response.avatar,
+        };
       });
+
+      this.authService.updateUserAvatar(this.displayedAvatar());
+      this.generalAppService.setSuccessToast('Changes saved successfully.');
+    } catch (error: any) {
+      console.error(error);
+      this.generalAppService.setErrorToast(error.message || 'Failed to save changes.');
+    }
   }
 
-  private generateHeatmap(moodMap: GetUserMoodMapResponse[]): HeatmapDay[] {
+  onLogout() {
+    this.authService.onLogout();
+  }
+
+  private generateHeatmap(moodMap: GetUserMoodMapResponse[], year: number): HeatmapDay[] {
     const days: HeatmapDay[] = [];
-    const today = new Date();
-    const firstDayOfTheYear = startOfYear(today);
-    const lastDayOfTheYear = endOfYear(today);
+    const firstDayOfTheYear = startOfYear(new Date(year, 0, 1));
+    const lastDayOfTheYear = endOfYear(new Date(year, 0, 1));
 
     for (let d = firstDayOfTheYear; d <= lastDayOfTheYear; d.setDate(d.getDate() + 1)) {
       const moods = moodMap.filter(
@@ -168,5 +199,44 @@ export class AccountComponent implements OnInit {
       });
     }
     return days;
+  }
+
+  onMoodLegendClick(mood: number) {
+    this.router.navigate(['entry/search'], { queryParams: { q: '', mood: mood } });
+  }
+
+  async onRecycleBinOpen() {
+    try {
+      const response = await firstValueFrom(this.apiClientService.getDeletedEntries());
+      this.deletedEntries.set(response);
+      this.isRecycleBinDialogOpen.set(true);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  onSelectEntryIds(entryIds: string[]) {
+    this.selectedEntryIds.set(entryIds);
+  }
+
+  async onRestoreEntries() {
+    if (this.selectedEntryIds().length === 0) return;
+
+    try {
+      const response = await firstValueFrom(
+        this.apiClientService.restoreDeletedEntries(this.selectedEntryIds()),
+      );
+      if (response.result) {
+        this.updateUserInfo();
+        this.onChangeYear(this.displayYear());
+        this.isRecycleBinDialogOpen.set(false);
+        this.generalAppService.setSuccessToast('Entries restored successfully.');
+      } else {
+        this.generalAppService.setErrorToast(response.message);
+      }
+    } catch (error: any) {
+      console.error(error);
+      this.generalAppService.setErrorToast(error.message || 'Failed to restore entries.');
+    }
   }
 }

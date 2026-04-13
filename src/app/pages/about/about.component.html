@@ -1,90 +1,310 @@
-<div class="about-container container d-flex flex-column gap-4 p-4 rounded-4 shadow-sm">
-  <section class="about-hero text-center py-4">
-    <h1 class="display-4 about-title">Astral Diary</h1>
-    <p class="lead text-muted">A celestial sanctuary for your deepest thoughts.</p>
-    <div class="divider mx-auto"></div>
-  </section>
+<div class="about-page container">
+  <!-- Floating stars decoration -->
+  <div class="stars-bg" aria-hidden="true">
+    <div class="star" style="--delay: 0s; --x: 8%; --y: 12%; --size: 4px"></div>
+    <div class="star" style="--delay: 1.2s; --x: 92%; --y: 8%; --size: 3px; --color: #b4c8ff"></div>
+    <div class="star" style="--delay: 0.5s; --x: 50%; --y: 5%; --size: 6px; --color: #87cefa"></div>
+    <div class="star" style="--delay: 2s; --x: 85%; --y: 25%; --size: 4px; --color: #dde9ff"></div>
+    <div
+      class="star"
+      style="--delay: 0.8s; --x: 18%; --y: 45%; --size: 5px; --color: #c8e6ff"
+    ></div>
+    <div class="star" style="--delay: 3s; --x: 5%; --y: 72%; --size: 3px; --color: #f0e6ff"></div>
+    <div
+      class="star"
+      style="--delay: 1.7s; --x: 78%; --y: 60%; --size: 5px; --color: #87cefa"
+    ></div>
+    <div class="star" style="--delay: 2.5s; --x: 40%; --y: 88%; --size: 4px"></div>
+    <div
+      class="star"
+      style="--delay: 0.3s; --x: 65%; --y: 78%; --size: 3px; --color: #b4c8ff"
+    ></div>
+    <div
+      class="star"
+      style="--delay: 1.5s; --x: 28%; --y: 20%; --size: 6px; --color: #dde9ff"
+    ></div>
+  </div>
 
-  <section class="about-content">
-    <div class="row g-4">
-      <div class="col-md-6">
-        <h3 class="section-title"><i class="fa-solid fa-star-and-crescent me-2"></i>Our Mission</h3>
-        <p>
-          Astral Diary was created to provide a serene space where your daily reflections can live
-          among the stars. We believe that everyone deserves a private, beautiful place to chronicle
-          their journey through the cosmos of life.
+  <div class="about-wrapper">
+    <!-- ── HERO ── -->
+    <section class="about-hero">
+      <div class="hero-orb"></div>
+      <div class="hero-orb hero-orb--secondary"></div>
+      <span class="hero-eyebrow">✦ A celestial sanctuary ✦</span>
+      <h1 class="hero-title">Astral Diary</h1>
+      <p class="hero-subtitle">Your thoughts, written among the stars.</p>
+      <div class="hero-divider">
+        <span class="divider-gem">◈</span>
+      </div>
+    </section>
+
+    <!-- ── MISSION + FEATURES ── -->
+    <section class="grid-section">
+      <div class="glass-card mission-card">
+        <div class="card-icon-wrap">
+          <i class="fa-solid fa-moon card-icon"></i>
+        </div>
+        <h2 class="card-title">Our Mission</h2>
+        <p class="card-body">
+          Astral Diary was crafted to be a serene space where your daily reflections live among the
+          stars. We believe everyone deserves a private, beautiful sanctuary to chronicle their
+          journey through the cosmos of life — free from noise, distraction, and prying eyes.
         </p>
       </div>
-      <div class="col-md-6">
-        <h3 class="section-title"><i class="fa-solid fa-shuttle-space me-2"></i>Features</h3>
+
+      <div class="glass-card features-card">
+        <div class="card-icon-wrap">
+          <i class="fa-solid fa-shuttle-space card-icon"></i>
+        </div>
+        <h2 class="card-title">Features</h2>
         <ul class="astral-list">
-          <li>Write entries in a clean, focused environment.</li>
-          <li>Navigate through your history with an astronomical calendar.</li>
-          <li>Personalize your experience with celestial backgrounds.</li>
-          <li>Securely store your memories with Google authentication.</li>
+          <li>
+            <i class="fa-solid fa-feather-pointed li-icon"></i>Write entries in a clean, focused
+            environment.
+          </li>
+          <li>
+            <i class="fa-solid fa-calendar-days li-icon"></i>Navigate history with an astronomical
+            calendar.
+          </li>
+          <li><i class="fa-solid fa-image li-icon"></i>Personalize with celestial backgrounds.</li>
+          <li><i class="fa-solid fa-lock li-icon"></i>Protected by end-to-end encryption.</li>
+          <li><i class="fa-brands fa-google li-icon"></i>Securely sign in with Google.</li>
+          <li><i class="fa-solid fa-trash-can li-icon"></i>Recycle bin for recovered entries.</li>
         </ul>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="feedback-section p-4 rounded-4">
-    <h3 class="section-title text-center mb-4">
-      <i class="fa-solid fa-paper-plane me-2"></i>Provide Feedback
-    </h3>
-    <p class="text-center mb-4 text-muted">Help us improve your journey through the stars.</p>
-
-    <form
-      [formGroup]="feedbackForm"
-      (ngSubmit)="onSubmit()"
-      class="feedback-form d-flex flex-column gap-3"
-    >
-      <div class="form-group">
-        <label for="category" class="form-label">Category</label>
-        <p-select
-          [options]="categories"
-          formControlName="category"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Select a category"
-          class="w-100 custom-select"
-        >
-        </p-select>
-        <small
-          class="text-danger"
-          *ngIf="feedbackForm.get('category')?.invalid && feedbackForm.get('category')?.touched"
-        >
-          Please select a category.
-        </small>
+    <!-- ── ENCRYPTION ── -->
+    <section class="encryption-section">
+      <div class="encryption-banner">
+        <div class="enc-glow"></div>
+        <div class="enc-header">
+          <span class="enc-badge">
+            <i class="fa-solid fa-shield-halved"></i>&nbsp;End-to-End Encryption
+          </span>
+        </div>
+        <h2 class="enc-title">Your secrets are safe in the cosmos.</h2>
+        <p class="enc-body">
+          Every diary entry you write is encrypted on your device before it ever leaves your
+          browser. Data travels from client to server fully encrypted — no one can read your
+          thoughts in transit.
+        </p>
+        <div class="enc-flow">
+          <div class="enc-node">
+            <div>
+              <i class="fa-solid fa-laptop enc-node-icon"></i>
+              <span class="enc-node-icon-div">/</span>
+              <i class="fa-solid fa-mobile-screen enc-node-icon"></i>
+            </div>
+            <span>Your Device</span>
+          </div>
+          <div class="enc-arrow">
+            <i class="fa-solid fa-lock enc-lock-icon"></i>
+            <span class="enc-arrow-line"></span>
+          </div>
+          <div class="enc-node">
+            <i class="fa-solid fa-server enc-node-icon"></i>
+            <span>Server</span>
+          </div>
+        </div>
+        <p class="enc-note">
+          <i class="fa-solid fa-circle-info me-1"></i>
+          The master key is securely held server-side. Your data is stored encrypted at rest,
+          keeping it safe even if the database were ever compromised.
+        </p>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="message" class="form-label">Your Thoughts</label>
-        <textarea
-          rows="5"
-          pTextarea
-          formControlName="message"
-          placeholder="Tell us what's on your mind..."
-          class="w-100 custom-textarea"
-        >
-        </textarea>
-        <small
-          class="text-danger"
-          *ngIf="feedbackForm.get('message')?.invalid && feedbackForm.get('message')?.touched"
-        >
-          Message is required (min 10 characters).
-        </small>
+    <!-- ── TECH STACK ── -->
+    <section class="tech-section">
+      <div class="section-header">
+        <i class="fa-solid fa-code section-header-icon"></i>
+        <h2 class="section-title">Tech Stack</h2>
       </div>
+      <p class="section-subtitle">Built with love and cutting-edge technology.</p>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-icon-wrap tech-icon--frontend">
+            <i class="fa-brands fa-angular"></i>
+          </div>
+          <h3 class="tech-name">Frontend</h3>
+          <ul class="tech-list">
+            <li>Angular 19</li>
+            <li>TypeScript</li>
+            <li>PrimeNG UI</li>
+            <li>Web Crypto API</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon-wrap tech-icon--backend">
+            <i class="fa-solid fa-server"></i>
+          </div>
+          <h3 class="tech-name">Backend</h3>
+          <ul class="tech-list">
+            <li>.NET Core</li>
+            <li>EF Core</li>
+            <li>RESTful API</li>
+            <li>JWT Auth</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon-wrap tech-icon--db">
+            <i class="fa-solid fa-database"></i>
+          </div>
+          <h3 class="tech-name">Database</h3>
+          <ul class="tech-list">
+            <li>MariaDB</li>
+            <li>Encrypted at rest</li>
+            <li>Relational schema</li>
+            <li>EF Migrations</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon-wrap tech-icon--security">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3 class="tech-name">Security</h3>
+          <ul class="tech-list">
+            <li>AES-GCM Encryption</li>
+            <li>Google OAuth 2.0</li>
+            <li>HTTPS everywhere</li>
+            <li>Sessions + CORS</li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-      <div class="text-center mt-3">
-        <p-button
-          label="Submit Feedback"
-          icon="fa-solid fa-rocket"
-          type="submit"
-          [disabled]="feedbackForm.invalid"
-          styleClass="astral-btn"
-        >
-        </p-button>
+    <!-- ── CREATOR ── -->
+    <section class="creator-section">
+      <div class="creator-card">
+        <div class="creator-glow"></div>
+        <div class="creator-avatar-ring">
+          <div class="creator-avatar">
+            <i class="fa-solid fa-user-astronaut avatar-icon"></i>
+          </div>
+        </div>
+        <div class="creator-info">
+          <span class="creator-eyebrow">Made with ☆ by</span>
+          <h2 class="creator-name">Jazz Espinosa</h2>
+          <p class="creator-bio">
+            A full-stack developer who believes software can be both functional and magical. Astral
+            Diary is a passion project — a place where tech meets tranquility among the stars.
+          </p>
+          <div class="creator-links">
+            <a
+              id="creator-github-link"
+              href="https://github.com/jazzespinosa"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="creator-link"
+              title="GitHub"
+            >
+              <i class="fa-brands fa-github"></i>
+              <span>GitHub</span>
+            </a>
+            <a
+              id="creator-linkedin-link"
+              href="https://linkedin.com/in/jazzespinosa"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="creator-link"
+              title="LinkedIn"
+            >
+              <i class="fa-brands fa-linkedin"></i>
+              <span>LinkedIn</span>
+            </a>
+            <a
+              id="creator-email-link"
+              href="mailto:hello@jazzespinosa.dev"
+              class="creator-link"
+              title="Email"
+            >
+              <i class="fa-solid fa-envelope"></i>
+              <span>Email</span>
+            </a>
+          </div>
+        </div>
       </div>
-    </form>
-  </section>
+    </section>
+
+    <!-- ── FEEDBACK ── -->
+    <section class="feedback-section">
+      <div class="section-header">
+        <i class="fa-solid fa-paper-plane section-header-icon"></i>
+        <h2 class="section-title">Share Your Thoughts</h2>
+      </div>
+      <p class="section-subtitle">Help us improve your journey through the stars.</p>
+
+      <div class="feedback-card">
+        <form
+          [formGroup]="feedbackForm"
+          (ngSubmit)="onSubmit()"
+          class="feedback-form"
+          id="feedback-form"
+        >
+          <div class="form-group">
+            <label for="category" class="form-label">
+              <i class="fa-solid fa-tag me-1"></i>Category
+            </label>
+            <p-select
+              inputId="category"
+              [options]="categories"
+              formControlName="category"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select a category"
+              class="w-100 astral-select"
+            >
+            </p-select>
+            <small
+              class="field-error"
+              *ngIf="feedbackForm.get('category')?.invalid && feedbackForm.get('category')?.touched"
+            >
+              Please select a category.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="message" class="form-label">
+              <i class="fa-solid fa-pen-nib me-1"></i>Your Thoughts
+            </label>
+            <textarea
+              id="message"
+              rows="5"
+              pTextarea
+              formControlName="message"
+              placeholder="Tell us what's on your mind..."
+              class="astral-textarea w-100"
+            >
+            </textarea>
+            <small
+              class="field-error"
+              *ngIf="feedbackForm.get('message')?.invalid && feedbackForm.get('message')?.touched"
+            >
+              Message is required (min 10 characters).
+            </small>
+          </div>
+
+          <div class="form-submit">
+            <p-button
+              id="submit-feedback-btn"
+              label="Send Feedback"
+              icon="fa-solid fa-rocket"
+              type="submit"
+              [disabled]="feedbackForm.invalid"
+              styleClass="astral-btn"
+            >
+            </p-button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── FOOTER NOTE ── -->
+    <footer class="about-footer">
+      <p>✦ Astral Diary &mdash; <em>Your celestial journal</em> ✦</p>
+    </footer>
+  </div>
+  <!-- /about-wrapper -->
 </div>
+<!-- /about-page -->

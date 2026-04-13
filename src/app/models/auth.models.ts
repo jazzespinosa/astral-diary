@@ -1,12 +1,14 @@
 export interface UserModel {
   email: string;
   name: string;
+  avatar: string | null;
 }
 
 export interface LoginResponseDto {
   userId: string;
   email: string;
   name: string;
+  avatar: string | null;
 }
 
 export interface SignUpResponseDto {

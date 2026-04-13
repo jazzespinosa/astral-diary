@@ -11,7 +11,6 @@ app-entry-content {
   left: 1.5rem;
   width: 2px;
   background: #ffb3b3;
-  pointer-events: none;
 }
 
 .paper-inner {

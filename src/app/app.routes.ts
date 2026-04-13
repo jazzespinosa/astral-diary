@@ -14,6 +14,8 @@ import { AuthComponent } from './pages/auth/auth.component';
 import { ViewEntryComponent } from './pages/entries/view-entry/view-entry.component';
 import { HomeSceneComponent } from './pages/home/home-scene/home-scene.component';
 import { EditEntryComponent } from './pages/entries/edit-entry/edit-entry.component';
+import { authChildGuard, authGuard, loginGuard } from './guards/auth.guard';
+import { pendingChangesGuard } from './guards/pending-changes.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -24,35 +26,33 @@ export const routes: Routes = [
   },
   {
     path: 'entry',
+    canActivateChild: [authChildGuard],
     children: [
       { path: '', redirectTo: 'search', pathMatch: 'full' },
       {
         path: 'view/:id',
         component: ViewEntryComponent,
-        // children: [
-        //   { path: '', redirectTo: 'search', pathMatch: 'full' },
-        //   // { path: 'edit', component: EditEntryComponent },
-        // ],
       },
       {
         path: 'edit/:id',
         component: EditEntryComponent,
+        canDeactivate: [pendingChangesGuard],
       },
-      { path: 'new', component: AddEntryComponent },
+      {
+        path: 'new',
+        component: AddEntryComponent,
+        canDeactivate: [pendingChangesGuard],
+      },
       { path: 'search', component: SearchEntryComponent },
       { path: 'drafts', component: DraftsComponent },
       { path: '**', redirectTo: 'search', pathMatch: 'full' },
     ],
   },
-  { path: 'calendar', component: CalendarComponent },
-  { path: 'account', component: AccountComponent },
+  { path: 'calendar', component: CalendarComponent, canActivate: [authGuard] },
+  { path: 'account', component: AccountComponent, canActivate: [authGuard] },
   { path: 'about', component: AboutComponent },
-  { path: 'auth', component: AuthComponent },
-  {
-    path: 'test',
-    component: TestComponent,
-    providers: [provideNgtRenderer()],
-  },
+  { path: 'auth', component: AuthComponent, canActivate: [loginGuard] },
+  { path: 'test', component: TestComponent },
   {
     path: 'test2',
     component: Test2Component,

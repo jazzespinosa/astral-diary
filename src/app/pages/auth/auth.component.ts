@@ -1,32 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
-import { ErrorMessageComponent } from 'app/shared/components/error-message/error-message.component';
-import { MessageService } from 'primeng/api';
+import { ErrorInputComponent } from 'app/shared/components/error-input/error-input.component';
 import { AuthService } from 'app/services/auth.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { AuthError } from 'app/models/auth.models';
+import { firstValueFrom } from 'rxjs';
 import { GeneralAppService } from 'app/services/general-app.service';
 
 @Component({
   selector: 'app-auth',
-  imports: [
-    ReactiveFormsModule,
-    CommonModule,
-    InputTextModule,
-    ButtonModule,
-    ErrorMessageComponent,
-  ],
+  imports: [ReactiveFormsModule, CommonModule, InputTextModule, ButtonModule, ErrorInputComponent],
   templateUrl: './auth.component.html',
   styleUrl: './auth.component.css',
 })
 export class AuthComponent {
   private appService = inject(GeneralAppService);
   private authService = inject(AuthService);
-  private destroyRef = inject(DestroyRef);
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
 
@@ -51,105 +42,62 @@ export class AuthComponent {
     });
   }
 
-  submitLogin() {
+  async submitLogin() {
     this.formSubmitted = true;
     this.isSubmitLoading.set(true);
 
     if (this.loginForm.invalid) {
-      this.appService.setToastMessage({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Form is invalid',
-      });
+      this.appService.setErrorToast('Form is invalid');
       this.isSubmitLoading.set(false);
       return;
     }
 
-    const loginData = this.loginForm.value;
-    this.authService
-      .login(loginData.email, loginData.password)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.appService.setToastMessage({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Login successful',
-          });
-          this.router.navigate(['/home']);
-        },
-        error: (err: AuthError) => {
-          this.isSubmitLoading.set(false);
-          this.appService.setToastMessage({
-            severity: 'error',
-            summary: 'Error',
-            detail: err.message,
-          });
-        },
-        complete: () => {
-          this.isSubmitLoading.set(false);
-        },
-      });
-
-    this.formSubmitted = false;
+    try {
+      const loginData = this.loginForm.value;
+      await firstValueFrom(this.authService.login(loginData.email, loginData.password));
+      this.appService.setSuccessToast('Login successful');
+      this.router.navigate(['/home']);
+    } catch (err: any) {
+      this.appService.setErrorToast(err.message || 'Login failed');
+    } finally {
+      this.isSubmitLoading.set(false);
+      this.formSubmitted = false;
+    }
   }
 
-  submitRegister() {
+  async submitRegister() {
     this.formSubmitted = true;
     this.isSubmitLoading.set(true);
 
     if (this.registerForm.invalid) {
-      this.appService.setToastMessage({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Form is invalid',
-      });
+      this.appService.setErrorToast('Form is invalid');
       this.isSubmitLoading.set(false);
       return;
     }
 
-    const registerData = this.registerForm.value;
-    this.authService
-      .register(registerData.name, registerData.email, registerData.password)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.appService.setToastMessage({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Verification email sent. Please verify your email to continue.',
-          });
-          this.router.navigate(['/auth/verify']);
-        },
-        error: (err: AuthError) => {
-          this.isSubmitLoading.set(false);
-          this.appService.setToastMessage({
-            severity: 'error',
-            summary: 'Error',
-            detail: err.message,
-          });
-        },
-        complete: () => {
-          this.isSubmitLoading.set(false);
-        },
-      });
-
-    this.formSubmitted = false;
+    try {
+      const registerData = this.registerForm.value;
+      await firstValueFrom(
+        this.authService.register(registerData.name, registerData.email, registerData.password),
+      );
+      this.appService.setSuccessToast(
+        'Verification email sent. Please verify your email to continue.',
+      );
+      this.router.navigate(['/auth/verify']);
+    } catch (err: any) {
+      this.appService.setErrorToast(err.message || 'Registration failed');
+    } finally {
+      this.isSubmitLoading.set(false);
+      this.formSubmitted = false;
+    }
   }
 
-  loginWithGoogle() {
-    this.authService
-      .loginGoogle()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        error: (err: any) => {
-          this.appService.setToastMessage({
-            severity: 'error',
-            summary: 'Error',
-            detail: err.message,
-          });
-        },
-      });
+  async loginWithGoogle() {
+    try {
+      await firstValueFrom(this.authService.loginGoogle());
+    } catch (err: any) {
+      this.appService.setErrorToast(err.message || 'Google login failed');
+    }
   }
 
   isInvalid(form: FormGroup, controlName: string) {

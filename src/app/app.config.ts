@@ -26,13 +26,24 @@ import { authInterceptor } from './interceptors/auth.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { CustomReuseStrategy } from './strategies/custom-reuse-strategy';
+import { timeoutInterceptor } from './interceptors/timeout.interceptor';
+import { timeOffsetInterceptor } from './interceptors/time-offset.interceptor';
+import { AstralPreset } from '../preset';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAppInitializer(initializeAuthFactory),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([
+        authInterceptor,
+        timeOffsetInterceptor,
+        timeoutInterceptor,
+        errorInterceptor,
+      ]),
+    ),
     provideRouter(routes),
     { provide: RouteReuseStrategy, useClass: CustomReuseStrategy },
     provideAnimationsAsync(),
@@ -40,7 +51,7 @@ export const appConfig: ApplicationConfig = {
     provideAuth(() => getAuth()),
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: AstralPreset,
       },
     }),
     MessageService,

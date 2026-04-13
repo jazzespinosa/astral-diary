@@ -12,13 +12,27 @@ app-search-entry {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
+.search-logo {
+  height: 3rem;
+  cursor: pointer;
+}
+
 .search-bar {
 }
 
 /* FILTERS */
 .filters {
   font-size: 0.8rem;
-  width: fit-content;
+  width: 100%;
+}
+
+.p-panel-content {
+  padding-bottom: 0.5rem !important;
+}
+
+.reset-filter {
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 /* DATEPICKER */
@@ -42,8 +56,7 @@ p-select.p-select p-overlay {
 }
 
 /* TEXT */
-.date-range span,
-.sort span {
+.filters span {
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -55,14 +68,6 @@ p-select.p-select p-overlay {
 }
 
 /* RESULTS */
-.p-card.p-component {
-  cursor: pointer;
-}
-
-.p-card.p-component .p-card-body {
-  gap: 0;
-}
-
 .results,
 .recents {
   scrollbar-width: thin;
@@ -74,11 +79,31 @@ p-select.p-select p-overlay {
   margin-bottom: 0 !important;
 }
 
+.cards-list.compact .results,
+.cards-list.compact .recents {
+  gap: 0.7rem !important;
+}
+
 @media (max-width: 768px) {
   :host,
   app-search-entry {
     height: calc(100vh - 4rem);
     padding: 0.75rem;
+  }
+
+  .filters {
+    background: #e0ebff8f;
+  }
+
+  .p-panel .p-panel-header,
+  .p-panel .p-panel-content {
+    padding: 0.5rem !important;
+  }
+
+  .p-panel .p-button {
+    background: #e0ebff8f !important;
+    height: 1.5rem !important;
+    width: 1.5rem !important;
   }
 
   .search-container {

@@ -1,19 +1,13 @@
 <div class="edit-entry-container">
-  @if (sourceId()) {
-    <app-entry
-      [parentComponent]="'edit-entry'"
-      [access]="access()"
-      [values]="values()"
-      [sourceId]="sourceId()"
-      [attachments]="attachments()"
-    />
+  @if (document()) {
+    <app-entry parentComponent="edit-entry" [access]="access()" [document]="document()" />
   } @else {
     @if (isLoading()) {
-      <div class="mt-3">
+      <div class="mt-4">
         <app-loading message="Getting entry" />
       </div>
     } @else {
-      <app-not-found />
+      <app-error-entry [errorCode]="errorCode()" />
     }
   }
 </div>

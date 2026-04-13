@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/astral-diary/browser",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",

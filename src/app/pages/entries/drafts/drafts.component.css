@@ -12,14 +12,6 @@ app-drafts {
   min-height: 15%;
 }
 
-.p-card.p-component {
-  cursor: pointer;
-}
-
-.p-card.p-component .p-card-body {
-  gap: 0;
-}
-
 .drafts-list {
   scrollbar-width: thin;
   padding-right: 0.1rem;

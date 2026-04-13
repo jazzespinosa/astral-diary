@@ -1,12 +1,11 @@
 import {
   Component,
-  computed,
   DestroyRef,
-  effect,
   HostListener,
   inject,
   OnInit,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { NavbarComponent } from './shared/layout/navbar/navbar.component';
 import { GeneralAppService } from './services/general-app.service';
@@ -16,15 +15,24 @@ import { BlurBackgroundComponent } from './shared/components/blur-background/blu
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
   selector: 'app-root',
-  imports: [NavbarComponent, RouterOutlet, CommonModule, BlurBackgroundComponent, ToastModule],
+  imports: [
+    NavbarComponent,
+    RouterOutlet,
+    CommonModule,
+    BlurBackgroundComponent,
+    ToastModule,
+    ConfirmDialogModule,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
+  encapsulation: ViewEncapsulation.None,
 })
 export class App implements OnInit {
-  private appService = inject(GeneralAppService);
+  private generalAppService = inject(GeneralAppService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 
@@ -32,11 +40,11 @@ export class App implements OnInit {
 
   @HostListener('window:resize')
   onResize() {
-    this.appService.setIsMobileView(window.innerWidth < 768);
+    this.generalAppService.setIsMobileView(window.innerWidth < 768);
   }
 
   ngOnInit(): void {
-    this.appService.setIsMobileView(window.innerWidth < 768);
+    this.generalAppService.setIsMobileView(window.innerWidth < 768);
 
     this.router.events
       .pipe(
@@ -45,7 +53,7 @@ export class App implements OnInit {
       )
       .subscribe((event: NavigationEnd) => {
         this.isLandingPage.set(event.urlAfterRedirects === '/');
-        this.appService.setActiveLink(event.urlAfterRedirects);
+        this.generalAppService.setActiveLink(event.urlAfterRedirects);
       });
   }
 }

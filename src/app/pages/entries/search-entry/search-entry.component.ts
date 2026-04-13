@@ -1,12 +1,9 @@
 import {
-  AfterViewInit,
   Component,
   computed,
-  DestroyRef,
   effect,
   inject,
   model,
-  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -14,31 +11,43 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardModule } from 'primeng/card';
 import { RadioButtonModule } from 'primeng/radiobutton';
-import {
-  FormBuilder,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { PanelModule } from 'primeng/panel';
 import { ApiClientService } from 'app/services/api-client.service';
 import {
   DateFilter,
+  DecryptedDocument,
   EntrySearchQueryParam,
-  GetEntryResponse,
-  GetSearchEntriesResponse,
+  PaginatedSearchResult,
   Sort,
 } from 'app/models/entry.models';
-import { ActivatedRoute, Router } from '@angular/router';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { AsyncPipe, DatePipe, formatDate } from '@angular/common';
-import { distinctUntilChanged, map, switchMap } from 'rxjs';
-import { GetImagePipe } from 'app/shared/pipes/get-image.pipe';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { formatDate } from '@angular/common';
 import { CardComponent } from 'app/shared/components/card/card.component';
 import { LoadingComponent } from 'app/shared/components/loading/loading.component';
+import { MOODS } from 'app/shared/components/mood-rating/mood-rating.component';
+import { firstValueFrom } from 'rxjs';
+import { SearchEntryService } from 'app/services/search-entry.service';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+
+const DATE_FILTER_OPTIONS = [
+  { label: 'Any', value: 'any' as DateFilter },
+  { label: 'Exact', value: 'exact' as DateFilter },
+  { label: 'Before', value: 'before' as DateFilter },
+  { label: 'After', value: 'after' as DateFilter },
+];
+
+const MOOD_FILTER_OPTIONS = [
+  { label: 'Any', value: null },
+  ...MOODS,
+  { label: 'Unrated', value: 0 },
+];
+
+const PAGE_ROWS = 20;
 
 @Component({
   selector: 'app-search-entry',
@@ -54,6 +63,9 @@ import { LoadingComponent } from 'app/shared/components/loading/loading.componen
     CardComponent,
     LoadingComponent,
     PaginatorModule,
+    RouterLink,
+    PanelModule,
+    ToggleSwitchModule,
   ],
   templateUrl: './search-entry.component.html',
   styleUrl: './search-entry.component.css',
@@ -62,9 +74,9 @@ import { LoadingComponent } from 'app/shared/components/loading/loading.componen
 export class SearchEntryComponent {
   private formBuilder = inject(FormBuilder);
   private apiClientService = inject(ApiClientService);
+  private searchEntryService = inject(SearchEntryService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private destroyRef = inject(DestroyRef);
 
   searchForm = this.formBuilder.group({
     searchValue: [''],
@@ -72,43 +84,55 @@ export class SearchEntryComponent {
 
   searchedValue = signal<string>('');
   searchLabel = computed(() => {
-    if (this.searchClicked()) {
-      if (this.searchedValue() === '') {
-        return 'Showing all entries';
+    if (this.searched()) {
+      const filter = this.queryParams().get('filter');
+      const mood = this.queryParams().get('mood');
+      if (
+        (!this.searchedValue() || this.searchedValue() === '') &&
+        (filter === 'any' || filter === null) &&
+        mood === null
+      ) {
+        return 'All entries';
       }
-      return `Showing search results for '${this.searchedValue()}'`;
+      return `Search results for "${this.searchedValue() ?? ''}"`;
     }
     return 'Recent Entries';
   });
 
+  displayFilterPanel = false;
+  compactView = model<boolean>(false);
   selectedSort = model<Sort>('desc');
-  dateFilterOptions = [
-    { label: 'Any', value: 'any' as DateFilter },
-    { label: 'Exact', value: 'exact' as DateFilter },
-    { label: 'Before', value: 'before' as DateFilter },
-    { label: 'After', value: 'after' as DateFilter },
-  ];
+  dateFilterOptions = DATE_FILTER_OPTIONS;
   selectedDateFilter = model<DateFilter>('any');
   selectedDate = model<Date>(new Date());
-  fullEntrySearchResult = signal<GetSearchEntriesResponse | null>(null);
-  entriesSearchResult = signal<GetEntryResponse[]>([]);
-  recentEntries = signal<GetEntryResponse[]>([]);
 
-  searchClicked = signal<boolean>(false);
+  moodFilterOptions = MOOD_FILTER_OPTIONS;
+  selectedMoodFilter = model<number | null>(null);
+
+  displaySearchResult = signal<PaginatedSearchResult>({
+    items: [],
+    page: 1,
+    pageSize: 20,
+    totalCount: 0,
+    totalPages: 0,
+  });
+  recentEntries = signal<DecryptedDocument[]>([]);
+
+  searched = signal<boolean>(false);
   isLoading = signal<boolean>(false);
 
   queryParams = toSignal(this.route.queryParamMap, {
     initialValue: this.route.snapshot.queryParamMap,
   });
-  currentPage = computed(() => {
-    const params = this.queryParams();
-    return Number(params.get('page') ?? 1);
-  });
+
+  currentPage = signal<number>(1);
   currentFirst = computed(() => {
     return (this.currentPage() - 1) * this.pageRows;
   });
-
-  pageRows: number = 20;
+  currentLast = computed(() => {
+    return this.currentFirst() + this.displaySearchResult().items.length;
+  });
+  readonly pageRows = PAGE_ROWS;
 
   constructor() {
     effect(() => {
@@ -116,21 +140,21 @@ export class SearchEntryComponent {
       const q = params.get('q');
       const filter = params.get('filter')?.toLowerCase() ?? null;
       const date = params.get('date') ?? null;
+      const mood = params.get('mood') ?? null;
       const sort = params.get('sort')?.toLowerCase() ?? null;
-      const page = params.get('page') ?? null;
 
-      if (!q && !filter && !date && !sort) {
-        this.searchClicked.set(false);
+      if (q === null && !filter && !date && !mood && !sort) {
+        this.searched.set(false);
+        this.searchForm.reset();
         this.getRecentEntries();
         return;
       }
 
       const validSort: Sort = this.isValidSort(sort) ? (sort as Sort) : 'desc';
 
-      const validPage = Number(page) > 0 ? Number(page) : 1;
-
       let validFilter: DateFilter;
       let validDate: string | null;
+      let validMood: number | null;
 
       if (this.isNonAnyDateFilter(filter)) {
         if (this.isValidDate(date)) {
@@ -145,6 +169,10 @@ export class SearchEntryComponent {
         validDate = null;
       }
 
+      if (mood === null) validMood = null;
+      else if (this.isValidMood(mood)) validMood = Number(mood);
+      else validMood = null;
+
       const corrections: Record<string, string | null> = {};
 
       if (filter !== null && filter !== validFilter) {
@@ -156,8 +184,8 @@ export class SearchEntryComponent {
       if (date !== null && date !== validDate) {
         corrections['date'] = validDate;
       }
-      if (page !== null && Number(page) !== validPage) {
-        corrections['page'] = validPage.toString();
+      if (mood !== null && mood !== validMood?.toString()) {
+        corrections['mood'] = null;
       }
 
       if (Object.keys(corrections).length > 0) {
@@ -169,9 +197,10 @@ export class SearchEntryComponent {
         return;
       }
 
-      this.searchClicked.set(true);
+      this.searched.set(true);
       this.selectedSort.set(validSort);
       this.selectedDateFilter.set(validFilter);
+      this.selectedMoodFilter.set(validMood);
       this.searchForm.get('searchValue')?.setValue(q);
       this.searchedValue.set(q!);
       if (validDate) {
@@ -182,14 +211,19 @@ export class SearchEntryComponent {
         q,
         filter: validFilter,
         date: validDate ? new Date(validDate) : null,
+        mood: validMood,
         sort: validSort,
-        page: validPage,
       });
     });
+
+    const compactView = localStorage.getItem('compactView');
+    if (compactView) {
+      this.compactView.set(compactView === 'true');
+    }
   }
 
   onSearchClicked() {
-    this.searchClicked.set(true);
+    this.searched.set(true);
 
     const searchValue = this.searchForm.value.searchValue;
     const filter = this.selectedDateFilter();
@@ -198,49 +232,69 @@ export class SearchEntryComponent {
         q: searchValue,
         filter: filter,
         date: filter !== 'any' ? this.formattedDate(this.selectedDate()) : null,
+        mood: this.selectedMoodFilter(),
         sort: this.selectedSort(),
-        page: 1,
         sid: crypto.randomUUID(), // Search ID to trigger search effect
       },
       queryParamsHandling: 'merge',
     });
   }
 
-  private searchEntries(params: EntrySearchQueryParam) {
+  private async searchEntries(params: EntrySearchQueryParam) {
     this.isLoading.set(true);
 
-    this.apiClientService
-      .getSearchEntries(params)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (entriesResponse) => {
-          this.isLoading.set(false);
-          this.fullEntrySearchResult.set(entriesResponse);
-          this.entriesSearchResult.set(entriesResponse.items);
-        },
-        error: (error) => {
-          this.isLoading.set(false);
-          console.error(error);
-        },
-      });
+    try {
+      const fullResult = await firstValueFrom(this.apiClientService.getSearchEntries(params));
+      this.searchEntryService.setFullSearchResult(fullResult);
+
+      const processedResult = this.processSearchResult(params.q, 1);
+      this.currentPage.set(1);
+      this.displaySearchResult.set(processedResult);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (this.selectedDateFilter() === 'any' && this.selectedMoodFilter() === null) {
+        this.displayFilterPanel = false;
+      } else {
+        this.displayFilterPanel = true;
+      }
+      this.isLoading.set(false);
+    }
   }
 
-  private getRecentEntries() {
+  onPageChange(event: PaginatorState, results: Element) {
+    const page = Math.floor((event.first ?? 0) / (event.rows ?? 20)) + 1;
+    const processedResult = this.processSearchResult(this.searchedValue(), page);
+    this.displaySearchResult.set(processedResult);
+    this.currentPage.set(page);
+    results.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }
+
+  private processSearchResult(q: string | null, page: number): PaginatedSearchResult {
+    const filteredResult = this.searchEntryService.clientSideSearch(q);
+    const paginatedResult = this.searchEntryService.paginateResult(
+      filteredResult,
+      page,
+      this.pageRows,
+    );
+
+    return paginatedResult;
+  }
+
+  private async getRecentEntries() {
     this.isLoading.set(true);
 
-    this.apiClientService
-      .getRecentEntries()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (entriesResponse) => {
-          this.isLoading.set(false);
-          this.recentEntries.set(entriesResponse);
-        },
-        error: (error) => {
-          this.isLoading.set(false);
-          console.error(error);
-        },
-      });
+    try {
+      const entriesResponse = await firstValueFrom(this.apiClientService.getRecentEntries());
+      this.recentEntries.set(entriesResponse);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   private isNonAnyDateFilter(value: string | null): boolean {
@@ -254,6 +308,10 @@ export class SearchEntryComponent {
     return /^(19[0-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/.test(value); // 1900-2099
   }
 
+  private isValidMood(value: string): boolean {
+    return /^[0-5]$/.test(value); // 0-5
+  }
+
   private isValidSort(value: string | null): boolean {
     if (!value) return false;
     return ['asc', 'desc'].includes(value as Sort);
@@ -263,14 +321,14 @@ export class SearchEntryComponent {
     return formatDate(date, 'yyyy-MM-dd', 'en-US');
   }
 
-  onPageChange(event: PaginatorState) {
-    const page = Math.floor((event.first ?? 0) / (event.rows ?? 20)) + 1;
-    this.router.navigate(['entry/search'], {
-      queryParams: {
-        page: page,
-        sid: crypto.randomUUID(),
-      },
-      queryParamsHandling: 'merge',
-    });
+  resetFilters() {
+    this.selectedMoodFilter.set(null);
+    this.selectedDateFilter.set('any');
+    this.selectedDate.set(new Date());
+    this.selectedSort.set('desc');
+  }
+
+  onCompactViewChange() {
+    localStorage.setItem('compactView', this.compactView().toString());
   }
 }

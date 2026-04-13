@@ -3,26 +3,28 @@ import {
   Component,
   computed,
   DestroyRef,
-  effect,
   ElementRef,
   inject,
   input,
   OnInit,
   output,
-  Signal,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePickerModule } from 'primeng/datepicker';
-import { EntryAccess, EntryParentComponentInput, EntryValues } from 'app/models/entry.models';
-import { EntryService } from 'app/services/entry.service';
-import { ErrorMessageComponent } from '../../error-message/error-message.component';
+import {
+  EntryAccess,
+  EntryParentComponentInput,
+  EntryValuesDefault,
+} from 'app/models/entry.models';
+import { ErrorInputComponent } from '../../error-input/error-input.component';
 import { InputTextModule } from 'primeng/inputtext';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs/operators';
 import { MoodRatingComponent } from '../../mood-rating/mood-rating.component';
+import { EntryService } from 'app/services/entry.service';
 
 @Component({
   selector: 'app-entry-content',
@@ -31,7 +33,7 @@ import { MoodRatingComponent } from '../../mood-rating/mood-rating.component';
     ReactiveFormsModule,
     DatePickerModule,
     InputTextModule,
-    ErrorMessageComponent,
+    ErrorInputComponent,
     MoodRatingComponent,
   ],
   templateUrl: './entry-content.component.html',
@@ -39,25 +41,25 @@ import { MoodRatingComponent } from '../../mood-rating/mood-rating.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class EntryContentComponent implements OnInit, AfterViewInit {
-  private entryService = inject(EntryService);
   private formBuilder = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private entryService = inject(EntryService);
 
   sourceId = input.required<string | null>();
   access = input.required<EntryAccess>();
-  values = input.required<EntryValues>();
+  values = input.required<EntryValuesDefault>();
   isParentFullEntryPage = input.required<boolean>();
-
-  parentComponent = input.required<EntryParentComponentInput>();
   paperTransitionState = input.required<'hidden' | 'flying' | 'zoomin'>();
   isEntryPaperExpanded = input.required<boolean>();
+  isFormSubmitted = input.required<boolean>();
 
   formValuesChange = output<FormGroup>();
-  moodChange = output<number | null>();
+  moodChange = output<number>();
   closeEntry = output<void>();
 
   form!: FormGroup;
 
+  idType = computed(() => this.entryService.getIdType(this.sourceId() ?? ''));
   placeholder = computed(() =>
     this.access() === 'new' ? 'Start writing your thoughts here...' : '',
   );
@@ -66,8 +68,6 @@ export class EntryContentComponent implements OnInit, AfterViewInit {
   measuringSpan = viewChild.required<ElementRef<HTMLSpanElement>>('measuringSpan');
   paperInnerRef = viewChild.required<ElementRef<HTMLDivElement>>('paperInnerRef');
   contentRef = viewChild.required<ElementRef<HTMLTextAreaElement>>('contentRef');
-
-  constructor() {}
 
   ngOnInit() {
     switch (this.access()) {
@@ -120,7 +120,7 @@ export class EntryContentComponent implements OnInit, AfterViewInit {
     }
   }
 
-  onMoodChange(mood: number | null) {
+  onMoodChange(mood: number) {
     this.moodChange.emit(mood);
   }
 
@@ -152,7 +152,7 @@ export class EntryContentComponent implements OnInit, AfterViewInit {
 
   isInvalid(form: FormGroup, controlName: string) {
     const control = form.get(controlName);
-    return control?.invalid && (control.touched || this.entryService.formSubmitted());
+    return control?.invalid && (control.touched || this.isFormSubmitted());
   }
 
   onCloseEntry() {

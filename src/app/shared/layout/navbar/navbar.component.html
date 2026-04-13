@@ -7,27 +7,33 @@
   >
     <i class="fa-solid fa-bars"></i>
   </button>
-  <i class="fa-solid fa-user-astronaut" (click)="menu.toggle($event)" role="button"></i>
+  <div class="navbar-avatar" (click)="menu.toggle($event)" role="button">
+    @if (displayedAvatar()) {
+      <img [src]="displayedAvatar()" alt="" />
+    } @else {
+      <i class="fa-solid fa-user-astronaut"></i>
+    }
+  </div>
   <p-menu
     #menu
     [model]="items()"
     popup="true"
     class="d-flex justify-content-center position-absolute top-0"
-    styleClass="w-full md:w-60"
   >
     <ng-template #start>
-      <div class="d-flex flex-row gap-1 px-2 py-2">
-        <i class="fa-solid fa-moon" style="color: rgba(116, 192, 252, 1)"></i>
-        <span class="text-xl font-semibold">Astral Diary</span>
+      <div class="d-flex flex-row align-items-center gap-2 p-2">
+        <!-- <i class="fa-solid fa-moon" style="color: rgba(116, 192, 252, 1)"></i> -->
+        <img src="AD-logo-simple.png" alt="" class="menu-logo" />
+        <span class="menu-title">Astral Diary</span>
       </div>
     </ng-template>
     <ng-template #submenuheader let-item>
       <span class="text-primary font-bold">{{ item.label }}</span>
     </ng-template>
     <ng-template #item let-item>
-      <a pRipple class="flex items-center p-menu-item-link">
+      <a class="flex items-center p-menu-item-link">
         <span [class]="item.icon"></span>
-        <span class="ml-2">{{ item.label }}</span>
+        <span>{{ item.label }}</span>
       </a>
     </ng-template>
     <ng-template #end>
@@ -36,7 +42,7 @@
         <p-toggleswitch
           [(ngModel)]="checked"
           size="small"
-          (onChange)="appService.setIsBackgroundMilkyWay(!appService.isBackgroundMilkyWay())"
+          (onChange)="setIsBackgroundMilkyWay(!isBackgroundMilkyWay())"
         />
       </div>
     </ng-template>
@@ -45,27 +51,33 @@
 <!-- OFFCANVAS -->
 <div
   class="offcanvas offcanvas-start d-flex flex-column position-fixed py-3 px-2 align-items-center gap-4"
-  [ngClass]="[appService.isBackgroundMilkyWay() ? 'bg-milky-way' : 'bg-fantasy-blue']"
+  [ngClass]="[isBackgroundMilkyWay() ? 'bg-milky-way' : 'bg-fantasy-blue']"
   data-bs-scroll="true"
   tabindex="-1"
   id="offcanvasWithBothOptions"
   aria-labelledby="offcanvasWithBothOptionsLabel"
 >
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">ASTRAL DIARY</h5>
+    <img
+      src="AD-logo-full.png"
+      alt=""
+      class="navbar-logo"
+      [routerLink]="['home']"
+      data-bs-dismiss="offcanvas"
+    />
   </div>
   <div class="offcanvas-body">
     <div class="list-group">
       <a
         class="list-group-item"
         [routerLink]="['/home']"
-        [ngClass]="{ active: appService.activeLink() === '/home' }"
+        [ngClass]="{ active: activeLink() === '/home' }"
         data-bs-dismiss="offcanvas"
         ><i class="fa-solid fa-house-chimney me-2"></i>Home</a
       >
       <a
         class="list-group-item"
-        [ngClass]="{ active: appService.activeLink().startsWith('/entry') }"
+        [ngClass]="{ active: activeLink().startsWith('/entry') }"
         id="collapseEntryParent"
         href="#collapseEntry"
         data-bs-toggle="collapse"
@@ -84,8 +96,7 @@
             class="list-group-item"
             [ngClass]="{
               active:
-                appService.activeLink().startsWith('/entry/search') ||
-                appService.activeLink().startsWith('/entry/view'),
+                activeLink().startsWith('/entry/search') || activeLink().startsWith('/entry/view'),
             }"
             [routerLink]="['/entry/search']"
             data-bs-dismiss="offcanvas"
@@ -95,7 +106,7 @@
           </li>
           <li
             class="list-group-item"
-            [ngClass]="{ active: appService.activeLink().startsWith('/entry/new') }"
+            [ngClass]="{ active: activeLink().startsWith('/entry/new') }"
             [routerLink]="['entry/new']"
             data-bs-dismiss="offcanvas"
           >
@@ -105,7 +116,7 @@
           <li
             class="list-group-item"
             [routerLink]="['entry/drafts']"
-            [ngClass]="{ active: appService.activeLink().startsWith('/entry/drafts') }"
+            [ngClass]="{ active: activeLink().startsWith('/entry/drafts') }"
             data-bs-dismiss="offcanvas"
           >
             <i class="fa-regular fa-pen-to-square me-2"></i>
@@ -116,38 +127,38 @@
       <a
         class="list-group-item"
         [routerLink]="['/calendar']"
-        [ngClass]="{ active: appService.activeLink() === '/calendar' }"
+        [ngClass]="{ active: activeLink() === '/calendar' }"
         data-bs-dismiss="offcanvas"
         ><i class="fa-solid fa-calendar-days me-2"></i>Calendar</a
       >
       <a
         class="list-group-item"
         [routerLink]="['/account']"
-        [ngClass]="{ active: appService.activeLink() === '/account' }"
+        [ngClass]="{ active: activeLink() === '/account' }"
         data-bs-dismiss="offcanvas"
         ><i class="fa-solid fa-user me-2"></i>Account</a
       >
       <a
         class="list-group-item"
         [routerLink]="['/about']"
-        [ngClass]="{ active: appService.activeLink() === '/about' }"
+        [ngClass]="{ active: activeLink() === '/about' }"
         data-bs-dismiss="offcanvas"
         ><i class="fa-solid fa-circle-info me-2"></i>About</a
       >
-      <a
+      <!-- <a
         class="list-group-item"
         [routerLink]="['/test']"
         [ngClass]="{ active: appService.activeLink() === '/test' }"
         data-bs-dismiss="offcanvas"
         >Test</a
-      >
-      <a
+      > -->
+      <!-- <a
         class="list-group-item"
         [routerLink]="['/test2']"
         [ngClass]="{ active: appService.activeLink() === '/test2' }"
         data-bs-dismiss="offcanvas"
         >Test2</a
-      >
+      > -->
     </div>
   </div>
   <div class="offcanvas-footer w-100 d-flex align-items-center justify-content-center">
@@ -156,7 +167,7 @@
       class="new-entry-button w-75"
       label="New Entry"
       icon="fa-solid fa-plus"
-      [rounded]="true"
+      rounded="true"
       [routerLink]="['entry/new']"
       data-bs-dismiss="offcanvas"
     ></button>

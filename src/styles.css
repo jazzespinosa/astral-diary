@@ -2,10 +2,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Parisienne&display=swap');
 @import '../node_modules/angular-calendar/css/angular-calendar.css';
 
-/* OFFCANVAS */
-.offcanvas-backdrop {
-  opacity: 0 !important;
-  background-color: transparent !important;
+:root {
+  --mood-1: 255, 116, 108; /*pastel red */
+  --mood-2: 255, 192, 103; /*pastel orange */
+  --mood-3: 255, 238, 140; /*pastel yellow */
+  --mood-4: 128, 239, 128; /* pastel green */
+  --mood-5: 179, 235, 242; /*pastel blue */
+
+  --p-tooltip-max-width: 90vw !important;
 }
 
 .google-icon {
@@ -13,23 +17,22 @@
   height: 1.5rem;
 }
 
+/* MOOD LEVEL COLORS */
+.mood-level-1 {
+  background: rgba(var(--mood-1), var(--shade, 1)) !important;
+}
+.mood-level-2 {
+  background: rgba(var(--mood-2), var(--shade, 1)) !important;
+}
+.mood-level-3 {
+  background: rgba(var(--mood-3), var(--shade, 1)) !important;
+}
+.mood-level-4 {
+  background: rgba(var(--mood-4), var(--shade, 1)) !important;
+}
+.mood-level-5 {
+  background: rgba(var(--mood-5), var(--shade, 1)) !important;
+}
+
 @media (max-width: 768px) {
-  /* CARD IN DRAFTS & SEARCH PAGE */
-  .p-card-body {
-    padding: 1rem !important;
-    gap: 0 !important;
-  }
-
-  .p-card-title {
-    font-size: 1rem !important;
-  }
-
-  .p-card-subtitle {
-    font-size: 1rem !important;
-  }
-
-  .p-card-content {
-    font-size: 0.9rem !important;
-    margin-top: 0.5rem !important;
-  }
 }

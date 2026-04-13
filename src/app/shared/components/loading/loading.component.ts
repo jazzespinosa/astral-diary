@@ -7,5 +7,5 @@ import { Component, input } from '@angular/core';
   styleUrl: './loading.component.css',
 })
 export class LoadingComponent {
-  message = input<string>('Loading...');
+  message = input<string>('');
 }

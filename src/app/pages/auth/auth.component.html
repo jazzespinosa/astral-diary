@@ -19,10 +19,10 @@
           </div>
           @if (isInvalid(loginForm, 'email')) {
             @if (loginForm.get('email')?.errors?.['required']) {
-              <app-error-message message="Email is required." />
+              <app-error-input message="Email is required." />
             }
             @if (loginForm.get('email')?.errors?.['email']) {
-              <app-error-message message="Please enter a valid email." />
+              <app-error-input message="Please enter a valid email." />
             }
           }
         </div>
@@ -46,10 +46,10 @@
           </div>
           @if (isInvalid(loginForm, 'password')) {
             @if (loginForm.get('password')?.errors?.['required']) {
-              <app-error-message message="Password is required." />
+              <app-error-input message="Password is required." />
             }
             @if (loginForm.get('password')?.errors?.['minlength']) {
-              <app-error-message message="Password needs 8 characters minimum." />
+              <app-error-input message="Password needs 8 characters minimum." />
             }
           }
         </div>
@@ -76,10 +76,10 @@
           </div>
           @if (isInvalid(registerForm, 'name')) {
             @if (registerForm.get('name')?.errors?.['required']) {
-              <app-error-message message="Name is required." />
+              <app-error-input message="Name is required." />
             }
             @if (registerForm.get('name')?.errors?.['minlength']) {
-              <app-error-message message="Name needs 3 characters minimum." />
+              <app-error-input message="Name needs 3 characters minimum." />
             }
           }
         </div>
@@ -90,10 +90,10 @@
           </div>
           @if (isInvalid(registerForm, 'email')) {
             @if (registerForm.get('email')?.errors?.['required']) {
-              <app-error-message message="Email is required." />
+              <app-error-input message="Email is required." />
             }
             @if (registerForm.get('email')?.errors?.['email']) {
-              <app-error-message message="Please enter a valid email." />
+              <app-error-input message="Please enter a valid email." />
             }
           }
         </div>
@@ -116,10 +116,10 @@
           </div>
           @if (isInvalid(registerForm, 'password')) {
             @if (registerForm.get('password')?.errors?.['required']) {
-              <app-error-message message="Password is required." />
+              <app-error-input message="Password is required." />
             }
             @if (registerForm.get('password')?.errors?.['minlength']) {
-              <app-error-message message="Password needs 8 characters minimum." />
+              <app-error-input message="Password needs 8 characters minimum." />
             }
           }
         </div>

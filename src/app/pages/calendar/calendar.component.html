@@ -1,26 +1,33 @@
 <div class="calendar-container container d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden">
-  <h3 class="">Calendar</h3>
-  <h4 class="m-0 align-self-end">
-    <!-- CHANGE TO MONTH DATE PICKER -->
-    {{ todayDate() | calendarDate: CalendarView.Month + 'ViewTitle' : 'en' }}
-  </h4>
+  <!-- <h3 class="">Calendar</h3> -->
+  <div class="calendar-month-picker m-0 align-self-end">
+    <p-datepicker
+      [(ngModel)]="displayMonth"
+      view="month"
+      dateFormat="MM yy"
+      readonlyInput="true"
+      showIcon="true"
+      iconDisplay="input"
+      autofocus="false"
+    />
+  </div>
   <div class="d-flex gap-1 align-self-end">
     <button
       mwlCalendarPreviousView
-      [view]="CalendarView.Month"
-      [(viewDate)]="todayDate"
+      view="month"
+      [(viewDate)]="displayMonth"
       class="prev-btn rounded-3 border-0"
       (click)="clearSelectedDay()"
     >
       <i class="fa-solid fa-chevron-left"></i>
     </button>
-    <button mwlCalendarToday [(viewDate)]="todayDate" class="rounded border-0">
+    <button mwlCalendarToday [(viewDate)]="displayMonth" class="rounded border-0">
       <i class="fa-solid fa-calendar-day"></i>
     </button>
     <button
       mwlCalendarNextView
-      [view]="CalendarView.Month"
-      [(viewDate)]="todayDate"
+      view="month"
+      [(viewDate)]="displayMonth"
       class="next-btn rounded-3 border-0"
       (click)="clearSelectedDay()"
     >
@@ -28,35 +35,40 @@
     </button>
   </div>
   <mwl-calendar-month-view
-    [headerTemplate]="generalAppService.isMobileView() ? headerTemplateMobile : headerTemplate"
+    [headerTemplate]="headerTemplate"
     [cellTemplate]="customCellTemplate"
-    [viewDate]="todayDate()"
+    [viewDate]="displayMonth()"
     (dayClicked)="dayClicked($event.day)"
     (beforeViewRender)="beforeMonthViewRender($event)"
     [events]="events()"
     [refresh]="refresh"
   />
-  @if (selectedMonthViewDay()) {
-    <section class="bg-secondary rounded-2 p-2 overflow-y-auto">
+  @if (selectedDate()) {
+    <section class="entries-list-container rounded-3 p-2 overflow-y-auto">
       <div class="d-flex flex-column gap-1">
         @if (selectedCalendarDateEntries().length > 0) {
           <div class="d-flex flex-row justify-content-between">
             <div class="d-flex flex-row gap-1">
               <div>Entries</div>
-              <div>({{ selectedCalendarDateEntries().length }})</div>
+              <div class="text-muted">({{ selectedCalendarDateEntries().length }})</div>
             </div>
-            <div>{{ selectedMonthViewDay()?.date | date: 'mediumDate' }}</div>
+            <div>{{ selectedDate() | date: 'mediumDate' }}</div>
           </div>
           <hr class="border-top border-2 border-black m-0" />
-          <div class="entries-list">
+          <div class="entries-list d-flex flex-column gap-1">
             @for (entry of selectedCalendarDateEntries(); track $index) {
               <div
-                class="entry d-flex flex-row justify-content-between rounded-1"
+                class="entry d-flex flex-row justify-content-between rounded-3"
                 [class.selected]="entry === selectedEntry()"
                 (click)="entryClicked(entry)"
               >
-                <div class="entry-title align-content-center m-2">{{ entry.title }}</div>
-                <div class="m-2 d-flex flex-row align-items-center">
+                <div class="entry-title align-content-center m-2">
+                  @if (entry.meta.mood) {
+                    <span class="cal-badge-dot" [ngClass]="'mood-level-' + entry.meta.mood"></span>
+                  }
+                  {{ entry.title }}
+                </div>
+                <div class="action-icons m-2 d-flex flex-row align-items-center">
                   <i class="fa-solid fa-file m-2" role="button" (click)="viewEntry(entry)"></i>
                   <i class="fa-solid fa-pencil m-2" role="button" (click)="editEntry(entry)"></i>
                   <i class="fa-solid fa-trash m-2" role="button" (click)="deleteEntry(entry)"></i>
@@ -75,52 +87,37 @@
 @if (generalAppService.isEntryOpen()) {
   <div class="calendar-entry-container">
     <app-entry
-      [parentComponent]="'calendar'"
+      parentComponent="calendar"
       [access]="access()"
-      [values]="values()"
-      [sourceId]="sourceId()"
-      [attachments]="attachments()"
+      [document]="document()"
+      [customDate]="selectedDate()"
     />
   </div>
 }
 
 <!-- CALENDAR HEADERS -->
-<ng-template #headerTemplateMobile>
-  <div role="row" class="cal-cell-row cal-header">
-    <div tabindex="0" role="columnheader" class="cal-cell cal-past cal-weekend">Sun</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Mon</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Tue</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-today">Wed</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Thu</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Fri</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-future cal-weekend">Sat</div>
-  </div>
-</ng-template>
 <ng-template #headerTemplate>
   <div role="row" class="cal-cell-row cal-header">
-    <div tabindex="0" role="columnheader" class="cal-cell cal-past cal-weekend">Sunday</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Monday</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-past">Tuesday</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-today">Wednesday</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Thursday</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-future">Friday</div>
-    <div tabindex="0" role="columnheader" class="cal-cell cal-future cal-weekend">Saturday</div>
+    <div class="cal-cell" header-short="Sun">Sunday</div>
+    <div class="cal-cell" header-short="Mon">Monday</div>
+    <div class="cal-cell" header-short="Tue">Tuesday</div>
+    <div class="cal-cell" header-short="Wed">Wednesday</div>
+    <div class="cal-cell" header-short="Thu">Thursday</div>
+    <div class="cal-cell" header-short="Fri">Friday</div>
+    <div class="cal-cell" header-short="Sat">Saturday</div>
   </div>
 </ng-template>
 
 <!-- CALENDAR CELL -->
 <ng-template #customCellTemplate let-day="day" let-locale="locale">
   <div class="cal-cell-top">
-    <span class="cal-day-number">{{ day.date | calendarDate: 'monthViewDayNumber' : locale }}</span>
+    <span class="cal-day-number">{{ day.date | calendarDate: 'monthViewDayNumber' : 'en' }}</span>
   </div>
   @if (generalAppService.isMobileView()) {
     <div
       class="cal-add-button-container position-absolute bottom-0 start-0 w-100 d-flex flex-row align-items-center justify-content-around overflow-hidden"
       [class.show]="day.cssClass === 'cal-day-selected'"
     >
-      <!-- @if (day.badgeTotal > 0) {
-        <i class="fa-solid fa-file"></i>
-      } -->
       <i (click)="addEntry(day)" role="button" class="fa-solid fa-circle-plus"></i>
     </div>
   } @else {
@@ -136,4 +133,3 @@
     <span class="cal-day-badge">{{ day.badgeTotal }}</span>
   }
 </ng-template>
-<p-confirmdialog styleClass="confirm-delete-dialog" draggable="false" />

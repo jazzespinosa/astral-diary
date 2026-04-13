@@ -1,8 +1,10 @@
-<div class="d-flex flex-column align-items-center my-3">
+<div class="d-flex flex-column align-items-center mb-3">
   @if (access() !== 'view') {
-    <span>How are you feeling?</span>
+    <span
+      >How are you feeling?&ensp;<span class="text-muted">{{ label() }}</span></span
+    >
   }
-  <div class="d-flex flex-row align-items-center gap-2">
+  <div class="mood-btn-container d-flex flex-row align-items-center">
     @for (mood of moods; track mood.value) {
       <button
         class="mood-btn"
@@ -24,7 +26,4 @@
       </button>
     }
   </div>
-  @if (access() !== 'view') {
-    <span class="text-muted">{{ label() }}</span>
-  }
 </div>

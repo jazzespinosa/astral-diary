@@ -1,26 +1,28 @@
-<p-card
-  subheader="{{ normalizedEntry().date | date: 'longDate' }}"
-  (click)="onEntryClick(normalizedEntry())"
->
-  <ng-template pTemplate="title">
-    @if (normalizedEntry().title) {
-      {{ normalizedEntry().title }}
-    } @else {
-      <span style="font-style: italic; font-weight: 400">(No Title)</span>
-    }
-  </ng-template>
-  <p class="result-p-card-content mt-3 mb-0">
-    {{ normalizedEntry().content }}
-  </p>
-  @if (normalizedEntry().attachments !== null && normalizedEntry().attachments!.length > 0) {
-    <div class="attachments mt-3">
-      @for (attachment of entry().attachments; track $index) {
-        <img
-          [src]="normalizedEntry().id | getImage: attachment.internalFileName | async"
-          [alt]="attachment.internalFileName"
-          class="attachment-thumbnail me-2"
-        />
+<div class="card-container" [class.compact]="compactView()">
+  <p-card
+    subheader="{{ document().date | date: 'longDate' }}"
+    (click)="onItemClick(document())"
+    [ngClass]="document().mood ? 'mood-level-' + document().mood : ''"
+  >
+    <ng-template pTemplate="title">
+      <div class="d-flex flex-row align-items-center">
+        @if (document().mood) {
+          <span class="card-badge-dot" [ngClass]="'mood-level-' + document().mood"></span>
+        }
+        @if (document().title) {
+          <span class="card-title-text">{{ document().title }}</span>
+        } @else {
+          <span style="font-style: italic; font-weight: 400">(No Title)</span>
+        }
+      </div>
+    </ng-template>
+    @if (!compactView()) {
+      <p class="result-p-card-content mt-3 mb-0">
+        {{ document().content }}
+      </p>
+      @if (thumbnails() !== null && thumbnails().length > 0) {
+        <app-thumbnail-viewer [thumbnails]="thumbnails()" [imageWidth]="50"></app-thumbnail-viewer>
       }
-    </div>
-  }
-</p-card>
+    }
+  </p-card>
+</div>

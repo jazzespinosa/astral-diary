@@ -3,11 +3,11 @@
     <!-- Profile Header -->
     <section class="profile-header text-center py-3">
       <div class="avatar-ring mx-auto mb-3">
-        <div class="avatar-placeholder" (click)="onAvatarClick()">
+        <div class="avatar-placeholder" (click)="onHeaderAvatarClick()">
           @if (displayedAvatar()) {
             <img [src]="displayedAvatar()" alt="" />
           } @else {
-            <i class="fa-solid fa-user fa-xl"></i>
+            <i class="fa-solid fa-user-astronaut fa-xl"></i>
           }
         </div>
       </div>
@@ -20,11 +20,7 @@
     <section class="stats-section">
       <h5 class="section-label"><i class="fa-solid fa-chart-simple me-2"></i>Your Journey</h5>
       <div class="stats-grid">
-        <div
-          class="stat-card"
-          [routerLink]="['/entry/search']"
-          [queryParams]="{ q: '', filter: 'any' }"
-        >
+        <div class="stat-card" (click)="onTotalEntriesClick()">
           <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
           <div class="stat-value">{{ userInfo()?.totalEntries ?? '—' }}</div>
           <div class="stat-label">Total Entries</div>
@@ -41,7 +37,7 @@
           </div>
           <div class="stat-label">Latest Saved Entry</div>
         </div>
-        <div class="stat-card streak-card" [routerLink]="'/calendar'">
+        <div class="stat-card streak-card" (click)="onCurrentStreakClick()">
           <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
           <div class="stat-value">{{ userInfo()?.currentStreak ?? '0' }} days</div>
           <div class="stat-label">Current Streak</div>
@@ -51,7 +47,24 @@
 
     <!-- Heatmap -->
     <section class="heatmap-section p-3 rounded-3">
-      <h5 class="section-label mb-3"><i class="fa-solid fa-calendar-days me-2"></i>Mood Heatmap</h5>
+      <div class="heatmap-header">
+        <h5 class="section-label mb-3">
+          <i class="fa-solid fa-calendar-days me-2"></i>Mood Heatmap
+        </h5>
+        <div class="heatmap-year">
+          <i
+            class="fa-solid fa-angle-left"
+            role="button"
+            (click)="onChangeYear(displayYear() - 1)"
+          ></i>
+          <span>{{ displayYear() }}</span>
+          <i
+            class="fa-solid fa-angle-right"
+            role="button"
+            (click)="onChangeYear(displayYear() + 1)"
+          ></i>
+        </div>
+      </div>
       <div class="heatmap-scroll">
         <div class="heatmap-content-wrapper">
           <div class="heatmap-months">
@@ -61,19 +74,24 @@
           </div>
           <div class="heatmap-grid">
             @for (day of heatmapDays(); track day.date) {
-              <div class="heatmap-cell" [class]="'level-' + day.level" [title]="day.date"></div>
+              <div
+                class="heatmap-cell"
+                [class]="'mood-level-' + day.level"
+                [title]="day.date"
+                (click)="onHeatMapCellClick(day)"
+              ></div>
             }
           </div>
         </div>
       </div>
       <div class="heatmap-legend mt-2">
-        <span class="legend-label">Sad</span>
-        <div class="legend-cell level-1"></div>
-        <div class="legend-cell level-2"></div>
-        <div class="legend-cell level-3"></div>
-        <div class="legend-cell level-4"></div>
-        <div class="legend-cell level-5"></div>
-        <span class="legend-label">Happy</span>
+        <span class="legend-label">Awful</span>
+        <div class="legend-cell mood-level-1" title="Awful" (click)="onMoodLegendClick(1)"></div>
+        <div class="legend-cell mood-level-2" title="Bad" (click)="onMoodLegendClick(2)"></div>
+        <div class="legend-cell mood-level-3" title="Okay" (click)="onMoodLegendClick(3)"></div>
+        <div class="legend-cell mood-level-4" title="Good" (click)="onMoodLegendClick(4)"></div>
+        <div class="legend-cell mood-level-5" title="Great" (click)="onMoodLegendClick(5)"></div>
+        <span class="legend-label">Great</span>
       </div>
     </section>
 
@@ -89,31 +107,94 @@
       <p-button
         label="Logout"
         icon="fa-solid fa-right-from-bracket"
-        styleClass="logout-btn"
-        severity="secondary"
+        severity="danger"
+        (click)="onLogout()"
       />
     </section>
+
+    <div class="recycle-bin d-flex justify-content-center">
+      <button
+        pButton
+        text="true"
+        icon="fa-regular fa-trash-can fa-xl"
+        severity="secondary"
+        (click)="onRecycleBinOpen()"
+      ></button>
+    </div>
   </div>
-  <p-dialog
-    [(visible)]="isAvatarDialogOpen"
-    [modal]="true"
-    [dismissableMask]="true"
-    [draggable]="false"
-  >
-    <ng-template #header>
-      <div class="d-flex justify-content-between align-items-center">
-        <h5 class="m-0">Select Avatar</h5>
+
+  <!-- Avatar Selection Dialog -->
+  @if (isAvatarDialogOpen()) {
+    <p-dialog
+      [(visible)]="isAvatarDialogOpen"
+      modal="true"
+      dismissableMask="true"
+      draggable="false"
+      class="avatar-dialog"
+    >
+      <ng-template #header>
+        <div class="d-flex align-items-center">
+          <h5 class="m-0">Select Your Avatar</h5>
+        </div>
+      </ng-template>
+      <div class="avatar-selection-wrapper">
+        <div class="avatar-grid">
+          @for (avatar of avatarChoices; track avatar) {
+            <div
+              class="avatar-item-ring"
+              [class]="avatar === dialogSelectedAvatar() ? 'selected' : ''"
+            >
+              <div class="avatar-item" (click)="onSelectionAvatarClick(avatar)">
+                <img [src]="avatar" alt="" />
+              </div>
+            </div>
+          }
+        </div>
       </div>
-    </ng-template>
-    <app-avatar-selection
-      [avatarChoices]="avatarChoices()"
-      [initialSelectedAvatar]="userInfo()?.avatar ?? ''"
-      (selectedAvatarOutput)="onAvatarSelect($event)"
-    ></app-avatar-selection>
-    <ng-template #footer>
-      <div class="w-100 d-flex justify-content-center">
-        <p-button label="Confirm" severity="primary" (click)="confirmAvatarSelection()"></p-button>
-      </div>
-    </ng-template>
-  </p-dialog>
+      <ng-template #footer>
+        <div class="w-100 d-flex justify-content-center">
+          <p-button
+            label="Confirm"
+            severity="primary"
+            (click)="confirmAvatarSelection()"
+          ></p-button>
+        </div>
+      </ng-template>
+    </p-dialog>
+  }
+
+  <!-- Recycle Bin Dialog -->
+  @if (isRecycleBinDialogOpen()) {
+    <p-dialog
+      [(visible)]="isRecycleBinDialogOpen"
+      modal="true"
+      dismissableMask="true"
+      draggable="false"
+      class="recycle-bin-dialog"
+    >
+      <ng-template #header>
+        <div class="d-flex align-items-center">
+          <i class="fa-regular fa-trash-can fa-2xl me-2"></i>
+          <div class="d-flex flex-column">
+            <h4 class="m-0">Recycle Bin</h4>
+            <small class="text-muted">* Entries will be permanently deleted after 30 days.</small>
+          </div>
+        </div>
+      </ng-template>
+      <app-recycle-bin
+        [deletedEntries]="deletedEntries()"
+        (selectedEntryIds)="onSelectEntryIds($event)"
+      ></app-recycle-bin>
+      <ng-template #footer>
+        <div class="w-100 d-flex justify-content-center">
+          <p-button
+            label="Restore Selected"
+            severity="primary"
+            [disabled]="selectedEntryIds().length === 0"
+            (click)="onRestoreEntries()"
+          ></p-button>
+        </div>
+      </ng-template>
+    </p-dialog>
+  }
 </div>

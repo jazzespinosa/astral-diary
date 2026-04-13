@@ -1,5 +1,11 @@
+.mood-btn-container {
+  background: rgb(215, 238, 250);
+  border-radius: 2rem;
+  border: 1px solid rgb(179, 212, 223);
+}
+
 .mood-btn {
-  font-size: 2rem;
+  font-size: 2rem !important;
   background: none;
   border: none;
   cursor: pointer;
@@ -8,8 +14,8 @@
   transition: all 0.2s ease;
   filter: grayscale(1) opacity(0.35);
   transform: scale(0.85);
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -52,13 +58,13 @@
 
 @media (max-width: 768px) {
   .mood-btn {
-    font-size: 1.5rem;
-    width: 2rem;
-    height: 2rem;
+    font-size: 1.5rem !important;
+    width: 2rem !important;
+    height: 2rem !important;
   }
 
   .mood-icon {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
   }
 }

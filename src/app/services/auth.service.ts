@@ -4,6 +4,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import {
   Auth,
+  authState,
   createUserWithEmailAndPassword,
   getAuth,
   getRedirectResult,
@@ -31,6 +32,11 @@ import {
 } from 'rxjs';
 import { AuthError, LoginResponseDto, SignUpResponseDto, UserModel } from 'app/models/auth.models';
 import { Router } from '@angular/router';
+import { EncryptionService } from './encryption.service';
+import { ConfirmationService } from 'primeng/api';
+import { GeneralAppService } from './general-app.service';
+import { ApiClientService } from './api-client.service';
+import { CachingService } from './caching.service';
 
 @Injectable({
   providedIn: 'root',
@@ -38,17 +44,44 @@ import { Router } from '@angular/router';
 export class AuthService {
   private http = inject(HttpClient);
   private auth = inject(Auth);
+  private encryptionService = inject(EncryptionService);
+  private confirmationService = inject(ConfirmationService);
+  private apiClientService = inject(ApiClientService);
+  private cachingService = inject(CachingService);
+  private generalAppService = inject(GeneralAppService);
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
 
   private readonly BASE_URL = environment.backendUrl;
   private googleProvider = new GoogleAuthProvider();
 
+  readonly user$ = authState(this.auth);
+
   // ========== user ==========
-  private readonly activeUser = signal<UserModel | null>(null);
-  readonly activeUser$ = this.activeUser.asReadonly();
+  private readonly _activeUser = signal<UserModel | null>(null);
+  readonly activeUser = this._activeUser.asReadonly();
   setActiveUser(user: UserModel | null) {
-    this.activeUser.set(user);
+    this._activeUser.set(user);
+  }
+  updateUserAvatar(avatar: string) {
+    const user = this._activeUser();
+    if (user) {
+      this._activeUser.set({ ...user, avatar });
+    }
+  }
+
+  constructor() {
+    this.user$.subscribe(async (user) => {
+      if (user) {
+        this._activeUser.set({
+          email: user.email || '',
+          name: user.displayName || user.email?.substring(0, user.email.indexOf('@')) || '',
+          avatar: await firstValueFrom(this.getAvatar()),
+        });
+      } else {
+        this._activeUser.set(null);
+      }
+    });
   }
 
   async initializeAuth(): Promise<void> {
@@ -61,7 +94,6 @@ export class AuthService {
       const redirectResult = await getRedirectResult(this.auth);
 
       if (redirectResult && redirectResult.user) {
-        console.log('[Auth] Redirect result found:', redirectResult.user.email);
         // Validate with backend for Google sign-in
         // const userData = await firstValueFrom(this.validateWithBackendGoogle(redirectResult));
         // if (userData && userData.email) {
@@ -74,7 +106,9 @@ export class AuthService {
           this.setActiveUser({
             email: redirectResult.user.email,
             name: redirectResult.user.displayName,
+            avatar: await firstValueFrom(this.getAvatar()),
           });
+          await this.encryptionService.initSessionKey();
           this.router.navigate(['/home']);
           return;
         }
@@ -82,11 +116,11 @@ export class AuthService {
     } catch (error: any) {
       // Handle specific redirect errors
       if (error.code === 'auth/popup-closed-by-user') {
-        console.log('[Auth] Popup was closed by user');
+        console.error('[Auth] Popup was closed by user');
       } else if (error.code === 'auth/cancelled-popup-request') {
-        console.log('[Auth] Popup request was cancelled');
+        console.error('[Auth] Popup request was cancelled');
       } else if (error.code === 'auth/redirect-cancelled-by-user') {
-        console.log('[Auth] Redirect was cancelled by user');
+        console.error('[Auth] Redirect was cancelled by user');
       } else {
         console.error('[Auth] Redirect result error:', error);
       }
@@ -95,7 +129,7 @@ export class AuthService {
     return new Promise<void>((resolve) => {
       const unsubscribe = onAuthStateChanged(
         this.auth,
-        (user) => {
+        async (user) => {
           if (user) {
             const email = user.email || '';
             const name =
@@ -103,8 +137,10 @@ export class AuthService {
             const userData: UserModel = {
               email: email,
               name: name,
+              avatar: await firstValueFrom(this.getAvatar()),
             };
             this.setActiveUser(userData);
+            await this.encryptionService.initSessionKey();
           }
           unsubscribe(); // Unsubscribe after first result
           resolve();
@@ -128,8 +164,9 @@ export class AuthService {
       switchMap(() => from(signInWithEmailAndPassword(this.auth, email, password))),
       switchMap((userCredential) => this.validateWithBackend(userCredential)),
       catchError((error) => throwError(() => this.mapLoginError(error))),
-      tap((userData) => {
+      tap(async (userData) => {
         this.setActiveUser(userData);
+        await this.encryptionService.initSessionKey();
       }),
     );
   }
@@ -151,6 +188,16 @@ export class AuthService {
         );
       }),
       catchError((error) => throwError(() => this.mapRegisterError(error))),
+    );
+  }
+
+  private getAvatar(): Observable<string | null> {
+    return this.apiClientService.getUserAvatar().pipe(
+      map((response) => response.avatar),
+      catchError((error) => {
+        console.error('[Auth] Failed to get avatar:', error);
+        return of(null);
+      }),
     );
   }
 
@@ -196,6 +243,7 @@ export class AuthService {
         userId: response.userId,
         email: response.email,
         name: response.name,
+        avatar: response.avatar,
       })),
     );
   }
@@ -216,14 +264,18 @@ export class AuthService {
         ),
       ),
       map((response) => ({
+        userId: response.userId,
         email: response.email,
         name: response.name,
+        avatar: response.avatar,
       })),
     );
   }
 
   signOutIfNeeded(): Observable<void> {
     if (this.auth.currentUser) {
+      this.encryptionService.clearSessionKey();
+      this.cachingService.clearAllCache();
       return from(signOut(this.auth));
     }
 
@@ -261,5 +313,30 @@ export class AuthService {
     return {
       message: errorMessages[error.code] || 'Signup failed. Try again.',
     };
+  }
+
+  onLogout() {
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to logout?',
+      header: 'Confirm Logout',
+      icon: 'fa-solid fa-exclamation',
+      dismissableMask: true,
+      rejectLabel: 'Cancel',
+      rejectButtonProps: {
+        label: 'Cancel',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptButtonProps: {
+        label: 'Logout',
+        severity: 'danger',
+      },
+      accept: () => {
+        this.signOutIfNeeded();
+        this.setActiveUser(null);
+        this.generalAppService.setSuccessToast('Logged out successfully');
+        this.router.navigate(['/auth']);
+      },
+    });
   }
 }

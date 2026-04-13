@@ -1,9 +1,7 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, viewChild } from '@angular/core';
 import { EntryComponent } from 'app/shared/components/entry/entry.component';
-import { NavigationEnd, Router } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, startWith } from 'rxjs';
 import { GeneralAppService } from 'app/services/general-app.service';
+import { CanComponentDeactivate } from 'app/guards/pending-changes.guard';
 
 @Component({
   selector: 'app-add-entry',
@@ -11,32 +9,20 @@ import { GeneralAppService } from 'app/services/general-app.service';
   templateUrl: './add-entry.component.html',
   styleUrl: './add-entry.component.css',
 })
-export class AddEntryComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
-  private router = inject(Router);
+export class AddEntryComponent implements CanComponentDeactivate {
   private appService = inject(GeneralAppService);
 
-  values = signal({
-    date: new Date(),
-    title: '',
-    content: '',
-    mood: null,
-  });
+  entryForm = viewChild(EntryComponent);
 
-  constructor() {}
+  constructor() {
+    this.appService.setIsEntryOpen(true);
+  }
 
-  ngOnInit(): void {
-    this.router.events
-      .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        startWith(new NavigationEnd(0, this.router.url, this.router.url)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((event: NavigationEnd) => {
-        const activeUrl = event.urlAfterRedirects;
-        if (activeUrl === '/entry/new') {
-          this.appService.setIsEntryOpen(true);
-        }
-      });
+  hasUnsavedChanges(): boolean {
+    return this.entryForm() ? this.entryForm()!.hasUnsavedChanges() : false;
+  }
+
+  isSubmitting(): boolean {
+    return this.entryForm() ? this.entryForm()!.isSubmitting() : false;
   }
 }

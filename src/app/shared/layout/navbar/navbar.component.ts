@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
+  effect,
   HostListener,
   inject,
   OnInit,
@@ -25,13 +26,17 @@ import { AuthService } from 'app/services/auth.service';
   encapsulation: ViewEncapsulation.None,
 })
 export class NavbarComponent {
-  protected appService = inject(GeneralAppService);
-  protected authService = inject(AuthService);
+  private generalAppService = inject(GeneralAppService);
+  private authService = inject(AuthService);
   private router = inject(Router);
+
+  displayedAvatar = computed(() => this.authService.activeUser()?.avatar);
+  activeLink = computed(() => this.generalAppService.activeLink());
+  isBackgroundMilkyWay = computed(() => this.generalAppService.isBackgroundMilkyWay());
 
   isScrolled = false;
 
-  checked = computed(() => this.appService.isBackgroundMilkyWay());
+  checked = computed(() => this.generalAppService.isBackgroundMilkyWay());
 
   private PopUpMenuNotLoggedIn: MenuItem[] = [
     {
@@ -79,8 +84,8 @@ export class NavbarComponent {
   ];
 
   items = computed(() => {
-    if (this.authService.activeUser$()) {
-      const name = this.authService.activeUser$()?.name;
+    if (this.authService.activeUser()) {
+      const name = this.authService.activeUser()?.name;
       this.PopUpMenuLoggedIn[1].items![0].label = name;
       return this.PopUpMenuLoggedIn;
     } else {
@@ -93,14 +98,11 @@ export class NavbarComponent {
     this.isScrolled = window.scrollY > 20;
   }
 
+  setIsBackgroundMilkyWay(value: boolean) {
+    this.generalAppService.setIsBackgroundMilkyWay(value);
+  }
+
   private logout() {
-    this.authService.signOutIfNeeded();
-    this.authService.setActiveUser(null);
-    this.appService.setToastMessage({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'Logged out successfully',
-    });
-    this.router.navigate(['/auth']);
+    this.authService.onLogout();
   }
 }

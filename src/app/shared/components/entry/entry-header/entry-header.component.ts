@@ -2,18 +2,16 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { EntryAccess } from 'app/models/entry.models';
-import { EntryService } from 'app/services/entry.service';
-import { PopoverModule } from 'primeng/popover';
 import { ButtonModule } from 'primeng/button';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-entry-header',
-  imports: [CommonModule, PopoverModule, ButtonModule],
+  imports: [CommonModule, FormsModule, ButtonModule],
   templateUrl: './entry-header.component.html',
   styleUrl: './entry-header.component.css',
 })
 export class EntryHeaderComponent {
-  entryService = inject(EntryService);
   private router = inject(Router);
 
   sourceId = input.required<string | null>();
@@ -21,6 +19,7 @@ export class EntryHeaderComponent {
   isEntryPaperExpanded = input.required<boolean>();
 
   delete = output<void>();
+  showInfo = output<void>();
 
   header = computed(() => {
     switch (this.access()) {
@@ -51,6 +50,10 @@ export class EntryHeaderComponent {
         };
     }
   });
+
+  onShowInfo() {
+    this.showInfo.emit();
+  }
 
   toEditFromView() {
     this.router.navigate(['entry/edit', this.sourceId()]);

@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   Component,
   DestroyRef,
   effect,
@@ -16,37 +15,38 @@ import {
   CalendarNextViewDirective,
   CalendarMonthViewComponent,
   CalendarEvent,
-  CalendarView,
   CalendarDatePipe,
   CalendarMonthViewDay,
 } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { MessageService, ConfirmationService } from 'primeng/api';
 import { EntryComponent } from 'app/shared/components/entry/entry.component';
 import { GeneralAppService } from 'app/services/general-app.service';
-import { DatePipe, NgClass } from '@angular/common';
-import { isSameDay, startOfDay } from 'date-fns';
-import { map, Subject, tap } from 'rxjs';
+import { CommonModule, DatePipe } from '@angular/common';
+import { isAfter, isSameDay, startOfDay } from 'date-fns';
+import { Subject } from 'rxjs';
 import { ApiClientService } from 'app/services/api-client.service';
-import { AttachmentObjResponse, EntryAccess } from 'app/models/entry.models';
+import { DecryptedDocument, EntryAccess } from 'app/models/entry.models';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EntryService } from 'app/services/entry.service';
+import { DatePickerModule } from 'primeng/datepicker';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-calendar',
   imports: [
+    CommonModule,
+    FormsModule,
     CalendarPreviousViewDirective,
     CalendarTodayDirective,
     CalendarNextViewDirective,
     CalendarMonthViewComponent,
     CalendarDatePipe,
     ButtonModule,
-    ConfirmDialogModule,
     EntryComponent,
     DatePipe,
+    DatePickerModule,
   ],
   providers: [
     provideCalendar({
@@ -59,30 +59,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   encapsulation: ViewEncapsulation.None,
 })
 export class CalendarComponent implements OnInit {
-  // inject dependencies
   protected generalAppService = inject(GeneralAppService);
-  private entryService = inject(ApiClientService);
+  private apiClientService = inject(ApiClientService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
-  private confirmationService = inject(ConfirmationService);
+  private entryService = inject(EntryService);
 
-  readonly CalendarView = CalendarView;
-  visibleDialog = signal<boolean>(false);
   refresh = new Subject<void>();
 
-  selectedMonthViewDay = signal<CalendarMonthViewDay | null>(null);
+  date: Date[] | undefined;
   selectedDate = signal<Date | null>(null);
-  todayDate = signal(new Date()); // displayed month
+  displayMonth = signal(new Date());
 
+  document = signal<DecryptedDocument | null>(null);
   access = signal<EntryAccess>('new');
-  values = signal({
-    date: new Date(),
-    title: '',
-    content: '',
-    mood: null as number | null,
-  });
-  sourceId = signal<string | null>(null);
-  attachments = signal<AttachmentObjResponse[]>([]);
 
   events = signal<CalendarEvent[]>([]);
   selectedCalendarDateEntries = signal<CalendarEvent[]>([]);
@@ -95,7 +85,8 @@ export class CalendarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.selectDateProgrammatically(new Date());
+    this.selectedDate.set(new Date());
+    this.refresh.next();
 
     this.generalAppService.refreshCalendarEvents
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -107,18 +98,22 @@ export class CalendarComponent implements OnInit {
   }
 
   private onMonthChange() {
-    this.entryService.getCalendarEntries(this.todayDate()).subscribe((response) => {
-      this.events.set(
-        response.map((entry) => ({
-          entryId: entry.entryId,
-          start: startOfDay(new Date(entry.date)),
-          title: entry.title,
-          content: entry.content,
-          mood: entry.mood,
-          attachments: entry.attachments,
-        })),
-      );
-    });
+    this.apiClientService
+      .getCalendarEntries(this.displayMonth())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        this.events.set(
+          response.map((entry) => ({
+            id: entry.id,
+            start: startOfDay(new Date(entry.date)),
+            title: entry.title,
+            content: entry.content,
+            mood: entry.mood,
+            meta: { document: entry },
+            attachmentId: entry.attachmentId,
+          })),
+        );
+      });
   }
 
   dayClicked(day: CalendarMonthViewDay): void {
@@ -131,73 +126,30 @@ export class CalendarComponent implements OnInit {
   }
 
   addEntry(day: CalendarMonthViewDay) {
-    this.sourceId.set(null);
+    this.document.set(null);
     this.access.set('new');
-    this.updateEntryValues(day.date, '', '', null);
     this.generalAppService.setIsEntryOpen(true);
-    this.selectDateProgrammatically(day.date);
+    this.dayClicked(day);
   }
 
   viewEntry(entry: any) {
-    this.sourceId.set(entry.entryId);
-    this.attachments.set(entry.attachments);
+    this.document.set(entry.meta.document);
     this.access.set('view');
-    this.updateEntryValues(entry.start, entry.title, entry.content, entry.mood);
     this.generalAppService.setIsEntryOpen(true);
   }
 
   editEntry(entry: any) {
-    this.router.navigate(['/entry/edit/', entry.entryId]);
+    this.router.navigate(['/entry/edit/', entry.id]);
   }
 
-  deleteEntry(entry: any) {
-    this.confirmationService.confirm({
-      target: entry.target as EventTarget,
-      message:
-        '<span class="fw-semibold">Do you want to delete this entry?</span> <br /><br />' +
-        entry.title,
-      header: 'Confirm Delete',
-      icon: 'fa-solid fa-circle-exclamation',
-      dismissableMask: true,
-      rejectLabel: 'Cancel',
-      rejectButtonProps: {
-        label: 'Cancel',
-        severity: 'secondary',
-        outlined: true,
-      },
-      acceptButtonProps: {
-        label: 'Delete',
-        severity: 'danger',
-      },
-
-      accept: () => {
-        this.entryService.deleteEntry(entry.entryId).subscribe({
-          next: () => {
-            this.onMonthChange();
-          },
-          error: (error) => {
-            console.log(error);
-            this.generalAppService.setErrorToast('Failed to delete entry.');
-          },
-        });
-
-        this.generalAppService.setToastMessage({
-          severity: 'success',
-          summary: 'Confirmed',
-          detail: 'Record deleted',
-        });
-      },
-      reject: () => {},
+  async deleteEntry(entry: any) {
+    const response = await this.entryService.onDelete({
+      entityId: entry.id,
+      title: entry.title,
     });
-  }
-
-  private updateEntryValues(date: Date, title: string, content: string, mood: number | null) {
-    this.values.set({
-      date,
-      title,
-      content,
-      mood,
-    });
+    if (response) {
+      this.onMonthChange();
+    }
   }
 
   clearSelectedDay() {
@@ -207,29 +159,24 @@ export class CalendarComponent implements OnInit {
 
   beforeMonthViewRender({ body }: { body: CalendarMonthViewDay[] }): void {
     const selected = this.selectedDate();
-    let foundSelectedDay = false;
+    let activeSelectedDay = false;
 
     body.forEach((day) => {
       if (selected && isSameDay(day.date, selected)) {
         day.cssClass = 'cal-day-selected';
-        this.selectedMonthViewDay.set(day);
+        this.selectedDate.set(day.date);
         this.selectedCalendarDateEntries.set(
           this.events().filter((event) => isSameDay(event.start, day.date)),
         );
-        foundSelectedDay = true;
+        activeSelectedDay = true;
       } else {
         delete day.cssClass;
       }
     });
 
-    if (!foundSelectedDay) {
-      this.selectedMonthViewDay.set(null);
+    if (!activeSelectedDay) {
+      this.selectedDate.set(null);
     }
-  }
-
-  selectDateProgrammatically(date: Date) {
-    this.selectedDate.set(date);
-    this.refresh.next();
   }
 
   entryClicked(entry: any) {

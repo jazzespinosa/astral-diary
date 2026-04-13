@@ -5,34 +5,70 @@
   overflow: hidden;
 }
 
-.attachment-thumbnail {
-  max-width: 50px;
-  max-height: 50px;
-  cursor: pointer;
-  border: 1px solid #e0e0e0;
+.card-container {
+  background-color: rgb(255, 255, 255);
+  border-radius: var(--p-card-border-radius);
 }
 
-app-card .p-card-title {
+.p-card.p-component {
+  cursor: pointer;
+  --shade: 0.03;
+}
+
+.card-badge-dot {
+  height: 8px;
+  width: 8px;
+  min-width: 8px;
+  --shade: 1;
+  border-radius: 50%;
+  border: 1px solid #dbdbdb;
+  margin-right: 0.5rem;
+  content: '';
+}
+
+/* .p-card-body {
+  gap: 0;
+} */
+
+.card-container.compact .p-card-body {
+  gap: 0 !important;
+  padding: 1rem !important;
+}
+
+.p-card-title {
   font-size: 1.3rem;
 }
 
-app-card .p-card-subtitle {
+.card-title-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.p-card-subtitle {
   font-size: 0.9rem;
   font-style: italic;
 }
 
 @media (max-width: 768px) {
-  .attachment-thumbnail {
-    max-width: 40px;
-    max-height: 40px;
-    margin-right: 0.25rem !important;
-  }
-
-  app-card .p-card-title {
+  .p-card-title {
     font-size: 1.1rem !important;
   }
 
-  app-card .p-card-subtitle {
+  .p-card-body {
+    padding: 1rem !important;
+  }
+
+  .card-container.compact .p-card-body {
+    padding: 0.5rem 1rem !important;
+  }
+
+  .p-card-subtitle {
     font-size: 0.8rem !important;
+  }
+
+  .p-card-content {
+    font-size: 0.9rem !important;
   }
 }

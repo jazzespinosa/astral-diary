@@ -85,9 +85,6 @@
   </ngt-points>
 </ngts-center>
 
-<!-- <ngt-primitive *args="[pathLine()]" />
-<ngt-primitive *args="[traveler()]" [parameters]="{ scale: 5 }" /> -->
-
 <app-stars
   [starCount]="20"
   [minDistance]="15"
@@ -110,7 +107,7 @@
 <!-- ENVIRONMENT -->
 <ngts-environment
   [options]="{
-    files: appService.isBackgroundMilkyWay() ? getMilkyWay() : getBlueNebula(),
+    files: generalAppService.isBackgroundMilkyWay() ? getMilkyWay() : getBlueNebula(),
     background: true,
     backgroundIntensity: 1,
   }"
@@ -134,11 +131,6 @@
   <ngtp-vignette [options]="{ darkness: 0.5 }" />
 </ngtp-effect-composer>
 
-<!-- <ngts-adaptive-dpr [pixelated]="true" />
-<ngts-adaptive-events /> -->
-
-<!-- <ngt-grid-helper /> -->
-<!-- <ngts-orbit-controls /> -->
 <ngts-orbit-controls
   [options]="{ regress: true, enablePan: false, minDistance: 20, maxDistance: 200 }"
 />

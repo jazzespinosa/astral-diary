@@ -12,9 +12,26 @@ app-calendar {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
+.calendar-month-picker .p-datepicker-input {
+  cursor: pointer;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  font-size: 1.5rem;
+  max-width: 15rem;
+  text-align: end;
+}
+
+.p-datepicker-input-icon-container,
+.cal-month-view .cal-header,
+.action-icons {
+  color: #2b2b2f !important;
+}
+
 .cal-day-selected,
 .cal-day-selected:hover {
-  background-color: deeppink !important;
+  background-color: #2bbdff7a !important;
 }
 
 .cal-month-view .cal-day-badge {
@@ -31,6 +48,7 @@ app-calendar {
   height: 1.5rem;
   width: 1.5rem;
   align-content: center;
+  background-color: #3a71e7ba !important;
 }
 
 .cal-month-view .cal-day-cell {
@@ -38,7 +56,21 @@ app-calendar {
 }
 
 .cal-month-view .cal-day-number {
+  font-family: 'Parisienne', cursive;
   margin-bottom: 0;
+}
+
+.cal-month-view .cal-day-cell.cal-today {
+  background-color: #e4f2ff;
+}
+
+.cal-month-view .cal-day-cell.cal-today .cal-day-number {
+  font-weight: 800;
+}
+
+.cal-month-view .cal-cell-row .cal-cell:hover,
+.cal-month-view .cal-cell.cal-has-events.cal-open {
+  background-color: #c2e1ff29;
 }
 
 .calendar-entry-container {
@@ -51,6 +83,8 @@ app-calendar {
 }
 
 .cal-add-button {
+  /* color: #4f4f4f; */
+  color: #ffffff;
   position: absolute;
   left: 50%;
   top: 50%;
@@ -58,7 +92,7 @@ app-calendar {
 }
 
 .cal-add-button-container {
-  background-color: green;
+  background-color: #6590db;
   height: 40%;
   max-height: 0;
   opacity: 0;
@@ -68,8 +102,14 @@ app-calendar {
 }
 
 .cal-add-button-container.show {
+  color: #ffffff;
   max-height: 40%;
   opacity: 1;
+}
+
+.entries-list-container {
+  background-color: #e1ecf5;
+  border: 1px solid #d9d9d9;
 }
 
 /* .entries-list .entry:nth-child(even) {
@@ -77,12 +117,33 @@ app-calendar {
 } */
 
 .entries-list .entry:nth-child(odd) {
-  background: #ffffff50;
+  background: #ffffffe0;
+}
+
+.entries-list .entry {
+  padding-left: 0.7rem;
+  padding-right: 0.7rem;
 }
 
 .entries-list .entry.selected {
-  background-color: #ff00ff !important;
-  color: white;
+  background-color: #2bbdff7a !important;
+  color: white !important;
+
+  .action-icons {
+    color: white !important;
+  }
+}
+
+.cal-badge-dot {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  min-width: 8px;
+  --shade: 0.6;
+  border-radius: 50%;
+  border: 1px solid #dbdbdb;
+  margin-right: 0.2rem;
+  content: '';
 }
 
 .entry-title {
@@ -91,32 +152,6 @@ app-calendar {
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-height: 6rem;
-}
-
-.confirm-delete-dialog.p-dialog {
-  max-width: clamp(400px, 90%, 1200px);
-  font-family: 'Google Sans', sans-serif;
-}
-
-.confirm-delete-dialog .p-dialog-content {
-  padding: 1rem !important;
-  background-color: rgb(255 240 240);
-}
-
-.confirm-delete-dialog .p-dialog-header,
-.confirm-delete-dialog .p-dialog-footer {
-  padding: 1rem !important;
-}
-
-.confirm-delete-dialog .p-confirmdialog-message {
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.confirm-delete-dialog .p-confirmdialog-icon {
-  align-self: start;
 }
 
 @media (max-width: 768px) {
@@ -129,6 +164,15 @@ app-calendar {
   .calendar-container {
     padding: 0.75rem !important;
     gap: 0.5rem !important;
+  }
+
+  .cal-month-view .cal-header .cal-cell {
+    font-size: 0;
+  }
+
+  .cal-month-view .cal-header .cal-cell::after {
+    content: attr(header-short);
+    font-size: 1rem;
   }
 
   .cal-month-view .cal-day-cell {
@@ -150,6 +194,11 @@ app-calendar {
     /* margin-bottom: 10px; */
   }
 
+  .entries-list .entry {
+    padding-left: 0.2rem;
+    padding-right: 0.2rem;
+  }
+
   .cal-month-view .cal-day-badge {
     font-size: 1rem !important;
     height: auto !important;
@@ -159,24 +208,5 @@ app-calendar {
   .calendar-entry-container {
     height: calc(100vh - 4rem);
     top: 4rem;
-  }
-
-  .confirm-delete-dialog,
-  .confirm-delete-dialog .p-button {
-    font-size: 0.9rem !important;
-  }
-
-  .confirm-delete-dialog.p-dialog {
-    max-width: 90%;
-  }
-
-  .confirm-delete-dialog .p-dialog-header,
-  .confirm-delete-dialog .p-dialog-content,
-  .confirm-delete-dialog .p-dialog-footer {
-    padding: 0.5rem !important;
-  }
-
-  .confirm-delete-dialog .p-dialog-title {
-    font-size: 1rem !important;
   }
 }

@@ -9,24 +9,25 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error) => {
       if (error.status === 0) {
-        appService.setToastMessage({
+        appService.setCustomToastMessage({
           severity: 'error',
           summary: 'Server Error',
           detail: 'Unable to connect to the server. Please try again later.',
         });
       } else if (error.status >= 500) {
-        appService.setToastMessage({
+        appService.setCustomToastMessage({
           severity: 'error',
           summary: 'Server Error',
           detail: error.message,
         });
       } else if (error.status >= 400) {
-        appService.setToastMessage({
+        appService.setCustomToastMessage({
           severity: 'error',
           summary: 'Client Error',
           detail: error.message,
         });
       }
+      console.error(error);
       return throwError(() => error);
     }),
   );

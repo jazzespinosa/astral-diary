@@ -2,58 +2,81 @@ import { CommonModule, formatDate } from '@angular/common';
 import {
   Component,
   computed,
-  DestroyRef,
   effect,
   inject,
   input,
+  model,
   OnDestroy,
   OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { GeneralAppService } from 'app/services/general-app.service';
 import { ApiClientService } from 'app/services/api-client.service';
-import { HashService } from 'app/services/hash.service';
 import {
-  AttachmentObjResponse,
+  DecryptedDocument,
+  DeleteObject,
   EntryAccess,
   EntryParentComponentInput,
-  EntryValues,
+  EntryValuesDefault,
   SubmitAction,
 } from 'app/models/entry.models';
 import { EntryHeaderComponent } from './entry-header/entry-header.component';
 import { EntryService } from 'app/services/entry.service';
 import { EntryContentComponent } from './entry-content/entry-content.component';
 import { EntryFooterComponent } from './entry-footer/entry-footer.component';
+import { EncryptionService } from 'app/services/encryption.service';
+import { AttachmentService } from 'app/services/attachment.service';
+import { DialogModule } from 'primeng/dialog';
+import { InfoComponent } from '../info/info.component';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-entry',
-  imports: [CommonModule, EntryHeaderComponent, EntryContentComponent, EntryFooterComponent],
+  imports: [
+    CommonModule,
+    EntryHeaderComponent,
+    EntryContentComponent,
+    EntryFooterComponent,
+    DialogModule,
+    InfoComponent,
+  ],
   templateUrl: './entry.component.html',
   styleUrl: './entry.component.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class EntryComponent implements OnInit, OnDestroy {
-  // inject dependencies
   private generalAppService = inject(GeneralAppService);
   private apiClientService = inject(ApiClientService);
-  entryService = inject(EntryService);
+  private encryptionService = inject(EncryptionService);
+  private attachmentService = inject(AttachmentService);
+  private entryService = inject(EntryService);
   private router = inject(Router);
-  private destroyRef = inject(DestroyRef);
 
-  // inputs
-  sourceId = input.required<string | null>();
+  document = input.required<DecryptedDocument | null>();
+  customDate = input<Date | null>(null);
   parentComponent = input.required<EntryParentComponentInput>();
   access = input.required<EntryAccess>();
-  values = input.required<EntryValues>();
-  attachments = input<AttachmentObjResponse[]>([]);
+  contentValues = computed<EntryValuesDefault>(() => {
+    return {
+      date:
+        this.access() === 'new'
+          ? (this.customDate() ?? new Date())
+          : (this.document()?.date ?? new Date()),
+      title: this.document()?.title ?? '',
+      content: this.document()?.content ?? '',
+      mood: this.document()?.mood ?? 0,
+    };
+  });
 
+  mood = signal<number>(0);
   form = signal<FormGroup>(new FormGroup({}));
-  mood = signal<number | null>(null);
+  formValue = signal<any>({});
+  isFormSubmitted = signal(false);
 
+  idType = computed(() => this.entryService.getIdType(this.document()?.id ?? ''));
   isParentFullEntryPage = computed(
     () =>
       this.parentComponent() === 'add-entry' ||
@@ -67,260 +90,237 @@ export class EntryComponent implements OnInit, OnDestroy {
   paperTransitionState = signal<'hidden' | 'flying' | 'zoomin'>('hidden');
   isEntryPaperExpanded = signal(false);
 
+  isInfoVisible = model<boolean>(false);
+
+  canSubmitAndPublish = computed(() => {
+    if (!this.formValue()?.date) return false;
+    const selectedDate = new Date(this.formValue().date);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selectedDate.getTime() <= today.getTime();
+  });
+
   constructor() {
     effect(() => {
       if (this.generalAppService.isEntryOpen()) this.summonPaper();
     });
   }
 
-  ngOnInit(): void {
-    this.entryService.setFormSubmitted(false);
+  ngOnInit() {
+    this.isFormSubmitted.set(false);
   }
 
-  ngOnDestroy(): void {
+  ngOnDestroy() {
     this.closeEntry();
     this.generalAppService.setIsEntryOpen(false);
   }
 
-  onFormValuesChange(form: FormGroup) {
-    this.form.set(form);
+  hasUnsavedChanges() {
+    return this.form().dirty;
   }
 
-  onMoodChange(mood: number | null) {
+  isSubmitting() {
+    return this.isFormSubmitted();
+  }
+
+  onFormValuesChange(receivedForm: FormGroup) {
+    this.form.set(receivedForm);
+    this.formValue.set({ ...receivedForm.value });
+  }
+
+  onMoodChange(mood: number) {
     this.mood.set(mood);
   }
 
   async onSubmit(action: SubmitAction) {
-    this.entryService.setFormSubmitted(true);
+    this.isFormSubmitted.set(true);
     const entryFormData = await this.appendFormData();
 
-    if (this.form().invalid) {
+    if (this.form().invalid && action !== 'update-draft') {
       this.generalAppService.setErrorToast(
-        'There are errors in the form. Please review and try again.',
+        'Form is not completely filled. Please review and try again.',
+      );
+      this.isFormSubmitted.set(false);
+      return;
+    }
+
+    if (!this.canSubmitAndPublish() && action !== 'update-draft') {
+      this.generalAppService.setWarningToast(
+        'You cannot submit or update entries of future dates.',
       );
       return;
     }
 
-    switch (action) {
-      case 'create':
-        this.onCreateEntry(entryFormData);
-        break;
-      case 'update-entry':
-        this.onUpdateEntry(entryFormData);
-        break;
-      case 'update-draft':
-        this.onUpdateDraft(entryFormData);
-        break;
+    try {
+      switch (action) {
+        case 'create':
+          await this.onCreateEntry(entryFormData);
+          break;
+        case 'update-entry':
+          await this.onUpdateEntry(entryFormData);
+          break;
+        case 'update-draft':
+          await this.onUpdateDraft(entryFormData);
+          break;
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.isFormSubmitted.set(false);
     }
-
-    this.entryService.setFormSubmitted(false);
   }
 
-  private onCreateEntry(entryFormData: FormData) {
-    this.apiClientService
-      .createEntry(entryFormData)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.generalAppService.setSuccessToast('Entry created successfully.');
-          this.generalAppService.triggerRefreshCalendarEvents();
+  private async onCreateEntry(entryFormData: FormData) {
+    try {
+      const response = await firstValueFrom(this.apiClientService.createEntry(entryFormData));
+      this.generalAppService.setSuccessToast('Entry created successfully.');
+      this.generalAppService.triggerRefreshCalendarEvents();
 
-          const location = response.headers.get('Location');
-          const entryId = location?.split('/').pop();
+      const location = response.headers.get('Location');
+      const entryId = location?.split('/').pop();
 
-          if (this.isParentFullEntryPage()) {
-            this.router.navigate([`entry/view/${entryId}`], { replaceUrl: true });
-          } else {
-            this.router.navigate([`entry/view/${entryId}`]);
-          }
-        },
-        error: (error) => {
-          console.log(error);
-          this.generalAppService.setErrorToast('Failed to create entry.');
-        },
-      });
+      if (this.isParentFullEntryPage()) {
+        await this.router.navigate([`entry/view/${entryId}`], { replaceUrl: true });
+      } else {
+        await this.router.navigate([`entry/view/${entryId}`]);
+      }
+    } catch (error) {
+      console.error(error);
+      this.generalAppService.setErrorToast('Failed to create entry.');
+      throw error;
+    }
   }
 
-  private onUpdateEntry(entryFormData: FormData) {
-    entryFormData.append('id', this.sourceId()!);
-    this.apiClientService
-      .updateEntry(this.sourceId()!, entryFormData)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.generalAppService.setSuccessToast('Entry updated successfully.');
-          this.generalAppService.triggerRefreshCalendarEvents();
+  private async onUpdateEntry(entryFormData: FormData) {
+    entryFormData.append('id', this.document()!.id);
+    try {
+      const response = await firstValueFrom(
+        this.apiClientService.updateEntry(this.document()!.id, entryFormData),
+      );
+      this.generalAppService.setSuccessToast('Entry updated successfully.');
+      this.generalAppService.triggerRefreshCalendarEvents();
 
-          if (this.isParentFullEntryPage()) {
-            this.router.navigate([`entry/view/${response.id}`], { replaceUrl: true });
-          } else {
-            this.router.navigate([`entry/view/${response.id}`]);
-          }
-        },
-        error: (error) => {
-          console.log(error);
-          this.generalAppService.setErrorToast('Failed to update entry.');
-        },
-      });
+      if (this.isParentFullEntryPage()) {
+        await this.router.navigate([`entry/view/${response.id}`], { replaceUrl: true });
+      } else {
+        await this.router.navigate([`entry/view/${response.id}`]);
+      }
+    } catch (error) {
+      console.error(error);
+      this.generalAppService.setErrorToast('Failed to update entry.');
+      throw error;
+    }
   }
 
-  private onUpdateDraft(entryFormData: FormData) {
-    entryFormData.append('id', this.sourceId()!);
-    this.apiClientService
-      .updateDraft(this.sourceId()!, entryFormData)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.generalAppService.setSuccessToast('Draft updated successfully.');
+  private async onUpdateDraft(entryFormData: FormData) {
+    entryFormData.append('id', this.document()!.id);
+    try {
+      await firstValueFrom(this.apiClientService.updateDraft(this.document()!.id, entryFormData));
+      this.generalAppService.setSuccessToast('Draft updated successfully.');
 
-          if (this.isParentFullEntryPage()) {
-            this.router.navigate(['entry/drafts']);
-          } else {
-            this.generalAppService.setIsEntryOpen(false);
-          }
-        },
-        error: (error) => {
-          console.log(error);
-          this.generalAppService.setErrorToast('Failed to update draft.');
-        },
-      });
+      if (this.isParentFullEntryPage()) {
+        await this.router.navigate(['entry/drafts']);
+      } else {
+        this.closeEntry();
+      }
+    } catch (error) {
+      console.error(error);
+      this.generalAppService.setErrorToast('Failed to update draft.');
+      throw error;
+    }
   }
 
   async onSaveAsDraft() {
-    this.entryService.setFormSubmitted(true);
+    this.isFormSubmitted.set(true);
 
-    this.apiClientService
-      .countUserDrafts()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          if (response.count >= 10) {
-            this.generalAppService.setErrorToast(
-              'You have reached the maximum number of drafts (10).',
-            );
-            return;
-          }
-        },
-        error: (error) => {
-          console.log(error);
-        },
-      });
+    try {
+      const response = await firstValueFrom(this.apiClientService.countUserDrafts());
+      if (response.count >= 10) {
+        this.generalAppService.setErrorToast('You have reached the maximum number of drafts (10).');
+        this.isFormSubmitted.set(false);
+        return;
+      }
 
-    if (this.form().get('date')?.invalid) {
-      this.generalAppService.setErrorToast('Please fill out the date.');
-      return;
+      if (this.form().get('date')?.invalid) {
+        this.generalAppService.setErrorToast('Please fill out the date.');
+        this.isFormSubmitted.set(false);
+        return;
+      }
+
+      const draftFormData = await this.appendFormData();
+
+      await firstValueFrom(this.apiClientService.createDraft(draftFormData));
+      this.generalAppService.setSuccessToast('Draft saved successfully.');
+
+      await this.router.navigate(['entry/drafts'], { replaceUrl: false });
+      this.closeEntry();
+    } catch (error) {
+      console.error(error);
+      this.generalAppService.setErrorToast('Failed to save draft.');
+    } finally {
+      this.isFormSubmitted.set(false);
     }
-
-    const draftFormData = await this.appendFormData();
-
-    this.apiClientService
-      .createDraft(draftFormData)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.generalAppService.setSuccessToast('Draft saved successfully.');
-
-          this.router.navigate(['entry/drafts'], { replaceUrl: true });
-        },
-        error: (error) => {
-          console.log(error);
-          this.generalAppService.setErrorToast('Failed to create draft.');
-        },
-      });
-
-    this.entryService.setFormSubmitted(false);
-    this.closeEntry();
   }
 
   async onPublishDraft() {
-    this.entryService.setFormSubmitted(true);
+    this.isFormSubmitted.set(true);
 
     if (this.form().invalid) {
       this.generalAppService.setErrorToast(
-        'There are errors in the form. Please review and try again.',
+        'Form is not completely filled. Please review and try again.',
       );
+      this.isFormSubmitted.set(false);
       return;
     }
 
-    const entryFormData = await this.appendFormData();
-    entryFormData.append('id', this.sourceId()!);
-
-    this.apiClientService
-      .publishDraft(this.sourceId()!, entryFormData)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.generalAppService.setSuccessToast('Draft published successfully.');
-          this.generalAppService.triggerRefreshCalendarEvents();
-
-          this.router.navigate([`entry/view/${response.id}`], { replaceUrl: true });
-        },
-        error: (error) => {
-          console.log(error);
-          this.generalAppService.setErrorToast('Failed to create entry.');
-        },
-      });
-  }
-
-  onDelete(type: 'entry' | 'draft') {
-    const entityId = this.sourceId();
-    if (!entityId) {
-      this.generalAppService.setErrorToast('No entry ID found.');
+    if (!this.canSubmitAndPublish()) {
+      this.generalAppService.setWarningToast('You cannot publish drafts of future dates.');
       return;
     }
 
-    switch (type) {
-      case 'entry':
-        this.deleteEntry(entityId);
-        break;
-      case 'draft':
-        this.deleteDraft(entityId);
-        break;
+    try {
+      const entryFormData = await this.appendFormData();
+      entryFormData.append('id', this.document()!.id);
+
+      const response = await firstValueFrom(
+        this.apiClientService.publishDraft(this.document()!.id, entryFormData),
+      );
+      this.generalAppService.setSuccessToast('Draft published successfully.');
+      this.generalAppService.triggerRefreshCalendarEvents();
+
+      await this.router.navigate([`entry/view/${response.id}`], { replaceUrl: true });
+      this.closeEntry();
+    } catch (error) {
+      console.error(error);
+      this.generalAppService.setErrorToast('Failed to publish draft.');
+    } finally {
+      this.isFormSubmitted.set(false);
     }
   }
 
-  private deleteEntry(entityId: string) {
-    this.apiClientService
-      .deleteEntry(entityId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.generalAppService.setSuccessToast('Entry deleted successfully.');
-
-          this.generalAppService.triggerRefreshCalendarEvents();
-
-          if (this.isParentFullEntryPage()) {
-            this.router.navigate(['entry/search']);
-          } else {
-            this.generalAppService.setIsEntryOpen(false);
-          }
-        },
-        error: (error) => {
-          console.log(error);
-          this.generalAppService.setErrorToast('Failed to delete entry.');
-        },
-      });
-  }
-
-  private deleteDraft(entityId: string) {
-    this.apiClientService
-      .deleteDraft(entityId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.generalAppService.setSuccessToast('Draft deleted successfully.');
-
-          if (this.isParentFullEntryPage()) {
-            this.router.navigate(['entry/drafts']);
-          } else {
-            this.generalAppService.setIsEntryOpen(false);
-          }
-        },
-        error: (error) => {
-          console.log(error);
-          this.generalAppService.setErrorToast('Failed to delete draft.');
-        },
-      });
+  async onDelete(deleteObject: DeleteObject) {
+    this.isFormSubmitted.set(true);
+    const response = await this.entryService.onDelete(deleteObject);
+    if (response == true) {
+      if (this.idType() === 'entry') {
+        if (this.isParentFullEntryPage()) {
+          await this.router.navigate(['entry/search']);
+        } else {
+          this.generalAppService.setIsEntryOpen(false);
+        }
+      } else if (this.idType() === 'draft') {
+        if (this.isParentFullEntryPage()) {
+          await this.router.navigate(['entry/drafts']);
+        } else {
+          this.generalAppService.setIsEntryOpen(false);
+        }
+      } else {
+        this.generalAppService.setErrorToast('Failed to delete entry.');
+      }
+    }
+    this.isFormSubmitted.set(false);
   }
 
   onAttachmentsChange(files: File[]) {
@@ -330,13 +330,29 @@ export class EntryComponent implements OnInit, OnDestroy {
   private async appendFormData(): Promise<FormData> {
     const formData = new FormData();
     const formattedDate = formatDate(this.form().value.date, 'yyyy-MM-dd', 'en-US');
-    formData.append('Date', formattedDate);
-    formData.append('Title', this.form().value.title);
-    formData.append('Content', this.form().value.content);
-    formData.append('Mood', this.mood()?.toString() || '0');
-    this.selectedFiles.forEach((file) => {
-      formData.append('Attachments', file);
+    const encryptedPayload = await this.encryptionService.encrypt({
+      title: this.form().value.title,
+      content: this.form().value.content,
     });
+
+    formData.append('Date', formattedDate);
+    formData.append('Mood', this.mood().toString());
+    formData.append('EncryptedContent', encryptedPayload.ciphertext);
+    formData.append('ContentIv', encryptedPayload.iv);
+    formData.append('ContentSalt', encryptedPayload.salt);
+
+    const attachmentData = await this.attachmentService.processOutgoingAttachments(
+      this.selectedFiles,
+    );
+
+    formData.append('EncryptedAttachments', attachmentData.encryptedAttachmentBlob ?? '');
+    formData.append('EncryptedThumbnails', attachmentData.encryptedThumbnailBlob ?? '');
+    formData.append(
+      'AttachmentHash',
+      attachmentData.attachmentHashes.length > 0
+        ? JSON.stringify(attachmentData.attachmentHashes)
+        : '',
+    );
 
     return formData;
   }
@@ -375,5 +391,9 @@ export class EntryComponent implements OnInit, OnDestroy {
       this.isEntryPaperExpanded.set(false);
       this.generalAppService.setIsEntryOpen(false);
     }
+  }
+
+  showEntryInfo() {
+    this.isInfoVisible.set(true);
   }
 }

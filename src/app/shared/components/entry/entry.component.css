@@ -101,11 +101,28 @@ app-entry {
   opacity: 1;
 }
 
+.info-dialog .p-dialog {
+  max-width: 500px;
+}
+
+.info-dialog .p-dialog-header {
+  padding: 0;
+}
+
+.info-dialog .p-dialog-content {
+  padding: 0;
+  margin-top: -1.5rem;
+}
+
 /* LOWER SECTION */
 @media (max-width: 768px) {
   :host,
   app-entry {
     padding: 0.5rem;
     height: calc(100vh - 4rem);
+  }
+
+  .info-dialog .p-dialog {
+    max-width: 95vw;
   }
 }

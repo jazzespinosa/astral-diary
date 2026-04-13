@@ -1,9 +1,9 @@
 <div class="background"></div>
 <div class="canvas-container">
   <router-outlet />
-  @if (appService.isEntryOpen()) {
+  @if (generalAppService.isEntryOpen()) {
     <div class="home-entry-container">
-      <app-entry [parentComponent]="'home'" [sourceId]="null" access="new" [values]="values()" />
+      <app-entry parentComponent="home" [document]="document()" [access]="access()" />
     </div>
   }
 </div>

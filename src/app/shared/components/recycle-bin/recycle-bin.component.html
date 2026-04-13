@@ -1,0 +1,37 @@
+<div class="recycle-bin-container">
+  <p-listbox
+    [options]="options()"
+    multiple="true"
+    checkbox="true"
+    striped="true"
+    (onChange)="onSelectionChange($event)"
+    class="recycle-bin-list-group"
+  >
+    <ng-template #item let-entry>
+      <div class="rb-item d-flex flex-column w-100 align-items-start">
+        <div class="rb-title"><b>Title:</b>&nbsp;{{ entry.title }}</div>
+        <div class="rb-date">
+          <b>Date:</b>&nbsp;<i>{{ entry.date | date: 'mediumDate' }}</i>
+        </div>
+        <div class="rb-content"><b>Content:</b>&nbsp;{{ entry.content }}</div>
+        @if (entry.mood) {
+          <div class="rb-mood">
+            <b>Mood:</b>&nbsp;
+            <img [src]="moods[entry.mood - 1].icon" alt="" />
+          </div>
+        }
+        @if (entry.thumbnail.length > 0) {
+          <div class="container">
+            <app-thumbnail-viewer
+              [thumbnails]="entry.thumbnail"
+              [imageWidth]="40"
+            ></app-thumbnail-viewer>
+          </div>
+        }
+        <div class="rb-deleted-date">
+          <b>Deleted on:</b>&nbsp;<i>{{ entry.deletedAt | date: 'short' }}</i>
+        </div>
+      </div>
+    </ng-template>
+  </p-listbox>
+</div>

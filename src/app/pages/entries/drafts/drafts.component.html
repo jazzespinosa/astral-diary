@@ -21,7 +21,7 @@
     } @else {
       @for (draft of drafts(); track $index) {
         <div class="draft mb-3">
-          <app-card [entry]="draft" />
+          <app-card [document]="draft" />
         </div>
       }
     }

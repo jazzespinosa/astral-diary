@@ -1,4 +1,5 @@
-:host {
+:host,
+app-account {
   display: block;
   min-height: calc(100vh - 4.5rem);
   padding: 2rem 1rem;
@@ -6,7 +7,6 @@
   overflow-y: auto;
 }
 
-/* ─── Container ─────────────────────────────────────────── */
 .account-wrapper {
   display: flex;
   justify-content: center;
@@ -24,8 +24,8 @@
 
 /* ─── Profile Header ─────────────────────────────────────── */
 .avatar-ring {
-  width: 112px;
-  height: 112px;
+  width: 108px;
+  height: 108px;
   border-radius: 50%;
   background: linear-gradient(135deg, #1e90ff, #87cefa);
   display: flex;
@@ -64,6 +64,41 @@
   width: 80px;
   height: 3px;
   background: linear-gradient(90deg, transparent, #87cefa, transparent);
+}
+
+/* ─── Avatar Selection ───────────────────────────────────── */
+.avatar-selection-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  gap: 1rem;
+}
+
+.avatar-grid {
+  max-width: 600px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.avatar-item-ring {
+  border: 2px solid transparent;
+  border-radius: 50%;
+  max-width: 150px;
+}
+
+.avatar-item-ring.selected {
+  border-color: rgb(72, 167, 255);
+}
+
+.avatar-item {
+  cursor: pointer;
+}
+
+.avatar-item img {
+  width: 100%;
+  max-width: 150px;
+  height: auto;
 }
 
 /* ─── Section Label ──────────────────────────────────────── */
@@ -133,6 +168,19 @@
   border: 1px dashed #87cefa;
 }
 
+.heatmap-header {
+  display: flex;
+  flex-direction: row;
+}
+
+.heatmap-year {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  margin-right: 1rem;
+}
+
 .heatmap-scroll {
   overflow-x: auto;
   padding-bottom: 4px;
@@ -172,6 +220,7 @@
   width: 14px;
   height: 14px;
   border-radius: 5px;
+  border: 1px solid #b2b2b24a;
   transition: transform 0.15s ease;
 }
 
@@ -180,33 +229,8 @@
   z-index: 1;
 }
 
-.heatmap-cell.level-0 {
+.heatmap-cell.mood-level-0 {
   background: #d9ebff;
-}
-
-.legend-cell.level-1,
-.heatmap-cell.level-1 {
-  background: red;
-}
-
-.legend-cell.level-2,
-.heatmap-cell.level-2 {
-  background: orange;
-}
-
-.legend-cell.level-3,
-.heatmap-cell.level-3 {
-  background: yellow;
-}
-
-.legend-cell.level-4,
-.heatmap-cell.level-4 {
-  background: lightgreen;
-}
-
-.legend-cell.level-5,
-.heatmap-cell.level-5 {
-  background: green;
 }
 
 .heatmap-legend {
@@ -222,32 +246,40 @@
 }
 
 .legend-cell {
+  cursor: pointer;
   width: 15px;
   height: 15px;
   border-radius: 6px;
   border: 1px solid #888;
 }
 
-/* ─── Logout Button ──────────────────────────────────────── */
-::ng-deep .logout-btn .p-button {
-  border-radius: 50px !important;
-  padding: 0.55rem 1.75rem !important;
-  font-size: 0.9rem !important;
-  border-color: #ced4da !important;
-  transition: all 0.2s ease !important;
+.recycle-bin {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
 }
 
-::ng-deep .logout-btn .p-button:hover {
-  background: rgba(220, 53, 69, 0.08) !important;
-  border-color: #dc3545 !important;
-  color: #dc3545 !important;
+.recycle-bin-dialog .p-dialog-content {
+  padding: 0rem 0.5rem 1rem 0.5rem;
 }
 
-/* ─── Responsive ─────────────────────────────────────────── */
-@media (max-width: 600px) {
-  :host {
+p-dialog.avatar-dialog .p-component {
+  max-width: 800px;
+}
+
+@media (max-width: 768px) {
+  :host,
+  app-account {
     padding: 1rem 0.5rem;
     min-height: calc(100vh - 4rem);
+  }
+
+  .avatar-item-ring {
+    max-width: 100px;
+  }
+
+  .avatar-item img {
+    max-width: 100px;
   }
 
   .stats-grid {
@@ -268,5 +300,10 @@
     width: 13px;
     height: 13px;
     border-radius: 4px;
+  }
+
+  .recycle-bin-dialog .p-dialog,
+  p-dialog.avatar-dialog .p-component {
+    max-width: 95vw;
   }
 }

@@ -45,7 +45,7 @@ export class GeneralAppService {
 
   private readonly _toastMessage = signal<ToastMessageOptions>({});
   readonly toastMessage = this._toastMessage.asReadonly();
-  setToastMessage(value: ToastMessageOptions) {
+  setCustomToastMessage(value: ToastMessageOptions) {
     this._toastMessage.set(value);
   }
   setSuccessToast(message: string) {
@@ -59,6 +59,13 @@ export class GeneralAppService {
     this._toastMessage.set({
       severity: 'error',
       summary: 'Error',
+      detail: message,
+    });
+  }
+  setWarningToast(message: string) {
+    this._toastMessage.set({
+      severity: 'warn',
+      summary: 'Warning',
       detail: message,
     });
   }

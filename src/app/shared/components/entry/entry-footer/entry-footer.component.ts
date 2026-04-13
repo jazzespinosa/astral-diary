@@ -1,35 +1,27 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
-  computed,
   effect,
   inject,
   input,
   model,
   OnInit,
+  OnDestroy,
   output,
   signal,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
-import {
-  AttachmentObjResponse,
-  EntryAccess,
-  GalleryItem,
-  SubmitAction,
-} from 'app/models/entry.models';
+import { EntryAccess, GalleryItem, GalleryItemFile, SubmitAction } from 'app/models/entry.models';
 import { AttachmentService } from 'app/services/attachment.service';
-import { EntryService } from 'app/services/entry.service';
 import { GeneralAppService } from 'app/services/general-app.service';
 import { HashService } from 'app/services/hash.service';
-import { GetImagePipe } from 'app/shared/pipes/get-image.pipe';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { GalleriaModule } from 'primeng/galleria';
 import { PopoverModule } from 'primeng/popover';
-import { lastValueFrom, map } from 'rxjs';
+import { ThumbnailViewerComponent } from '../../thumbnail-viewer/thumbnail-viewer.component';
 
 @Component({
   selector: 'app-entry-footer',
@@ -40,52 +32,57 @@ import { lastValueFrom, map } from 'rxjs';
     ButtonModule,
     PopoverModule,
     GalleriaModule,
-    GetImagePipe,
+    ThumbnailViewerComponent,
   ],
   templateUrl: './entry-footer.component.html',
   styleUrl: './entry-footer.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class EntryFooterComponent implements OnInit {
-  entryService = inject(EntryService);
+export class EntryFooterComponent implements OnInit, OnDestroy {
   private attachmentService = inject(AttachmentService);
   private hashService = inject(HashService);
   private generalAppService = inject(GeneralAppService);
 
-  private domSanitizer = inject(DomSanitizer);
-
   sourceId = input.required<string | null>();
   access = input.required<EntryAccess>();
   isEntryPaperExpanded = input.required<boolean>();
-  attachments = input<AttachmentObjResponse[]>([]);
+  attachmentId = input<string | null>(null);
   files = input.required<File[]>();
-  selectedFiles = signal<File[]>([]);
 
   submit = output<SubmitAction>();
   saveAsDraft = output<void>();
   publishDraft = output<void>();
-  delete = output<'entry' | 'draft'>();
+  delete = output<void>();
   attachmentsChange = output<File[]>();
+  showInfo = output<void>();
 
   readonly maxFileSize = 10485760; // 10MB
+  selectedFiles = signal<File[]>([]);
   fileSize = signal(0);
-
+  thumbnails = signal<GalleryItem[]>([]);
   gallery = signal<GalleryItem[]>([]);
-  displayCustom = signal(false);
+  displayGalleryViewer = signal(false);
   activeIndex = signal(0);
+  submitButton = signal({ label: 'Submit', action: 'create' as SubmitAction });
 
   isAttachmentOpen = model(false);
 
-  attachmentRef = viewChild.required<FileUpload>('attachment');
+  attachmentRef = viewChild<FileUpload>('attachment');
 
   popoverOptions: { label: string; action: () => void }[] = [];
-
-  submitButton = signal({ label: 'Submit', action: 'create' as SubmitAction });
 
   constructor() {
     effect(() => {
       if (this.access() !== 'view') {
         this.attachmentsChange.emit(this.selectedFiles());
+      }
+    });
+
+    effect(() => {
+      const ref = this.attachmentRef();
+      const files = this.selectedFiles();
+      if (ref && files.length > 0) {
+        ref.files = [...files];
       }
     });
   }
@@ -103,45 +100,66 @@ export class EntryFooterComponent implements OnInit {
         ];
         this.submitButton.set({ label: 'Submit', action: 'create' });
         break;
-
+      case 'view':
+        this.getThumbnailsFromServer(this.attachmentId() ?? '');
+        break;
       case 'edit-entry':
         this.popoverOptions = [
+          {
+            label: 'Show Info',
+            action: () => this.onShowInfo(),
+          },
           {
             label: 'Save as Draft',
             action: () => this.onSaveAsDraft(),
           },
           {
             label: 'Delete Entry',
-            action: () => this.onDelete('entry'),
+            action: () => this.onDelete(),
           },
         ];
         this.submitButton.set({ label: 'Update Entry', action: 'update-entry' });
-        if (this.attachments().length > 0) {
-          this.loadEditAttachment();
+        if (this.attachmentId()) {
+          this.loadAttachmentFiles(this.attachmentId() ?? '');
         }
         break;
 
       case 'edit-draft':
         this.popoverOptions = [
           {
+            label: 'Show Info',
+            action: () => this.onShowInfo(),
+          },
+          {
             label: 'Publish Draft',
             action: () => this.onPublishDraft(),
           },
           {
             label: 'Delete Draft',
-            action: () => this.onDelete('draft'),
+            action: () => this.onDelete(),
           },
         ];
         this.submitButton.set({ label: 'Update Draft', action: 'update-draft' });
-        if (this.attachments().length > 0) {
-          this.loadEditAttachment();
+        if (this.attachmentId()) {
+          this.loadAttachmentFiles(this.attachmentId() ?? '');
         }
+        break;
+      default:
         break;
     }
   }
 
+  ngOnDestroy(): void {
+    this.attachmentService.cleanupImageUrls(this.gallery());
+    this.attachmentService.cleanupImageUrls(this.thumbnails());
+  }
+
   onSubmit(action: SubmitAction) {
     this.submit.emit(action);
+  }
+
+  onShowInfo() {
+    this.showInfo.emit();
   }
 
   onSaveAsDraft() {
@@ -152,72 +170,109 @@ export class EntryFooterComponent implements OnInit {
     this.publishDraft.emit();
   }
 
-  onDelete(type: 'entry' | 'draft') {
-    this.delete.emit(type);
+  onDelete() {
+    this.delete.emit();
   }
 
   showAttachment() {
     this.isAttachmentOpen.set(true);
   }
 
-  async loadViewGallery() {
+  private async getThumbnailsFromServer(attachmentId: string) {
     const entityId = this.sourceId();
-    if (!entityId) return;
+    if (!entityId || !attachmentId) return;
 
     try {
-      const fileList = this.attachments();
-      const processedItems = await Promise.all(
-        fileList.map(async (file) => {
-          const blob = await lastValueFrom(
-            this.attachmentService.getAttachment(entityId, file.internalFileName),
-          );
-          const url = URL.createObjectURL(blob);
+      const cachedFiles = this.attachmentService.getFilesFromCache(entityId, 'thumbnail');
+      if (cachedFiles && cachedFiles.length > 0) {
+        this.thumbnails.set(cachedFiles);
+        return;
+      }
 
-          return {
-            internalFileName: file.internalFileName,
-            objectUrl: url,
-            localUrl: this.domSanitizer.bypassSecurityTrustUrl(url),
-          };
-        }),
-      );
-      this.gallery.set(processedItems);
+      const items: GalleryItem[] = await this.attachmentService
+        .processIncomingAttachments(entityId, 'thumbnail', attachmentId)
+        .then((item) => {
+          let files = item.map((item) => item.file);
+          this.attachmentService.saveFilesToCache(entityId, files, 'thumbnail');
+
+          return item.map((item) => {
+            return {
+              fileName: item.fileName,
+              objectUrl: item.objectUrl,
+              localUrl: item.localUrl,
+            };
+          });
+        });
+
+      this.thumbnails.set(items);
     } catch (error) {
-      console.error('Failed to load gallery', error);
+      console.error('Failed to load files', error);
     }
   }
 
-  async loadEditAttachment() {
+  private async getAttachmentsFromServer(attachmentId: string) {
     const entityId = this.sourceId();
-    if (!entityId) return;
-
-    const fileList = this.attachments();
-    if (!fileList || fileList.length === 0) return;
+    if (!entityId || !attachmentId) return;
 
     try {
-      const files: File[] = [];
-      for (let i = 0; i < fileList.length; i++) {
-        const file = await lastValueFrom(
-          this.attachmentService.getAttachment(entityId, fileList[i].internalFileName).pipe(
-            map((blob: Blob) => {
-              const newFile = new File([blob], fileList[i].originalFileName, {
-                type: blob.type,
-                lastModified: Date.now(),
-              });
-              (newFile as any).objectURL = this.domSanitizer.bypassSecurityTrustUrl(
-                URL.createObjectURL(newFile),
-              );
-              return newFile;
-            }),
-          ),
+      let items: GalleryItemFile[] | null = null;
+      let isCached = false;
+
+      const cachedFiles = this.attachmentService.getFilesFromCache(entityId, 'attachment');
+      if (cachedFiles && cachedFiles.length > 0) {
+        items = cachedFiles;
+        isCached = true;
+      } else {
+        items = await this.attachmentService.processIncomingAttachments(
+          entityId,
+          'attachment',
+          attachmentId,
         );
-        files.push(file);
       }
 
+      const files = items.map((item) => item.file);
+      if (!isCached) this.attachmentService.saveFilesToCache(entityId, files, 'attachment');
+
+      const attachmentFiles: GalleryItem[] = items.map((item) => {
+        return {
+          fileName: item.fileName,
+          objectUrl: item.objectUrl,
+          localUrl: item.localUrl,
+        };
+      });
+
+      this.gallery.set(attachmentFiles);
+    } catch (error) {
+      console.error('Failed to load files', error);
+    }
+  }
+
+  private async loadAttachmentFiles(attachmentId: string) {
+    const entityId = this.sourceId();
+    if (!entityId || !attachmentId) return;
+
+    try {
+      let items: GalleryItemFile[] | null = null;
+      let isCached = false;
+
+      const cachedFiles = this.attachmentService.getFilesFromCache(entityId, 'attachment');
+      if (cachedFiles && cachedFiles.length > 0) {
+        items = cachedFiles;
+        isCached = true;
+      } else {
+        items = await this.attachmentService.processIncomingAttachments(
+          entityId,
+          'attachment',
+          attachmentId,
+        );
+      }
+
+      const files = items.map((item) => item.file);
+      if (!isCached) this.attachmentService.saveFilesToCache(entityId, files, 'attachment');
       this.selectedFiles.set([...files]);
-      this.attachmentRef().files = files;
       this.updateFileSize();
     } catch (error) {
-      console.error('Failed to load attachments', error);
+      console.error('Failed to load files', error);
     }
   }
 
@@ -278,19 +333,7 @@ export class EntryFooterComponent implements OnInit {
     }
   }
 
-  imageClick(index: number) {
-    if (this.gallery().length === 0) {
-      this.loadViewGallery();
-    }
-    this.activeIndex.set(index);
-    this.displayCustom.set(true);
-  }
-
-  private updateFileSize() {
-    this.fileSize.set(this.selectedFiles().reduce((total, file) => total + file.size, 0));
-  }
-
-  onRemoveFile(event: any, fileUpload: FileUpload = this.attachmentRef()) {
+  onRemoveFile(event: any, fileUpload: FileUpload) {
     this.selectedFiles.set(fileUpload.files);
     const currentFileSize = this.fileSize();
     this.fileSize.set(currentFileSize - event.file.size);
@@ -300,5 +343,17 @@ export class EntryFooterComponent implements OnInit {
   onClearFiles(fileUpload: FileUpload) {
     this.selectedFiles.set(fileUpload.files);
     this.updateFileSize();
+  }
+
+  imageClick(index: number) {
+    if (this.gallery().length === 0) {
+      this.getAttachmentsFromServer(this.attachmentId() ?? '');
+    }
+    this.activeIndex.set(index);
+    this.displayGalleryViewer.set(true);
+  }
+
+  private updateFileSize() {
+    this.fileSize.set(this.selectedFiles().reduce((total, file) => total + file.size, 0));
   }
 }

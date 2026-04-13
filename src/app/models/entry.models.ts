@@ -13,11 +13,35 @@ type CaseInsensitive<T extends string> =
   | Lowercase<T>
   | Capitalize<T>
   | Uncapitalize<T>;
+
 export type DateFilter = CaseInsensitive<'any' | 'exact' | 'before' | 'after'>;
 
 export type Sort = CaseInsensitive<'asc' | 'desc'>;
 
 export type EntryAccess = 'new' | 'view' | 'edit-entry' | 'edit-draft';
+
+export interface JournalEntry {
+  title: string;
+  content: string;
+}
+
+export interface DeleteObject {
+  entityId: string;
+  title: string | null;
+}
+
+export interface EncryptedPayload {
+  ciphertext: string;
+  iv: string;
+  salt: string;
+}
+
+export class EntryValuesDefault {
+  date: Date = new Date();
+  title: string = '';
+  content: string = '';
+  mood: number = 0;
+}
 
 export interface GetUserMoodMapResponse {
   date: Date;
@@ -28,55 +52,57 @@ export interface EntrySearchQueryParam {
   q: string | null;
   filter: DateFilter;
   date?: Date | null;
+  mood: number | null;
   sort: Sort;
-  page: number;
   sid?: string | null;
 }
 
-interface BaseEntry {
+export interface EncryptedDocument {
+  id: string;
+  type: 'Entry' | 'Draft';
   date: Date;
-  title: string | null;
-  content: string | null;
-  mood: number | null;
+  mood: number;
+  encryptedContent: string;
+  contentIv: string;
+  contentSalt: string;
+  attachmentId: string | null;
+  attachmentHash: string | null;
   createdAt: Date;
   modifiedAt: Date;
+  deletedAt: Date | null;
+  publishedAt: Date | null;
 }
 
-export class EntryValues {
-  date: Date = new Date();
-  title: string = '';
-  content: string = '';
-  mood: number | null = null;
-}
-
-export interface AttachmentObjResponse {
-  filePath: string;
-  thumbnailPath: string;
-  internalFileName: string;
-  originalFileName: string;
+export interface DecryptedDocument {
+  id: string;
+  type: 'entry' | 'draft';
+  date: Date;
+  mood: number;
+  title: string;
+  content: string;
+  attachmentId: string | null;
+  attachmentHash: string | null;
+  createdAt: Date;
+  modifiedAt: Date;
+  deletedAt: Date | null;
+  publishedAt: Date | null;
 }
 
 export interface GalleryItem {
-  internalFileName: string;
-  localUrl: SafeUrl;
+  fileName: string;
   objectUrl: string;
+  localUrl: SafeUrl;
 }
 
-export interface GenericEntry extends BaseEntry {
-  id: string;
-  attachments: AttachmentObjResponse[] | null;
+export interface GalleryItemFile extends GalleryItem {
+  file: File;
 }
 
-export interface GetEntryResponse extends BaseEntry {
+export type FileType = 'attachment' | 'thumbnail';
+
+export interface EntryIdObj {
+  id: number;
   entryId: string;
-  title: string;
-  content: string;
-  attachments: AttachmentObjResponse[] | null;
-}
-
-export interface GetDraftResponse extends BaseEntry {
-  draftId: string;
-  attachments: AttachmentObjResponse[] | null;
 }
 
 export interface GetDraftCountResponse {
@@ -85,23 +111,18 @@ export interface GetDraftCountResponse {
 
 export interface UpdatePublishResponse {
   id: string;
-  date: Date;
-  title: string | null;
 }
 
-export interface GetSearchEntriesResponse {
-  items: GetEntryResponse[];
+export interface SearchEntriesResponse {
+  items: EncryptedDocument[];
+}
+
+export interface PaginatedSearchResult {
+  items: DecryptedDocument[];
   page: number;
   pageSize: number;
   totalCount: number;
   totalPages: number;
-}
-
-export interface GetEntriesCalendarResponse extends BaseEntry {
-  entryId: string;
-  title: string;
-  content: string;
-  attachments: AttachmentObjResponse[] | null;
 }
 
 export type SubmitAction = 'create' | 'update-entry' | 'update-draft';

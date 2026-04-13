@@ -7,7 +7,6 @@ import { from, switchMap } from 'rxjs';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = getAuth(initializeApp(environment.firebaseConfig));
 
-  // Skip if Authorization header already exists
   if (req.headers.has('Authorization')) {
     return next(req);
   }
@@ -17,7 +16,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       const user = auth.currentUser;
 
       if (!user) {
-        console.log('AuthInterceptorService - no user');
         return next(req);
       }
 

@@ -2,7 +2,7 @@
   class="search-container container mh-100 d-flex flex-column gap-3 p-3 rounded-3 overflow-hidden"
 >
   <section class="d-flex flex-row align-items-center gap-2">
-    <h4 class="mb-0">AD</h4>
+    <img src="AD-logo-simple.png" alt="" class="search-logo" [routerLink]="['entries/search']" />
     <form
       [formGroup]="searchForm"
       (ngSubmit)="onSearchClicked()"
@@ -27,78 +27,129 @@
     </form>
   </section>
   <hr class="border-top border-2 border-black m-0" />
+  <p-panel header="Filters & Options" toggleable="true" [collapsed]="!displayFilterPanel">
+    <div class="filters d-flex flex-wrap flex-row gap-2 align-items-center rounded-2 p-1">
+      <div class="mood-filter d-flex flex-wrap flex-row align-items-center gap-2">
+        <span>Mood Filter:</span>
+        <div class="mood-select d-flex flex-row gap-2">
+          <p-select [options]="moodFilterOptions" [(ngModel)]="selectedMoodFilter">
+            <ng-template #selectedItem let-selectedOption>
+              <div class="d-flex flex-row align-items-center gap-2">
+                @if (selectedOption.value === 0 || selectedOption.value === null) {
+                  <div>{{ selectedOption.label }}</div>
+                } @else {
+                  <img src="{{ selectedOption.icon }}" style="width: 18px" />
+                  <div>{{ selectedOption.label }}</div>
+                }
+              </div>
+            </ng-template>
+            <ng-template let-mood #item>
+              <div class="d-flex flex-row align-items-center gap-2">
+                @if (mood.value === 0 || mood.value === null) {
+                  <div>{{ mood.label }}</div>
+                } @else {
+                  <img src="{{ mood.icon }}" style="width: 18px" />
+                  <div>{{ mood.label }}</div>
+                }
+              </div>
+            </ng-template>
+          </p-select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="date-filter d-flex flex-wrap flex-row align-items-center gap-2">
+        <span>Date Filter:</span>
+        <div class="date-select d-flex flex-row gap-2">
+          <p-select [options]="dateFilterOptions" [(ngModel)]="selectedDateFilter" />
+          @if (selectedDateFilter() !== 'any') {
+            <div class="search-date-picker-container">
+              <p-datepicker
+                class="search-date-picker"
+                dateFormat="mm/dd/yy"
+                [(ngModel)]="selectedDate"
+                showIcon="true"
+                showOnFocus="false"
+              />
+            </div>
+          }
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="sort d-flex flex-wrap flex-row align-items-center gap-2">
+        <span>Sort by:</span>
+        <div class="d-flex align-items-center" (click)="selectedSort.set('desc')">
+          <p-radiobutton
+            id="desc"
+            name="sort"
+            value="desc"
+            [(ngModel)]="selectedSort"
+            inputId="desc"
+          />
+          <label for="desc" class="ms-2">Descending</label>
+        </div>
+        <div class="d-flex align-items-center" (click)="selectedSort.set('asc')">
+          <p-radiobutton
+            id="asc"
+            name="sort"
+            value="asc"
+            [(ngModel)]="selectedSort"
+            inputId="asc"
+          />
+          <label for="asc" class="ms-2">Ascending</label>
+        </div>
+      </div>
+      <span class="reset-filter m-2 text-decoration-underline" (click)="resetFilters()">Reset</span>
+      <div class="divider"></div>
+      <div class="d-flex flex-row align-items-center justify-content-end gap-2 me-0 ms-auto">
+        <span>Compact View</span>
+        <p-toggleswitch [(ngModel)]="compactView" size="small" (onChange)="onCompactViewChange()" />
+      </div>
+    </div>
+  </p-panel>
   <section
-    class="filters d-flex flex-wrap flex-row gap-2 align-items-center rounded-2 bg-light p-2"
+    class="cards-list d-flex flex-column h-100 overflow-hidden"
+    [class.compact]="compactView()"
   >
-    <div class="date-range d-flex flex-wrap flex-row align-items-center gap-2">
-      <span>Date Filter:</span>
-      <div class="date-select d-flex flex-row gap-2">
-        <p-select [options]="dateFilterOptions" [(ngModel)]="selectedDateFilter" />
-        @if (selectedDateFilter() !== 'any') {
-          <div class="search-date-picker-container">
-            <p-datepicker
-              class="search-date-picker position-fixed z-1"
-              dateFormat="mm/dd/yy"
-              [(ngModel)]="selectedDate"
-              showIcon="true"
-              showOnFocus="false"
-            />
-          </div>
+    @if (searched()) {
+      <h4 class="mb-0">{{ searchLabel() }}</h4>
+      <span class="text-muted mb-2">
+        @if (displaySearchResult().totalCount > 0) {
+          Showing {{ currentFirst() + 1 }}-{{ currentLast() }} of
+          {{ displaySearchResult().totalCount }} entries
+        } @else {
+          Showing 0 of 0 entries
         }
-      </div>
-    </div>
-    <div class="divider"></div>
-    <div class="sort d-flex flex-wrap flex-row align-items-center gap-2">
-      <span>Sort by:</span>
-      <div class="d-flex align-items-center" (click)="selectedSort.set('desc')">
-        <p-radiobutton
-          id="desc"
-          name="sort"
-          value="desc"
-          [(ngModel)]="selectedSort"
-          inputId="desc"
-        />
-        <label for="desc" class="ms-2">Descending</label>
-      </div>
-      <div class="d-flex align-items-center" (click)="selectedSort.set('asc')">
-        <p-radiobutton id="asc" name="sort" value="asc" [(ngModel)]="selectedSort" inputId="asc" />
-        <label for="asc" class="ms-2">Ascending</label>
-      </div>
-    </div>
-  </section>
-  <section class="d-flex flex-column h-100 overflow-hidden">
-    @if (searchClicked()) {
-      <h4>{{ searchLabel() }}</h4>
-      <div class="results overflow-y-auto flex-fill">
+      </span>
+      <div #results class="results d-flex flex-column overflow-y-auto flex-fill gap-3">
         @if (isLoading()) {
           <app-loading message="Getting search results" />
-        } @else if (entriesSearchResult().length === 0) {
+        } @else if (displaySearchResult().items.length === 0) {
           <p class="text-center mt-3">No entries found.</p>
         } @else {
-          @for (entry of entriesSearchResult(); track $index) {
-            <div class="result-entry mb-3">
-              <app-card [entry]="entry" />
+          @for (entry of displaySearchResult().items; track entry.id) {
+            <div class="result-entry">
+              <app-card [document]="entry" [compactView]="compactView()" />
             </div>
           }
           <p-paginator
-            (onPageChange)="onPageChange($event)"
+            (onPageChange)="onPageChange($event, results)"
             [first]="currentFirst()"
             [rows]="pageRows"
-            [totalRecords]="fullEntrySearchResult()?.totalCount ?? 0"
+            [totalRecords]="displaySearchResult().totalCount"
           />
         }
       </div>
     } @else {
       <h4>Recent Entries</h4>
-      <div class="recents overflow-y-auto flex-fill">
+      <div class="recents d-flex flex-column overflow-y-auto flex-fill gap-3">
         @if (isLoading()) {
           <app-loading message="Getting recent entries" />
         } @else if (recentEntries().length === 0) {
           <p class="text-center mt-3">No entries found.</p>
         } @else {
           @for (entry of recentEntries(); track $index) {
-            <div class="recent-entry mb-3">
-              <app-card [entry]="entry" />
+            <div class="recent-entry">
+              <app-card [document]="entry" [compactView]="compactView()" />
             </div>
           }
         }

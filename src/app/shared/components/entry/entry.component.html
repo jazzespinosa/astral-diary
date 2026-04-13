@@ -3,20 +3,21 @@
   (click)="backgroundClick()"
 ></div>
 <app-entry-header
-  [sourceId]="sourceId()"
+  [sourceId]="document()?.id ?? ''"
   [access]="access()"
   [isEntryPaperExpanded]="isEntryPaperExpanded()"
-  (delete)="onDelete('entry')"
+  (delete)="onDelete({ entityId: document()?.id ?? '', title: document()?.title ?? '' })"
+  (showInfo)="showEntryInfo()"
 ></app-entry-header>
 
 <app-entry-content
-  [sourceId]="sourceId()"
+  [sourceId]="document()?.id ?? ''"
   [access]="access()"
-  [values]="values()"
+  [values]="contentValues()"
   [isParentFullEntryPage]="isParentFullEntryPage()"
-  [parentComponent]="parentComponent()"
   [paperTransitionState]="paperTransitionState()"
   [isEntryPaperExpanded]="isEntryPaperExpanded()"
+  [isFormSubmitted]="isFormSubmitted()"
   class="paper"
   [ngClass]="[paperTransitionState(), isEntryPaperExpanded() ? 'expanded' : 'not-expanded']"
   (formValuesChange)="onFormValuesChange($event)"
@@ -27,12 +28,33 @@
 <app-entry-footer
   [access]="access()"
   [isEntryPaperExpanded]="isEntryPaperExpanded()"
-  [sourceId]="sourceId()"
+  [sourceId]="document()?.id ?? ''"
   [files]="selectedFiles"
-  [attachments]="attachments()"
+  [attachmentId]="document()?.attachmentId ?? ''"
   (submit)="onSubmit($event)"
   (saveAsDraft)="onSaveAsDraft()"
   (publishDraft)="onPublishDraft()"
-  (delete)="onDelete($event)"
+  (delete)="onDelete({ entityId: document()?.id ?? '', title: document()?.title ?? '' })"
   (attachmentsChange)="onAttachmentsChange($event)"
+  (showInfo)="showEntryInfo()"
 ></app-entry-footer>
+
+<!-- Info Dialog -->
+@if (isInfoVisible()) {
+  <p-dialog
+    [(visible)]="isInfoVisible"
+    modal="true"
+    dismissableMask="true"
+    draggable="false"
+    class="info-dialog"
+  >
+    <app-info
+      [type]="idType()"
+      [title]="document()?.title ?? ''"
+      [date]="document()?.date"
+      [created]="document()?.createdAt"
+      [lastModified]="document()?.modifiedAt"
+      [publishedAt]="document()?.publishedAt"
+    ></app-info>
+  </p-dialog>
+}

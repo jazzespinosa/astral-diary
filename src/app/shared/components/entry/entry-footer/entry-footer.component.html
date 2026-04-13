@@ -5,23 +5,23 @@
   >
     <p-dialog
       [(visible)]="isAttachmentOpen"
-      [modal]="true"
-      [dismissableMask]="true"
-      [draggable]="false"
+      modal="true"
+      dismissableMask="true"
+      draggable="false"
       class="attachment-dialog"
       (onHide)="onValidateAttachments(attachment)"
     >
       <ng-template #header>
         <div class="d-flex flex-column font-bold whitespace-nowrap">
           <span><b>ATTACHMENTS</b></span>
-          @if (selectedFiles.length > 0 || fileSize() > 0) {
+          @if (selectedFiles().length > 0 || fileSize() > 0) {
             <span class="text-muted"
               >{{
-                selectedFiles.length > 0
+                selectedFiles().length > 0
                   ? '(' +
-                    selectedFiles.length +
+                    selectedFiles().length +
                     ' item' +
-                    (selectedFiles.length > 1 ? 's' : '') +
+                    (selectedFiles().length > 1 ? 's' : '') +
                     ')'
                   : ''
               }}
@@ -79,7 +79,7 @@
         pButton
         icon="fa-solid fa-paper-plane"
         class="submit-button position-absolute p-2"
-        severity="success"
+        severity="primary"
         raised="true"
         rounded="true"
         (click)="onSubmit(submitButton().action)"
@@ -114,31 +114,29 @@
       </p-popover>
     </div>
   </div>
-} @else if (access() === 'view' && attachments() && attachments().length > 0) {
+} @else if (access() === 'view' && attachmentId()) {
   <div class="attachment-gallery w-100 d-flex justify-content-center mt-3 z-1">
-    <div>
-      @for (attachment of attachments(); track $index) {
-        <img
-          [src]="sourceId() ?? '' | getImage: attachment.internalFileName | async"
-          [alt]="attachment.internalFileName"
-          class="gallery-thumbnail me-2"
-          (click)="imageClick($index)"
-        />
-      }
+    <div class="container">
+      <app-thumbnail-viewer
+        [thumbnails]="thumbnails()"
+        [imageWidth]="60"
+        contentJustify="center"
+        (imageClicked)="imageClick($event)"
+      ></app-thumbnail-viewer>
     </div>
     <p-galleria
       [value]="gallery()"
-      [(visible)]="displayCustom"
+      [(visible)]="displayGalleryViewer"
       [(activeIndex)]="activeIndex"
       [containerStyle]="{ 'max-width': '850px' }"
       [numVisible]="7"
-      [circular]="true"
-      [fullScreen]="true"
-      [showItemNavigators]="true"
-      [showThumbnails]="false"
+      circular="true"
+      fullScreen="true"
+      showItemNavigators="true"
+      showThumbnails="false"
     >
       <ng-template #item let-item>
-        <img [src]="item.localUrl" style="max-height: calc(100vh - 7rem); max-width: 85vw" />
+        <img [src]="item.localUrl" class="gallery-image" />
       </ng-template>
     </p-galleria>
   </div>

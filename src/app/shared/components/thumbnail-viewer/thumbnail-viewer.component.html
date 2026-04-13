@@ -1,0 +1,12 @@
+<div #imageContainer class="thumbnail-grid mt-3" [style.--justify]="contentJustify()">
+  @for (img of visibleData().visible; track $index; let isLast = $last) {
+    <div class="image-wrapper" [style.--size]="imageWidth() + 'px'">
+      <img [src]="img.localUrl" [alt]="img.fileName" (click)="onImageClick($index)" />
+      @if (isLast && visibleData().hiddenCount > 0) {
+        <div class="overlay" (click)="onImageClick(visibleData().visible.length - 1)">
+          +{{ visibleData().hiddenCount }}
+        </div>
+      }
+    </div>
+  }
+</div>
