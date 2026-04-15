@@ -3,6 +3,8 @@
 @import '../node_modules/angular-calendar/css/angular-calendar.css';
 
 :root {
+  color-scheme: light;
+
   --mood-1: 255, 116, 108; /*pastel red */
   --mood-2: 255, 192, 103; /*pastel orange */
   --mood-3: 255, 238, 140; /*pastel yellow */

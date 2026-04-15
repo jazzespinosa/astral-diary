@@ -1,10 +1,8 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
-import { TestComponent } from './test/test.component';
 import { CalendarComponent } from './pages/calendar/calendar.component';
 import { AboutComponent } from './pages/about/about.component';
 import { AddEntryComponent } from './pages/entries/add-entry/add-entry.component';
-import { Test2Component } from './test2/test2.component';
 import { SearchEntryComponent } from './pages/entries/search-entry/search-entry.component';
 import { DraftsComponent } from './pages/entries/drafts/drafts.component';
 import { AccountComponent } from './pages/account/account.component';
@@ -18,7 +16,7 @@ import { authChildGuard, authGuard, loginGuard } from './guards/auth.guard';
 import { pendingChangesGuard } from './guards/pending-changes.guard';
 
 export const routes: Routes = [
-  { path: '', component: LandingComponent },
+  { path: '', component: LandingComponent, canActivate: [loginGuard] },
   {
     path: 'home',
     component: HomeComponent,
@@ -52,11 +50,5 @@ export const routes: Routes = [
   { path: 'account', component: AccountComponent, canActivate: [authGuard] },
   { path: 'about', component: AboutComponent },
   { path: 'auth', component: AuthComponent, canActivate: [loginGuard] },
-  { path: 'test', component: TestComponent },
-  {
-    path: 'test2',
-    component: Test2Component,
-    providers: [provideNgtRenderer()],
-  },
   { path: '**', redirectTo: '', pathMatch: 'full' },
 ];

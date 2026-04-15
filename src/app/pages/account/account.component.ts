@@ -168,7 +168,7 @@ export class AccountComponent implements OnInit {
       this.generalAppService.setSuccessToast('Changes saved successfully.');
     } catch (error: any) {
       console.error(error);
-      this.generalAppService.setErrorToast(error.message || 'Failed to save changes.');
+      this.generalAppService.setErrorToast('Failed to save changes.');
     }
   }
 
@@ -236,7 +236,7 @@ export class AccountComponent implements OnInit {
       }
     } catch (error: any) {
       console.error(error);
-      this.generalAppService.setErrorToast(error.message || 'Failed to restore entries.');
+      this.generalAppService.setErrorToast('Failed to restore entries.');
     }
   }
 }

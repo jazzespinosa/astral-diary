@@ -27,13 +27,15 @@
         </div>
         <div class="stat-card" (click)="onFirstEntryClick()">
           <div class="stat-icon"><i class="fa-solid fa-seedling"></i></div>
-          <div class="stat-value">{{ userInfo()?.firstEntryDate | date: 'mediumDate' }}</div>
+          <div class="stat-value">
+            {{ (userInfo()?.firstEntryDate | date: 'mediumDate') ?? '—' }}
+          </div>
           <div class="stat-label">First Saved Entry</div>
         </div>
         <div class="stat-card" (click)="onLatestEntryClick()">
           <div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
           <div class="stat-value">
-            {{ userInfo()?.latestEntryDate | date: 'mediumDate' }}
+            {{ (userInfo()?.latestEntryDate | date: 'mediumDate') ?? '—' }}
           </div>
           <div class="stat-label">Latest Saved Entry</div>
         </div>

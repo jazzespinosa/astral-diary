@@ -52,6 +52,9 @@ export const appConfig: ApplicationConfig = {
     providePrimeNG({
       theme: {
         preset: AstralPreset,
+        options: {
+          darkModeSelector: false,
+        },
       },
     }),
     MessageService,

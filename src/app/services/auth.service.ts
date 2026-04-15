@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { DestroyRef, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -16,6 +16,7 @@ import {
   signOut,
   updateCurrentUser,
   updateProfile,
+  User,
   UserCredential,
 } from '@angular/fire/auth';
 import { environment } from 'environments/environment';
@@ -37,6 +38,7 @@ import { ConfirmationService } from 'primeng/api';
 import { GeneralAppService } from './general-app.service';
 import { ApiClientService } from './api-client.service';
 import { CachingService } from './caching.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root',
@@ -51,6 +53,7 @@ export class AuthService {
   private generalAppService = inject(GeneralAppService);
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   private readonly BASE_URL = environment.backendUrl;
   private googleProvider = new GoogleAuthProvider();
@@ -71,15 +74,13 @@ export class AuthService {
   }
 
   constructor() {
-    this.user$.subscribe(async (user) => {
-      if (user) {
-        this._activeUser.set({
-          email: user.email || '',
-          name: user.displayName || user.email?.substring(0, user.email.indexOf('@')) || '',
-          avatar: await firstValueFrom(this.getAvatar()),
-        });
-      } else {
-        this._activeUser.set(null);
+    this.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (user) => {
+      if (user && user.emailVerified && !this.activeUser()) {
+        console.log('[AuthService] Normalizing user from constructor state');
+        const userData = await firstValueFrom(this.validateWithBackend(user));
+        this.setActiveUser(userData);
+      } else if (!user) {
+        this.setActiveUser(null);
       }
     });
   }
@@ -94,20 +95,10 @@ export class AuthService {
       const redirectResult = await getRedirectResult(this.auth);
 
       if (redirectResult && redirectResult.user) {
-        // Validate with backend for Google sign-in
-        // const userData = await firstValueFrom(this.validateWithBackendGoogle(redirectResult));
-        // if (userData && userData.email) {
-        //   this.setUser(userData);
-        //   this.router.navigate(['/home']);
-        //   return; // Exit early - we've handled the auth
-        // }
-
-        if (redirectResult.user.email && redirectResult.user.displayName) {
-          this.setActiveUser({
-            email: redirectResult.user.email,
-            name: redirectResult.user.displayName,
-            avatar: await firstValueFrom(this.getAvatar()),
-          });
+        if (redirectResult.user.email) {
+          console.log('[AuthService] Normalizing user from redirect state');
+          const userData = await firstValueFrom(this.validateWithBackend(redirectResult.user));
+          this.setActiveUser(userData);
           await this.encryptionService.initSessionKey();
           this.router.navigate(['/home']);
           return;
@@ -130,15 +121,9 @@ export class AuthService {
       const unsubscribe = onAuthStateChanged(
         this.auth,
         async (user) => {
-          if (user) {
-            const email = user.email || '';
-            const name =
-              user.displayName || user.email?.substring(0, user.email.indexOf('@')) || '';
-            const userData: UserModel = {
-              email: email,
-              name: name,
-              avatar: await firstValueFrom(this.getAvatar()),
-            };
+          if (user && user.emailVerified) {
+            console.log('[AuthService] Normalizing user from onAuthStateChanged state');
+            const userData = await firstValueFrom(this.validateWithBackend(user));
             this.setActiveUser(userData);
             await this.encryptionService.initSessionKey();
           }
@@ -162,7 +147,7 @@ export class AuthService {
   login(email: string, password: string): Observable<UserModel> {
     return this.signOutIfNeeded().pipe(
       switchMap(() => from(signInWithEmailAndPassword(this.auth, email, password))),
-      switchMap((userCredential) => this.validateWithBackend(userCredential)),
+      switchMap((userCredential) => this.validateWithBackend(userCredential.user)),
       catchError((error) => throwError(() => this.mapLoginError(error))),
       tap(async (userData) => {
         this.setActiveUser(userData);
@@ -201,66 +186,20 @@ export class AuthService {
     );
   }
 
-  // private saveUserDataInBackend(
-  //   userCredential: UserCredential,
-  //   name: string,
-  // ): Observable<UserModel> {
-  //   return from(userCredential.user.getIdToken(true)).pipe(
-  //     switchMap((token) =>
-  //       this.http.post<SignUpResponseDto>(
-  //         `${this.baseUrl}/api/user/signup`,
-  //         {
-  //           Email: userCredential.user.email,
-  //           Name: name,
-  //         },
-  //         {
-  //           headers: { Authorization: `Bearer ${token}` },
-  //         },
-  //       ),
-  //     ),
-  //     map((response) => ({
-  //       email: response.email,
-  //       name: response.name,
-  //       isAnonymous: false,
-  //     })),
-  //   );
-  // }
-
-  private validateWithBackend(userCredential: UserCredential): Observable<UserModel> {
-    return from(userCredential.user.getIdToken(true)).pipe(
+  private validateWithBackend(user: User): Observable<UserModel> {
+    return from(user.getIdToken(true)).pipe(
       switchMap((token) =>
         this.http.post<LoginResponseDto>(
           `${this.BASE_URL}/user/login`,
-          { Email: userCredential.user.email, Name: userCredential.user.displayName },
+          {
+            Email: user.email,
+            Name: user.displayName || user.email?.substring(0, user.email.indexOf('@')),
+          },
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           },
-        ),
-      ),
-      map((response) => ({
-        userId: response.userId,
-        email: response.email,
-        name: response.name,
-        avatar: response.avatar,
-      })),
-    );
-  }
-
-  private validateWithBackendGoogle(userCredential: UserCredential | null): Observable<UserModel> {
-    if (!userCredential) {
-      return of({} as UserModel);
-    }
-    return from(userCredential.user.getIdToken(true)).pipe(
-      switchMap((token) =>
-        this.http.post<LoginResponseDto>(
-          `${this.BASE_URL}/user/login`,
-          {
-            Email: userCredential.user.email,
-            Name: userCredential.user.displayName,
-          },
-          { headers: { Authorization: `Bearer ${token}` } },
         ),
       ),
       map((response) => ({
@@ -283,7 +222,16 @@ export class AuthService {
   }
 
   private mapLoginError(error: any): AuthError {
-    this.signOutIfNeeded();
+    this.signOutIfNeeded()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.setActiveUser(null);
+        },
+        error: (error) => {
+          console.error('[Auth] Logout error:', error);
+        },
+      });
 
     if (error.message.includes('You must verify your email before signing in.')) {
       return {
@@ -332,10 +280,19 @@ export class AuthService {
         severity: 'danger',
       },
       accept: () => {
-        this.signOutIfNeeded();
-        this.setActiveUser(null);
-        this.generalAppService.setSuccessToast('Logged out successfully');
-        this.router.navigate(['/auth']);
+        this.signOutIfNeeded()
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.setActiveUser(null);
+              this.router.navigate(['auth']);
+              this.generalAppService.setSuccessToast('Logged out successfully');
+            },
+            error: (error) => {
+              console.error('[Auth] Logout error:', error);
+              this.generalAppService.setErrorToast('Logout failed. Try again.');
+            },
+          });
       },
     });
   }

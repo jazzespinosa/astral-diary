@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -8,6 +8,8 @@ import { AuthService } from 'app/services/auth.service';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { GeneralAppService } from 'app/services/general-app.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthError } from 'app/models/auth.models';
 
 @Component({
   selector: 'app-auth',
@@ -20,6 +22,7 @@ export class AuthComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
+  private destroyRef = inject(DestroyRef);
 
   loginForm!: FormGroup;
   registerForm!: FormGroup;
@@ -58,7 +61,8 @@ export class AuthComponent {
       this.appService.setSuccessToast('Login successful');
       this.router.navigate(['/home']);
     } catch (err: any) {
-      this.appService.setErrorToast(err.message || 'Login failed');
+      console.error(err);
+      this.appService.setErrorToast('Login failed');
     } finally {
       this.isSubmitLoading.set(false);
       this.formSubmitted = false;
@@ -75,28 +79,51 @@ export class AuthComponent {
       return;
     }
 
-    try {
-      const registerData = this.registerForm.value;
-      await firstValueFrom(
-        this.authService.register(registerData.name, registerData.email, registerData.password),
-      );
-      this.appService.setSuccessToast(
-        'Verification email sent. Please verify your email to continue.',
-      );
-      this.router.navigate(['/auth/verify']);
-    } catch (err: any) {
-      this.appService.setErrorToast(err.message || 'Registration failed');
-    } finally {
-      this.isSubmitLoading.set(false);
-      this.formSubmitted = false;
-    }
+    // try {
+    //   const registerData = this.registerForm.value;
+    //   await firstValueFrom(
+    //     this.authService.register(registerData.name, registerData.email, registerData.password),
+    //   );
+    //   this.appService.setSuccessToast(
+    //     'Registration successful. Please verify your email to continue.',
+    //   );
+    // } catch (err: any) {
+    //   this.appService.setErrorToast(err.message || 'Registration failed');
+    //   console.log('error [submitRegister]', err);
+    // } finally {
+    //   this.isSubmitLoading.set(false);
+    //   this.formSubmitted = false;
+    // }
+
+    const registerData = this.registerForm.value;
+    this.authService
+      .register(registerData.name, registerData.email, registerData.password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.appService.setSuccessToast(
+            'Registration successful. Please verify your email to continue.',
+          );
+          this.registerForm.reset();
+          this.isLogin.set(true);
+          this.isSubmitLoading.set(false);
+          this.formSubmitted = false;
+        },
+        error: (err: AuthError) => {
+          console.error(err);
+          this.appService.setErrorToast(err.message || 'Registration failed');
+          this.isSubmitLoading.set(false);
+          this.formSubmitted = false;
+        },
+      });
   }
 
   async loginWithGoogle() {
     try {
       await firstValueFrom(this.authService.loginGoogle());
     } catch (err: any) {
-      this.appService.setErrorToast(err.message || 'Google login failed');
+      console.error(err);
+      this.appService.setErrorToast('Google login failed');
     }
   }
 
