@@ -176,16 +176,6 @@ export class AuthService {
     );
   }
 
-  private getAvatar(): Observable<string | null> {
-    return this.apiClientService.getUserAvatar().pipe(
-      map((response) => response.avatar),
-      catchError((error) => {
-        console.error('[Auth] Failed to get avatar:', error);
-        return of(null);
-      }),
-    );
-  }
-
   private validateWithBackend(user: User): Observable<UserModel> {
     return from(user.getIdToken(true)).pipe(
       switchMap((token) =>

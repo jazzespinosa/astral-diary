@@ -48,10 +48,6 @@ export class ApiClientService {
     });
   }
 
-  getUserAvatar(): Observable<{ avatar: string | null }> {
-    return this.http.get<{ avatar: string | null }>(`${this.BASE_URL}/user/get-avatar`);
-  }
-
   saveUserAvatar(avatar: string): Observable<{ avatar: string }> {
     return this.http.patch<{ avatar: string }>(`${this.BASE_URL}/user/save-avatar`, { avatar });
   }
