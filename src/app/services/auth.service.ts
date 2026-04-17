@@ -6,7 +6,6 @@ import {
   Auth,
   authState,
   createUserWithEmailAndPassword,
-  getAuth,
   getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -14,10 +13,8 @@ import {
   signInWithEmailAndPassword,
   signInWithRedirect,
   signOut,
-  updateCurrentUser,
   updateProfile,
   User,
-  UserCredential,
 } from '@angular/fire/auth';
 import { environment } from 'environments/environment';
 import {
@@ -31,14 +28,14 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { AuthError, LoginResponseDto, SignUpResponseDto, UserModel } from 'app/models/auth.models';
+import { AuthError, LoginResponseDto, UserModel } from 'app/models/auth.models';
 import { Router } from '@angular/router';
 import { EncryptionService } from './encryption.service';
 import { ConfirmationService } from 'primeng/api';
 import { GeneralAppService } from './general-app.service';
-import { ApiClientService } from './api-client.service';
 import { CachingService } from './caching.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 
 @Injectable({
   providedIn: 'root',
@@ -48,12 +45,12 @@ export class AuthService {
   private auth = inject(Auth);
   private encryptionService = inject(EncryptionService);
   private confirmationService = inject(ConfirmationService);
-  private apiClientService = inject(ApiClientService);
   private cachingService = inject(CachingService);
   private generalAppService = inject(GeneralAppService);
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+  private readonly functions = inject(Functions);
 
   private readonly BASE_URL = environment.backendUrl;
   private googleProvider = new GoogleAuthProvider();
@@ -75,20 +72,19 @@ export class AuthService {
 
   constructor() {
     this.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (user) => {
-      if (user && user.emailVerified && !this.activeUser()) {
-        console.log('[AuthService] Normalizing user from constructor state');
-        const userData = await firstValueFrom(this.validateWithBackend(user));
-        this.setActiveUser(userData);
-      } else if (!user) {
+      if (!user) {
         this.setActiveUser(null);
+        this.encryptionService.clearSessionKey();
       }
     });
   }
 
+  private isProcessingAuth = false;
+
   async initializeAuth(): Promise<void> {
     // Don't run on server
     if (!isPlatformBrowser(this.platformId)) {
-      return Promise.resolve();
+      return;
     }
 
     try {
@@ -96,10 +92,7 @@ export class AuthService {
 
       if (redirectResult && redirectResult.user) {
         if (redirectResult.user.email) {
-          console.log('[AuthService] Normalizing user from redirect state');
-          const userData = await firstValueFrom(this.validateWithBackend(redirectResult.user));
-          this.setActiveUser(userData);
-          await this.encryptionService.initSessionKey();
+          await this.processAuthenticatedUser(redirectResult.user, 'initializeAuth (redirect)');
           this.router.navigate(['/home']);
           return;
         }
@@ -122,10 +115,7 @@ export class AuthService {
         this.auth,
         async (user) => {
           if (user && user.emailVerified) {
-            console.log('[AuthService] Normalizing user from onAuthStateChanged state');
-            const userData = await firstValueFrom(this.validateWithBackend(user));
-            this.setActiveUser(userData);
-            await this.encryptionService.initSessionKey();
+            await this.processAuthenticatedUser(user, 'initializeAuth (stateChange)');
           }
           unsubscribe(); // Unsubscribe after first result
           resolve();
@@ -138,6 +128,70 @@ export class AuthService {
     });
   }
 
+  private async processAuthenticatedUser(user: User, source: string): Promise<UserModel | null> {
+    if (this.activeUser() && this.activeUser()?.email === user.email) {
+      return this.activeUser();
+    }
+
+    if (this.isProcessingAuth) {
+      return this.activeUser();
+    }
+
+    this.isProcessingAuth = true;
+    try {
+      const userData = await firstValueFrom(this.validateWithBackend(user));
+      console.log(`[Auth] validate login called from ${source}`);
+
+      // Get user pepper (catch errors — pepper may not exist yet)
+      const getUserPepperFn = httpsCallable<
+        object,
+        { userPepper: string | null; success: boolean }
+      >(this.functions, 'getUserPepper');
+
+      let userPepper: string | null = null;
+      try {
+        const userPepperResult = await getUserPepperFn({});
+        userPepper = userPepperResult.data.userPepper;
+        console.log('✅ User pepper retrieved:', !!userPepper);
+      } catch (pepperError) {
+        console.warn('[Auth] getUserPepper failed (pepper may not exist yet):', pepperError);
+      }
+
+      // If user pepper is not found, generate it and re-fetch
+      if (!userPepper) {
+        console.log('[Auth] No pepper found, generating...');
+        await this.initializeEncryption();
+        const retryResult = await getUserPepperFn({});
+        userPepper = retryResult.data.userPepper;
+      }
+
+      if (!userPepper) {
+        throw new Error('Unable to retrieve user pepper after generation.');
+      }
+
+      this.setActiveUser(userData);
+      await this.encryptionService.initSessionKey(userPepper);
+      return userData;
+    } catch (error) {
+      console.error(`[Auth] Error processing user from ${source}:`, error);
+      return null;
+    } finally {
+      this.isProcessingAuth = false;
+    }
+  }
+
+  async initializeEncryption(): Promise<void> {
+    try {
+      const initializeEncryption = httpsCallable(this.functions, 'generateAndSaveUserPepper');
+
+      const result = await initializeEncryption({});
+      console.log('✅ Encryption initialized:', result);
+    } catch (error) {
+      console.error('Error initializing encryption:', error);
+      throw error;
+    }
+  }
+
   loginGoogle() {
     return this.signOutIfNeeded().pipe(
       switchMap(() => from(signInWithRedirect(this.auth, this.googleProvider))),
@@ -147,21 +201,29 @@ export class AuthService {
   login(email: string, password: string): Observable<UserModel> {
     return this.signOutIfNeeded().pipe(
       switchMap(() => from(signInWithEmailAndPassword(this.auth, email, password))),
-      switchMap((userCredential) => this.validateWithBackend(userCredential.user)),
+      switchMap((userCredential) =>
+        from(this.processAuthenticatedUser(userCredential.user, 'login')).pipe(
+          map((userData) => {
+            if (!userData) throw new Error('Login validation failed');
+            return userData;
+          }),
+        ),
+      ),
       catchError((error) => throwError(() => this.mapLoginError(error))),
-      tap(async (userData) => {
-        this.setActiveUser(userData);
-        await this.encryptionService.initSessionKey();
-      }),
     );
   }
 
   register(name: string, email: string, password: string) {
     return this.signOutIfNeeded().pipe(
       switchMap(() =>
-        from(
-          createUserWithEmailAndPassword(this.auth, email, password).then((userCredential) => {
-            updateProfile(userCredential.user, { displayName: name });
+        from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
+          switchMap(async (userCredential) => {
+            await updateProfile(userCredential.user, { displayName: name });
+
+            // Generate user pepper during registration so it's ready for first login
+            await this.initializeEncryption();
+            console.log('[Auth] User pepper created during registration');
+
             return userCredential;
           }),
         ),
@@ -243,6 +305,17 @@ export class AuthService {
   }
 
   private mapRegisterError(error: any): AuthError {
+    this.signOutIfNeeded()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.setActiveUser(null);
+        },
+        error: (error) => {
+          console.error('[Auth] Logout error:', error);
+        },
+      });
+
     const errorMessages: Record<string, string> = {
       'auth/too-many-requests': 'Too many attempts. Try again later.',
       'auth/email-already-in-use': 'Email already in use.',

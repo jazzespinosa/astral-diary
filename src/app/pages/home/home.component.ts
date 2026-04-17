@@ -66,7 +66,7 @@ export class HomeComponent implements OnDestroy {
 
   async onMainStarClicked() {
     const fetchedUserEntries = this.userEntries();
-    if (!fetchedUserEntries) {
+    if (!fetchedUserEntries || fetchedUserEntries.length === 0) {
       return;
     }
     const rand = Math.floor(Math.random() * fetchedUserEntries.length);

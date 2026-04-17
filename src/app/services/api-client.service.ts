@@ -6,7 +6,7 @@ import {
   DecryptedDocument,
   EncryptedDocument,
   EntrySearchQueryParam,
-  GetDraftCountResponse,
+  GetCountResponse,
   EntryIdObj,
   GetUserMoodMapResponse,
   SearchEntriesResponse,
@@ -171,8 +171,12 @@ export class ApiClientService {
     );
   }
 
-  countUserDrafts(): Observable<GetDraftCountResponse> {
-    return this.http.get<GetDraftCountResponse>(`${this.BASE_URL}/draft/count`);
+  checkEntryLimit(): Observable<GetCountResponse> {
+    return this.http.get<GetCountResponse>(`${this.BASE_URL}/entry/check-limit`);
+  }
+
+  countUserDrafts(): Observable<GetCountResponse> {
+    return this.http.get<GetCountResponse>(`${this.BASE_URL}/draft/count`);
   }
 
   getCalendarEntries(date: Date): Observable<DecryptedDocument[]> {

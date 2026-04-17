@@ -47,7 +47,12 @@ export const routes: Routes = [
     ],
   },
   { path: 'calendar', component: CalendarComponent, canActivate: [authGuard] },
-  { path: 'account', component: AccountComponent, canActivate: [authGuard] },
+  {
+    path: 'account',
+    component: AccountComponent,
+    canActivate: [authGuard],
+    canDeactivate: [pendingChangesGuard],
+  },
   { path: 'about', component: AboutComponent },
   { path: 'auth', component: AuthComponent, canActivate: [loginGuard] },
   { path: '**', redirectTo: '', pathMatch: 'full' },

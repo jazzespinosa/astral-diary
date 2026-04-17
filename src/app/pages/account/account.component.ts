@@ -1,15 +1,20 @@
 import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   model,
   OnInit,
   signal,
+  viewChild,
+  viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { CanComponentDeactivate } from 'app/guards/pending-changes.guard';
 import { GetUserInfoResponse } from 'app/models/auth.models';
 import { DecryptedDocument, GetUserMoodMapResponse } from 'app/models/entry.models';
 import { ApiClientService } from 'app/services/api-client.service';
@@ -53,20 +58,22 @@ const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
   styleUrl: './account.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class AccountComponent implements OnInit {
+export class AccountComponent implements OnInit, CanComponentDeactivate {
   private apiClientService = inject(ApiClientService);
   private authService = inject(AuthService);
   private generalAppService = inject(GeneralAppService);
   private router = inject(Router);
 
   readonly heatmapMonths = months;
+  readonly dailyLimit = 3;
+
   heatmapDays = signal<HeatmapDay[]>([]);
   displayYear = signal(new Date().getFullYear());
   userInfo = signal<GetUserInfoResponse | null>(null);
 
   avatarChoices = avatars;
   isAvatarDialogOpen = model(false);
-  displayedAvatar = signal<string>('');
+  displayedAvatar = signal<string | null>(null);
   dialogSelectedAvatar = signal<string>('');
 
   isRecycleBinDialogOpen = model(false);
@@ -77,9 +84,32 @@ export class AccountComponent implements OnInit {
     return this.displayedAvatar() !== this.userInfo()?.avatar;
   });
 
+  heatmapScroll = viewChild<ElementRef<HTMLDivElement>>('heatmapScroll');
+  monthLabels = viewChildren<ElementRef<HTMLSpanElement>>('monthLabel');
+
   constructor() {
     effect(() => {
-      this.displayedAvatar.set(this.userInfo()?.avatar ?? '');
+      this.displayedAvatar.set(this.userInfo()?.avatar ?? null);
+    });
+
+    effect(() => {
+      const days = this.heatmapDays();
+      const scrollEl = this.heatmapScroll();
+      if (days.length > 0 && scrollEl) {
+        setTimeout(() => {
+          this.updateScrollPosition(this.displayYear());
+        }, 0);
+      }
+    });
+
+    effect(() => {
+      const monthLabels = this.monthLabels();
+      const scrollEl = this.heatmapScroll();
+      if (monthLabels.length > 0 && scrollEl) {
+        setTimeout(() => {
+          this.updateScrollPosition(this.displayYear());
+        }, 0);
+      }
     });
   }
 
@@ -88,13 +118,21 @@ export class AccountComponent implements OnInit {
     this.onChangeYear(this.displayYear());
   }
 
+  hasUnsavedChanges(): boolean {
+    return this.isSaveEnable();
+  }
+
+  isSubmitting(): boolean {
+    return false;
+  }
+
   confirmAvatarSelection() {
     this.isAvatarDialogOpen.set(false);
-    this.displayedAvatar.set(this.dialogSelectedAvatar());
+    this.displayedAvatar.set(this.dialogSelectedAvatar() ? this.dialogSelectedAvatar() : null);
   }
 
   onHeaderAvatarClick() {
-    this.dialogSelectedAvatar.set(this.displayedAvatar());
+    this.dialogSelectedAvatar.set(this.displayedAvatar() ?? '');
     this.isAvatarDialogOpen.set(true);
   }
 
@@ -113,6 +151,12 @@ export class AccountComponent implements OnInit {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  onDailyEntriesLimitClick() {
+    this.router.navigate(['entry/search'], {
+      queryParams: { q: '', filter: 'exact', date: formatDate(new Date(), 'yyyy-MM-dd', 'en-US') },
+    });
   }
 
   onTotalEntriesClick() {
@@ -154,7 +198,7 @@ export class AccountComponent implements OnInit {
   async onSave() {
     try {
       const response = await firstValueFrom(
-        this.apiClientService.saveUserAvatar(this.displayedAvatar()),
+        this.apiClientService.saveUserAvatar(this.displayedAvatar() ?? ''),
       );
       this.userInfo.update((user) => {
         if (!user) return user;
@@ -164,7 +208,7 @@ export class AccountComponent implements OnInit {
         };
       });
 
-      this.authService.updateUserAvatar(this.displayedAvatar());
+      this.authService.updateUserAvatar(this.displayedAvatar() ?? '');
       this.generalAppService.setSuccessToast('Changes saved successfully.');
     } catch (error: any) {
       console.error(error);
@@ -198,11 +242,30 @@ export class AccountComponent implements OnInit {
         level: level,
       });
     }
+
     return days;
   }
 
   onMoodLegendClick(mood: number) {
     this.router.navigate(['entry/search'], { queryParams: { q: '', mood: mood } });
+  }
+
+  private updateScrollPosition(year: number) {
+    const month = new Date().toLocaleDateString('en-US', { month: 'short' });
+    const monthLabel = this.monthLabels().find((m) => m.nativeElement.id === `month-${month}`);
+    const scrollElement = this.heatmapScroll()?.nativeElement;
+
+    if (!scrollElement) return;
+
+    if (monthLabel && year === new Date().getFullYear()) {
+      monthLabel.nativeElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    } else {
+      scrollElement.scrollTo({ left: 0, behavior: 'smooth' });
+    }
   }
 
   async onRecycleBinOpen() {

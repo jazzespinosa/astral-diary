@@ -10,10 +10,18 @@ import { firstValueFrom } from 'rxjs';
 import { GeneralAppService } from 'app/services/general-app.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthError } from 'app/models/auth.models';
+import { MessageModule } from 'primeng/message';
 
 @Component({
   selector: 'app-auth',
-  imports: [ReactiveFormsModule, CommonModule, InputTextModule, ButtonModule, ErrorInputComponent],
+  imports: [
+    ReactiveFormsModule,
+    CommonModule,
+    InputTextModule,
+    ButtonModule,
+    ErrorInputComponent,
+    MessageModule,
+  ],
   templateUrl: './auth.component.html',
   styleUrl: './auth.component.css',
 })
@@ -26,6 +34,7 @@ export class AuthComponent {
 
   loginForm!: FormGroup;
   registerForm!: FormGroup;
+  loginVerifyReminder = signal(false);
   isLogin = signal(true); //form toggle
   isLoginPasswordVisible = signal(false);
   isRegisterPasswordVisible = signal(false);
@@ -47,6 +56,7 @@ export class AuthComponent {
 
   async submitLogin() {
     this.formSubmitted = true;
+    this.loginVerifyReminder.set(false);
     this.isSubmitLoading.set(true);
 
     if (this.loginForm.invalid) {
@@ -62,10 +72,24 @@ export class AuthComponent {
       this.router.navigate(['/home']);
     } catch (err: any) {
       console.error(err);
-      this.appService.setErrorToast('Login failed');
+      this.appService.setErrorToast(err.message || 'Login failed');
+      if (err.message === 'You must verify your email before signing in.') {
+        this.loginVerifyReminder.set(true);
+      }
     } finally {
       this.isSubmitLoading.set(false);
       this.formSubmitted = false;
+    }
+  }
+
+  async loginWithGoogle() {
+    try {
+      await firstValueFrom(this.authService.loginGoogle());
+      this.appService.setSuccessToast('Google login successful');
+      this.router.navigate(['/home']);
+    } catch (err: any) {
+      console.error(err);
+      this.appService.setErrorToast('Google login failed');
     }
   }
 
@@ -78,22 +102,6 @@ export class AuthComponent {
       this.isSubmitLoading.set(false);
       return;
     }
-
-    // try {
-    //   const registerData = this.registerForm.value;
-    //   await firstValueFrom(
-    //     this.authService.register(registerData.name, registerData.email, registerData.password),
-    //   );
-    //   this.appService.setSuccessToast(
-    //     'Registration successful. Please verify your email to continue.',
-    //   );
-    // } catch (err: any) {
-    //   this.appService.setErrorToast(err.message || 'Registration failed');
-    //   console.log('error [submitRegister]', err);
-    // } finally {
-    //   this.isSubmitLoading.set(false);
-    //   this.formSubmitted = false;
-    // }
 
     const registerData = this.registerForm.value;
     this.authService
@@ -118,15 +126,6 @@ export class AuthComponent {
       });
   }
 
-  async loginWithGoogle() {
-    try {
-      await firstValueFrom(this.authService.loginGoogle());
-    } catch (err: any) {
-      console.error(err);
-      this.appService.setErrorToast('Google login failed');
-    }
-  }
-
   isInvalid(form: FormGroup, controlName: string) {
     const control = form.get(controlName);
     return control?.invalid && (control.touched || this.formSubmitted);
@@ -144,6 +143,7 @@ export class AuthComponent {
     this.isLogin.set(!this.isLogin());
     this.loginForm.reset();
     this.registerForm.reset();
+    this.loginVerifyReminder.set(false);
     this.formSubmitted = false;
   }
 }

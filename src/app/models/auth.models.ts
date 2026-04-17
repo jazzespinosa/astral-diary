@@ -25,6 +25,7 @@ export interface GetUserInfoResponse {
   email: string;
   displayName: string;
   avatar: string | null;
+  dailyEntries: number;
   totalEntries: number;
   firstEntryId: string | null;
   firstEntryDate: Date | null;

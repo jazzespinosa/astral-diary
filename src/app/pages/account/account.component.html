@@ -15,6 +15,17 @@
       <p class="user-email text-muted">{{ userInfo()?.email ?? '—' }}</p>
       <div class="divider mx-auto mt-2"></div>
     </section>
+    <!-- Daily Limits -->
+    <section class="daily-limits-section">
+      <h5 class="section-label"><i class="fa-solid fa-bars-progress me-2"></i>Daily Limits</h5>
+      <div class="stats-grid">
+        <div class="stat-card" (click)="onDailyEntriesLimitClick()">
+          <div class="stat-icon"><i class="fa-solid fa-feather"></i></div>
+          <div class="stat-value">{{ userInfo()?.dailyEntries ?? '—' }} / {{ dailyLimit }}</div>
+          <div class="stat-label">Entries Limit</div>
+        </div>
+      </div>
+    </section>
 
     <!-- Stats Cards -->
     <section class="stats-section">
@@ -67,11 +78,11 @@
           ></i>
         </div>
       </div>
-      <div class="heatmap-scroll">
+      <div #heatmapScroll class="heatmap-scroll">
         <div class="heatmap-content-wrapper">
           <div class="heatmap-months">
             @for (month of heatmapMonths; track month) {
-              <span class="month-label">{{ month }}</span>
+              <span #monthLabel id="month-{{ month }}" class="month-label">{{ month }}</span>
             }
           </div>
           <div class="heatmap-grid">

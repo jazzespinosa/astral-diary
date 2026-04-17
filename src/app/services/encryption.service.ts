@@ -17,7 +17,7 @@ export class EncryptionService {
   private sessionKey = signal<CryptoKey | null>(null);
   private initializationPromise: Promise<void> | null = null;
 
-  async initSessionKey(): Promise<void> {
+  async initSessionKey(userPepper: string): Promise<void> {
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
@@ -33,11 +33,13 @@ export class EncryptionService {
 
         if (!user) throw new Error('Not authenticated');
 
-        const pepper = await firstValueFrom(
-          this.http.get<{ pepper: string }>(`${this.BASE_URL}/crypto/pepper`),
+        const serverPepper = await firstValueFrom(
+          this.http.get<{ serverPepper: string }>(`${this.BASE_URL}/crypto/pepper`),
         );
 
-        const rawMaterial = new TextEncoder().encode(user.uid + pepper.pepper);
+        const rawMaterial = new TextEncoder().encode(
+          user.uid + serverPepper.serverPepper + userPepper,
+        );
         const baseKey = await crypto.subtle.importKey('raw', rawMaterial, 'HKDF', false, [
           'deriveKey',
         ]);
@@ -78,11 +80,7 @@ export class EncryptionService {
           return;
         }
 
-        await this.initSessionKey();
-
-        if (this.sessionKey()) {
-          return;
-        }
+        throw new Error('Session key not initialized. User pepper may be missing.');
       } catch (error) {
         console.warn(`[SessionKey] Attempt ${attempt} failed:`, error);
 

@@ -63,8 +63,11 @@
                 (click)="entryClicked(entry)"
               >
                 <div class="entry-title align-content-center m-2">
-                  @if (entry.meta.mood) {
-                    <span class="cal-badge-dot" [ngClass]="'mood-level-' + entry.meta.mood"></span>
+                  @if (entry.meta.document) {
+                    <span
+                      class="cal-badge-dot"
+                      [ngClass]="'mood-level-' + entry.meta.document.mood"
+                    ></span>
                   }
                   {{ entry.title }}
                 </div>

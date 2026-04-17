@@ -173,6 +173,10 @@ export class EntryComponent implements OnInit, OnDestroy {
   }
 
   private async onCreateEntry(entryFormData: FormData) {
+    if (await this.isDailyLimitReached()) {
+      return;
+    }
+
     try {
       const response = await firstValueFrom(this.apiClientService.createEntry(entryFormData));
       this.generalAppService.setSuccessToast('Entry created successfully.');
@@ -191,6 +195,17 @@ export class EntryComponent implements OnInit, OnDestroy {
       this.generalAppService.setErrorToast('Failed to create entry.');
       throw error;
     }
+  }
+
+  private async isDailyLimitReached(): Promise<boolean> {
+    const response = await firstValueFrom(this.apiClientService.checkEntryLimit());
+    if (response.count >= 3) {
+      this.generalAppService.setErrorToast(
+        'You have reached the daily maximum number of entries (3). You may upload again tomorrow.',
+      );
+      return true;
+    }
+    return false;
   }
 
   private async onUpdateEntry(entryFormData: FormData) {
@@ -265,6 +280,10 @@ export class EntryComponent implements OnInit, OnDestroy {
   }
 
   async onPublishDraft() {
+    if (await this.isDailyLimitReached()) {
+      return;
+    }
+
     this.isFormSubmitted.set(true);
 
     if (this.form().invalid) {

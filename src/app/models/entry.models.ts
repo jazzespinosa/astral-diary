@@ -105,7 +105,7 @@ export interface EntryIdObj {
   entryId: string;
 }
 
-export interface GetDraftCountResponse {
+export interface GetCountResponse {
   count: number;
 }
 

@@ -36,6 +36,10 @@
   cursor: pointer;
 }
 
+.login-reminder {
+  max-width: 90%;
+}
+
 /* DIVIDER */
 .divider-line {
   height: 1px;
@@ -44,7 +48,7 @@
   background: #bdbcbc;
 }
 
-.divider span {
+.divider-auth span {
   padding: 0 0.75rem;
   color: #333333;
 }

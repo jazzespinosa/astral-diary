@@ -60,7 +60,7 @@ app-account {
   margin-bottom: 0;
 }
 
-.divider {
+.profile-header .divider {
   width: 80px;
   height: 3px;
   background: linear-gradient(90deg, transparent, #87cefa, transparent);
@@ -265,6 +265,14 @@ app-account {
 
 p-dialog.avatar-dialog .p-component {
   max-width: 800px;
+}
+
+.avatar-dialog .p-component .p-dialog-content {
+  padding-bottom: 0;
+}
+
+.avatar-dialog .p-component .p-dialog-footer {
+  padding-top: 1rem;
 }
 
 @media (max-width: 768px) {
