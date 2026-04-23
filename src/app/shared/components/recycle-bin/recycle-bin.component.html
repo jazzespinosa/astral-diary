@@ -1,37 +1,62 @@
 <div class="recycle-bin-container">
-  <p-listbox
-    [options]="options()"
-    multiple="true"
-    checkbox="true"
-    striped="true"
-    (onChange)="onSelectionChange($event)"
-    class="recycle-bin-list-group"
-  >
-    <ng-template #item let-entry>
-      <div class="rb-item d-flex flex-column w-100 align-items-start">
-        <div class="rb-title"><b>Title:</b>&nbsp;{{ entry.title }}</div>
-        <div class="rb-date">
-          <b>Date:</b>&nbsp;<i>{{ entry.date | date: 'mediumDate' }}</i>
-        </div>
-        <div class="rb-content"><b>Content:</b>&nbsp;{{ entry.content }}</div>
-        @if (entry.mood) {
-          <div class="rb-mood">
-            <b>Mood:</b>&nbsp;
-            <img [src]="moods[entry.mood - 1].icon" alt="" />
+  @if (isLoading()) {
+    <p-listbox [options]="['']">
+      <ng-template #item>
+        <div class="d-flex flex-row align-items-center gap-2">
+          <p-skeleton width="1rem" height="1rem"></p-skeleton>
+          <div class="d-flex flex-column gap-2">
+            <p-skeleton width="10rem" height="1rem"></p-skeleton>
+            <p-skeleton width="10rem" height="1rem"></p-skeleton>
+            <p-skeleton width="10rem" height="1rem"></p-skeleton>
+            <div class="d-flex flex-row align-items-center gap-2">
+              <p-skeleton width="4rem" height="4rem"></p-skeleton>
+              <p-skeleton width="4rem" height="4rem"></p-skeleton>
+            </div>
           </div>
-        }
-        @if (entry.thumbnail.length > 0) {
-          <div class="container">
-            <app-thumbnail-viewer
-              [thumbnails]="entry.thumbnail"
-              [imageWidth]="40"
-            ></app-thumbnail-viewer>
-          </div>
-        }
-        <div class="rb-deleted-date">
-          <b>Deleted on:</b>&nbsp;<i>{{ entry.deletedAt | date: 'short' }}</i>
         </div>
-      </div>
-    </ng-template>
-  </p-listbox>
+      </ng-template>
+    </p-listbox>
+  } @else {
+    <p-listbox
+      [options]="options()"
+      multiple="true"
+      checkbox="true"
+      striped="true"
+      (onChange)="onSelectionChange($event)"
+      class="recycle-bin-list-group"
+    >
+      <ng-template #filter>
+        <div class="d-flex align-items-center">
+          <span class="m-0">{{ selectedCount() }}/{{ options().length }} items selected</span>
+        </div>
+      </ng-template>
+
+      <ng-template #item let-entry>
+        <div class="rb-item d-flex flex-column w-100 align-items-start">
+          <div class="rb-title"><b>Title:</b>&nbsp;{{ entry.title }}</div>
+          <div class="rb-date">
+            <b>Date:</b>&nbsp;<i>{{ entry.date | date: 'mediumDate' }}</i>
+          </div>
+          <div class="rb-content"><b>Content:</b>&nbsp;{{ entry.content }}</div>
+          @if (entry.mood) {
+            <div class="rb-mood">
+              <b>Mood:</b>&nbsp;
+              <img [src]="moods[entry.mood - 1].icon" alt="" />
+            </div>
+          }
+          @if (entry.thumbnail.length > 0) {
+            <div class="container">
+              <app-thumbnail-viewer
+                [thumbnails]="entry.thumbnail"
+                [imageWidth]="40"
+              ></app-thumbnail-viewer>
+            </div>
+          }
+          <div class="rb-deleted-date">
+            <b>Deleted on:</b>&nbsp;<i>{{ entry.deletedAt | date: 'short' }}</i>
+          </div>
+        </div>
+      </ng-template>
+    </p-listbox>
+  }
 </div>

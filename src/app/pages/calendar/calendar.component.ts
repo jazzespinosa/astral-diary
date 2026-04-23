@@ -30,7 +30,7 @@ import { DecryptedDocument, EntryAccess } from 'app/models/entry.models';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EntryService } from 'app/services/entry.service';
-import { DatePickerModule } from 'primeng/datepicker';
+import { DatePicker, DatePickerModule } from 'primeng/datepicker';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -139,7 +139,7 @@ export class CalendarComponent implements OnInit {
   }
 
   editEntry(entry: any) {
-    this.router.navigate(['/entry/edit/', entry.id]);
+    this.router.navigate(['entry/edit/', entry.id]);
   }
 
   async deleteEntry(entry: any) {
@@ -181,5 +181,9 @@ export class CalendarComponent implements OnInit {
 
   entryClicked(entry: any) {
     this.selectedEntry.set(entry);
+  }
+
+  onDatePickerClicked(calendarDatePicker: DatePicker) {
+    calendarDatePicker.toggle();
   }
 }

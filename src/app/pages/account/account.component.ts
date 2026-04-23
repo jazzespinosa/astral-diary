@@ -25,13 +25,14 @@ import { endOfYear, startOfYear } from 'date-fns';
 import { Button, ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { firstValueFrom } from 'rxjs';
+import { SkeletonModule } from 'primeng/skeleton';
 
 interface HeatmapDay {
   date: string;
   level: number; // 1-5
 }
 
-const avatars = [
+const AVATARS = [
   'avatar/avatar-cat.svg',
   'avatar/avatar-rabbit.svg',
   'avatar/avatar-dog.svg',
@@ -49,11 +50,19 @@ const avatars = [
   'avatar/avatar-chicken.svg',
 ];
 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 @Component({
   selector: 'app-account',
-  imports: [CommonModule, Button, DatePipe, DialogModule, RecycleBinComponent, ButtonModule],
+  imports: [
+    CommonModule,
+    Button,
+    DatePipe,
+    DialogModule,
+    RecycleBinComponent,
+    ButtonModule,
+    SkeletonModule,
+  ],
   templateUrl: './account.component.html',
   styleUrl: './account.component.css',
   encapsulation: ViewEncapsulation.None,
@@ -64,14 +73,15 @@ export class AccountComponent implements OnInit, CanComponentDeactivate {
   private generalAppService = inject(GeneralAppService);
   private router = inject(Router);
 
-  readonly heatmapMonths = months;
+  readonly heatmapMonths = MONTHS;
   readonly dailyLimit = 3;
 
   heatmapDays = signal<HeatmapDay[]>([]);
   displayYear = signal(new Date().getFullYear());
   userInfo = signal<GetUserInfoResponse | null>(null);
+  isLoading = signal(false);
 
-  avatarChoices = avatars;
+  avatarChoices = AVATARS;
   isAvatarDialogOpen = model(false);
   displayedAvatar = signal<string | null>(null);
   dialogSelectedAvatar = signal<string>('');
@@ -145,11 +155,14 @@ export class AccountComponent implements OnInit, CanComponentDeactivate {
   }
 
   async updateUserInfo() {
+    this.isLoading.set(true);
     try {
       const response = await firstValueFrom(this.apiClientService.getUserInfo(new Date()));
       this.userInfo.set(response);
     } catch (error) {
       console.error(error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

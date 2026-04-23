@@ -22,6 +22,7 @@ import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { GalleriaModule } from 'primeng/galleria';
 import { PopoverModule } from 'primeng/popover';
 import { ThumbnailViewerComponent } from '../../thumbnail-viewer/thumbnail-viewer.component';
+import { SkeletonModule } from 'primeng/skeleton';
 
 @Component({
   selector: 'app-entry-footer',
@@ -33,6 +34,7 @@ import { ThumbnailViewerComponent } from '../../thumbnail-viewer/thumbnail-viewe
     PopoverModule,
     GalleriaModule,
     ThumbnailViewerComponent,
+    SkeletonModule,
   ],
   templateUrl: './entry-footer.component.html',
   styleUrl: './entry-footer.component.css',
@@ -48,6 +50,7 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
   isEntryPaperExpanded = input.required<boolean>();
   attachmentId = input<string | null>(null);
   files = input.required<File[]>();
+  isFormSubmitting = input.required<boolean>();
 
   submit = output<SubmitAction>();
   saveAsDraft = output<void>();
@@ -60,10 +63,16 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
   selectedFiles = signal<File[]>([]);
   fileSize = signal(0);
   thumbnails = signal<GalleryItem[]>([]);
+  isLoadingThumbnails = signal(false);
   gallery = signal<GalleryItem[]>([]);
+  isLoadingGallery = signal(false);
   displayGalleryViewer = signal(false);
   activeIndex = signal(0);
-  submitButton = signal({ label: 'Submit', action: 'create' as SubmitAction });
+  submitButton = signal({
+    label: 'Submit',
+    action: 'create' as SubmitAction,
+    loading: 'Submitting',
+  });
 
   isAttachmentOpen = model(false);
 
@@ -98,7 +107,7 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
             action: () => this.onSaveAsDraft(),
           },
         ];
-        this.submitButton.set({ label: 'Submit', action: 'create' });
+        this.submitButton.set({ label: 'Submit', action: 'create', loading: 'Submitting' });
         break;
       case 'view':
         this.getThumbnailsFromServer(this.attachmentId() ?? '');
@@ -118,7 +127,11 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
             action: () => this.onDelete(),
           },
         ];
-        this.submitButton.set({ label: 'Update Entry', action: 'update-entry' });
+        this.submitButton.set({
+          label: 'Update Entry',
+          action: 'update-entry',
+          loading: 'Updating',
+        });
         if (this.attachmentId()) {
           this.loadAttachmentFiles(this.attachmentId() ?? '');
         }
@@ -139,7 +152,11 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
             action: () => this.onDelete(),
           },
         ];
-        this.submitButton.set({ label: 'Update Draft', action: 'update-draft' });
+        this.submitButton.set({
+          label: 'Update Draft',
+          action: 'update-draft',
+          loading: 'Updating',
+        });
         if (this.attachmentId()) {
           this.loadAttachmentFiles(this.attachmentId() ?? '');
         }
@@ -179,6 +196,8 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
   }
 
   private async getThumbnailsFromServer(attachmentId: string) {
+    this.isLoadingThumbnails.set(true);
+
     const entityId = this.sourceId();
     if (!entityId || !attachmentId) return;
 
@@ -207,10 +226,14 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
       this.thumbnails.set(items);
     } catch (error) {
       console.error('Failed to load files', error);
+    } finally {
+      this.isLoadingThumbnails.set(false);
     }
   }
 
   private async getAttachmentsFromServer(attachmentId: string) {
+    this.isLoadingGallery.set(true);
+
     const entityId = this.sourceId();
     if (!entityId || !attachmentId) return;
 
@@ -244,6 +267,8 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
       this.gallery.set(attachmentFiles);
     } catch (error) {
       console.error('Failed to load files', error);
+    } finally {
+      this.isLoadingGallery.set(false);
     }
   }
 
@@ -347,6 +372,12 @@ export class EntryFooterComponent implements OnInit, OnDestroy {
 
   imageClick(index: number) {
     if (this.gallery().length === 0) {
+      const placeholderItems = this.thumbnails().map((t) => ({
+        fileName: t.fileName,
+        objectUrl: '',
+        localUrl: '' as any,
+      }));
+      this.gallery.set(placeholderItems);
       this.getAttachmentsFromServer(this.attachmentId() ?? '');
     }
     this.activeIndex.set(index);

@@ -4,9 +4,13 @@
 }
 
 .entry-header {
-  font-family: 'Google Sans', sans-serif;
   opacity: 0;
   transition: opacity 0.3s ease;
+}
+
+.content-header {
+  color: var(--p-primary-900);
+  font-family: 'Parisienne', cursive;
 }
 
 .entry-header.show {

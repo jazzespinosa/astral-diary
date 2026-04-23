@@ -1,7 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component,
-  effect,
   inject,
   input,
   OnDestroy,
@@ -14,10 +13,11 @@ import { DecryptedDocument, GalleryItem } from 'app/models/entry.models';
 import { AttachmentService } from 'app/services/attachment.service';
 import { CardModule } from 'primeng/card';
 import { ThumbnailViewerComponent } from '../thumbnail-viewer/thumbnail-viewer.component';
+import { SkeletonModule } from 'primeng/skeleton';
 
 @Component({
   selector: 'app-card',
-  imports: [CommonModule, CardModule, DatePipe, ThumbnailViewerComponent],
+  imports: [CommonModule, CardModule, DatePipe, ThumbnailViewerComponent, SkeletonModule],
   templateUrl: './card.component.html',
   styleUrl: './card.component.css',
   encapsulation: ViewEncapsulation.None,
@@ -28,6 +28,7 @@ export class CardComponent implements OnInit, OnDestroy {
 
   document = input.required<DecryptedDocument>();
   compactView = input<boolean>(false);
+  isLoadingThumbnail = signal<boolean>(false);
 
   thumbnails = signal<GalleryItem[]>([]);
 
@@ -52,6 +53,7 @@ export class CardComponent implements OnInit, OnDestroy {
   }
 
   private async getThumbnailsFromServer(attachmentId: string) {
+    this.isLoadingThumbnail.set(true);
     const entityId = this.document().id;
     if (!entityId || !attachmentId) return;
 
@@ -80,6 +82,8 @@ export class CardComponent implements OnInit, OnDestroy {
       this.thumbnails.set(items);
     } catch (error) {
       console.error('Failed to load files', error);
+    } finally {
+      this.isLoadingThumbnail.set(false);
     }
   }
 }

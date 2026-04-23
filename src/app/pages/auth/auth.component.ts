@@ -26,7 +26,7 @@ import { MessageModule } from 'primeng/message';
   styleUrl: './auth.component.css',
 })
 export class AuthComponent {
-  private appService = inject(GeneralAppService);
+  private generalAppService = inject(GeneralAppService);
   private authService = inject(AuthService);
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
@@ -60,7 +60,7 @@ export class AuthComponent {
     this.isSubmitLoading.set(true);
 
     if (this.loginForm.invalid) {
-      this.appService.setErrorToast('Form is invalid');
+      this.generalAppService.setErrorToast('Form is invalid');
       this.isSubmitLoading.set(false);
       return;
     }
@@ -68,11 +68,11 @@ export class AuthComponent {
     try {
       const loginData = this.loginForm.value;
       await firstValueFrom(this.authService.login(loginData.email, loginData.password));
-      this.appService.setSuccessToast('Login successful');
-      this.router.navigate(['/home']);
+      this.generalAppService.setSuccessToast('Login successful');
+      this.router.navigate(['home']);
     } catch (err: any) {
       console.error(err);
-      this.appService.setErrorToast(err.message || 'Login failed');
+      this.generalAppService.setErrorToast(err.message || 'Login failed');
       if (err.message === 'You must verify your email before signing in.') {
         this.loginVerifyReminder.set(true);
       }
@@ -85,11 +85,9 @@ export class AuthComponent {
   async loginWithGoogle() {
     try {
       await firstValueFrom(this.authService.loginGoogle());
-      this.appService.setSuccessToast('Google login successful');
-      this.router.navigate(['/home']);
     } catch (err: any) {
       console.error(err);
-      this.appService.setErrorToast('Google login failed');
+      this.generalAppService.setErrorToast('Google login failed');
     }
   }
 
@@ -98,7 +96,7 @@ export class AuthComponent {
     this.isSubmitLoading.set(true);
 
     if (this.registerForm.invalid) {
-      this.appService.setErrorToast('Form is invalid');
+      this.generalAppService.setErrorToast('Form is invalid');
       this.isSubmitLoading.set(false);
       return;
     }
@@ -109,7 +107,7 @@ export class AuthComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.appService.setSuccessToast(
+          this.generalAppService.setSuccessToast(
             'Registration successful. Please verify your email to continue.',
           );
           this.registerForm.reset();
@@ -119,7 +117,7 @@ export class AuthComponent {
         },
         error: (err: AuthError) => {
           console.error(err);
-          this.appService.setErrorToast(err.message || 'Registration failed');
+          this.generalAppService.setErrorToast(err.message || 'Registration failed');
           this.isSubmitLoading.set(false);
           this.formSubmitted = false;
         },

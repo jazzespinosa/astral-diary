@@ -13,10 +13,29 @@ app-entry-content {
   background: #ffb3b3;
 }
 
+.paper-cover {
+  background-color: #000000;
+  opacity: 0.15;
+}
+
 .paper-inner {
   padding: 1rem 1rem 1rem 2rem;
   scrollbar-width: thin;
   overflow-anchor: none;
+}
+
+.date-container,
+.title-container {
+  font-size: 1.4rem;
+
+  label {
+    min-width: 3rem;
+  }
+
+  .p-inputtext,
+  .measuring-span {
+    font-size: 1.2rem;
+  }
 }
 
 .date-container .p-datepicker-input.p-inputtext,
@@ -31,13 +50,10 @@ app-entry-content {
   padding: 0 0 0 2px;
 }
 
-.date-container .p-datepicker-input.p-datepicker-input {
-  width: 10rem;
-}
-
+.date-container .p-datepicker-input.p-datepicker-input,
 .entry-title {
-  min-width: 10rem;
-  width: 10rem;
+  min-width: 11rem;
+  width: 11rem;
 }
 
 .measuring-span {
@@ -51,8 +67,8 @@ app-entry-content {
   /* min-height: 60vh; */
   position: relative;
   margin-top: 1rem;
-  font-size: 0.9rem;
-  line-height: 1.2rem;
+  font-size: 1.2rem;
+  line-height: 1.8rem;
   color: #333;
   outline: none;
   opacity: 0;
@@ -60,15 +76,16 @@ app-entry-content {
 }
 
 .entry-textarea {
+  font-family: 'Dancing Script', cursive;
   min-height: 40vh;
   overflow: hidden;
   resize: none;
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   background: repeating-linear-gradient(
     transparent 0rem,
-    transparent calc(1.2rem - 1px),
-    #8d8d8d calc(1.2rem - 1px),
-    #8d8d8d 1.2rem
+    transparent calc(1.8rem - 1px),
+    #8d8d8d calc(1.8rem - 1px),
+    #8d8d8d 1.8rem
   );
 }
 
@@ -77,4 +94,13 @@ app-entry-content {
 }
 
 @media (max-width: 768px) {
+  .date-container,
+  .title-container {
+    font-size: 1.3rem;
+
+    .p-inputtext,
+    .measuring-span {
+      font-size: 1.2rem;
+    }
+  }
 }

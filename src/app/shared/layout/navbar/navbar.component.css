@@ -20,7 +20,9 @@ app-navbar {
 }
 
 .menu-title {
-  font-size: 1.2rem;
+  font-family: 'Parisienne', cursive;
+  color: var(--p-primary-900);
+  font-size: 1.5rem;
   font-weight: 500;
 }
 
@@ -128,6 +130,7 @@ app-navbar {
 }
 
 .list-group-item {
+  color: var(--p-primary-800);
   width: 100%;
   text-align: center;
   border-radius: 32px !important;

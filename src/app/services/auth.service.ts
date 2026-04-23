@@ -82,23 +82,27 @@ export class AuthService {
   private isProcessingAuth = false;
 
   async initializeAuth(): Promise<void> {
-    // Don't run on server
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
 
     try {
-      const redirectResult = await getRedirectResult(this.auth);
+      const redirectResult = await getRedirectResult(this.auth); // handle google sign in
 
       if (redirectResult && redirectResult.user) {
         if (redirectResult.user.email) {
-          await this.processAuthenticatedUser(redirectResult.user, 'initializeAuth (redirect)');
-          this.router.navigate(['/home']);
+          const result = await this.processAuthenticatedUser(
+            redirectResult.user,
+            'initializeAuth (redirect)',
+          );
+          if (result) {
+            await this.router.navigate(['home']);
+            this.generalAppService.setSuccessToast('Google login successful');
+          }
           return;
         }
       }
     } catch (error: any) {
-      // Handle specific redirect errors
       if (error.code === 'auth/popup-closed-by-user') {
         console.error('[Auth] Popup was closed by user');
       } else if (error.code === 'auth/cancelled-popup-request') {
@@ -117,12 +121,12 @@ export class AuthService {
           if (user && user.emailVerified) {
             await this.processAuthenticatedUser(user, 'initializeAuth (stateChange)');
           }
-          unsubscribe(); // Unsubscribe after first result
+          unsubscribe();
           resolve();
         },
         (error) => {
           console.error('[Auth] Auth state error:', error);
-          resolve(); // Resolve anyway to prevent hanging
+          resolve();
         },
       );
     });
@@ -140,9 +144,7 @@ export class AuthService {
     this.isProcessingAuth = true;
     try {
       const userData = await firstValueFrom(this.validateWithBackend(user));
-      console.log(`[Auth] validate login called from ${source}`);
 
-      // Get user pepper (catch errors — pepper may not exist yet)
       const getUserPepperFn = httpsCallable<
         object,
         { userPepper: string | null; success: boolean }
@@ -152,14 +154,11 @@ export class AuthService {
       try {
         const userPepperResult = await getUserPepperFn({});
         userPepper = userPepperResult.data.userPepper;
-        console.log('✅ User pepper retrieved:', !!userPepper);
       } catch (pepperError) {
         console.warn('[Auth] getUserPepper failed (pepper may not exist yet):', pepperError);
       }
 
-      // If user pepper is not found, generate it and re-fetch
       if (!userPepper) {
-        console.log('[Auth] No pepper found, generating...');
         await this.initializeEncryption();
         const retryResult = await getUserPepperFn({});
         userPepper = retryResult.data.userPepper;
@@ -185,7 +184,6 @@ export class AuthService {
       const initializeEncryption = httpsCallable(this.functions, 'generateAndSaveUserPepper');
 
       const result = await initializeEncryption({});
-      console.log('✅ Encryption initialized:', result);
     } catch (error) {
       console.error('Error initializing encryption:', error);
       throw error;
@@ -219,10 +217,7 @@ export class AuthService {
         from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
           switchMap(async (userCredential) => {
             await updateProfile(userCredential.user, { displayName: name });
-
-            // Generate user pepper during registration so it's ready for first login
             await this.initializeEncryption();
-            console.log('[Auth] User pepper created during registration');
 
             return userCredential;
           }),

@@ -2,9 +2,9 @@
   class="entry-header w-100 d-flex flex-row align-items-center z-1"
   [ngClass]="[isEntryPaperExpanded() ? 'show' : '']"
 >
-  <div class="d-flex flex-row align-items-center gap-1 ms-0">
-    <i [class]="header().icon"></i>
-    <h4 class="my-2">{{ header().label }}</h4>
+  <div class="content-header d-flex flex-row align-items-center gap-1 ms-0">
+    <i class="content-header-icon" [class]="header().icon"></i>
+    <h2 class="content-header-label my-2">{{ header().label }}</h2>
   </div>
   @if (access() === 'view') {
     <div class="d-flex flex-row align-items-center me-0 ms-auto">

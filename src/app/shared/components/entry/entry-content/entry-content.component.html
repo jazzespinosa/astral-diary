@@ -1,4 +1,7 @@
 <div class="red-line position-absolute top-0 bottom-0"></div>
+@if (isFormSubmitting()) {
+  <div class="paper-cover position-absolute w-100 h-100 top-0 bottom-0 z-1"></div>
+}
 <div #paperInnerRef class="paper-inner h-100 overflow-y-auto">
   @if (!isParentFullEntryPage()) {
     <button

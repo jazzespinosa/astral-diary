@@ -51,7 +51,7 @@ export class EntryContentComponent implements OnInit, AfterViewInit {
   isParentFullEntryPage = input.required<boolean>();
   paperTransitionState = input.required<'hidden' | 'flying' | 'zoomin'>();
   isEntryPaperExpanded = input.required<boolean>();
-  isFormSubmitted = input.required<boolean>();
+  isFormSubmitting = input.required<boolean>();
 
   formValuesChange = output<FormGroup>();
   moodChange = output<number>();
@@ -152,7 +152,7 @@ export class EntryContentComponent implements OnInit, AfterViewInit {
 
   isInvalid(form: FormGroup, controlName: string) {
     const control = form.get(controlName);
-    return control?.invalid && (control.touched || this.isFormSubmitted());
+    return control?.invalid && (control.touched || this.isFormSubmitting());
   }
 
   onCloseEntry() {

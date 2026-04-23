@@ -33,6 +33,7 @@ import { MOODS } from 'app/shared/components/mood-rating/mood-rating.component';
 import { firstValueFrom } from 'rxjs';
 import { SearchEntryService } from 'app/services/search-entry.service';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { CardSkeletonComponent } from 'app/shared/components/card-skeleton/card-skeleton.component';
 
 const DATE_FILTER_OPTIONS = [
   { label: 'Any', value: 'any' as DateFilter },
@@ -66,6 +67,7 @@ const PAGE_ROWS = 20;
     RouterLink,
     PanelModule,
     ToggleSwitchModule,
+    CardSkeletonComponent,
   ],
   templateUrl: './search-entry.component.html',
   styleUrl: './search-entry.component.css',

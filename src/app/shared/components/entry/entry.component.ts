@@ -47,7 +47,7 @@ import { firstValueFrom } from 'rxjs';
   styleUrl: './entry.component.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class EntryComponent implements OnInit, OnDestroy {
+export class EntryComponent implements OnDestroy {
   private generalAppService = inject(GeneralAppService);
   private apiClientService = inject(ApiClientService);
   private encryptionService = inject(EncryptionService);
@@ -74,7 +74,7 @@ export class EntryComponent implements OnInit, OnDestroy {
   mood = signal<number>(0);
   form = signal<FormGroup>(new FormGroup({}));
   formValue = signal<any>({});
-  isFormSubmitted = signal(false);
+  isFormSubmitting = signal(false);
 
   idType = computed(() => this.entryService.getIdType(this.document()?.id ?? ''));
   isParentFullEntryPage = computed(
@@ -108,9 +108,9 @@ export class EntryComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit() {
-    this.isFormSubmitted.set(false);
-  }
+  // ngOnInit() {
+  //   this.isFormSubmitted.set(false);
+  // }
 
   ngOnDestroy() {
     this.closeEntry();
@@ -122,7 +122,7 @@ export class EntryComponent implements OnInit, OnDestroy {
   }
 
   isSubmitting() {
-    return this.isFormSubmitted();
+    return this.isFormSubmitting();
   }
 
   onFormValuesChange(receivedForm: FormGroup) {
@@ -135,14 +135,15 @@ export class EntryComponent implements OnInit, OnDestroy {
   }
 
   async onSubmit(action: SubmitAction) {
-    this.isFormSubmitted.set(true);
+    this.isFormSubmitting.set(true);
+
     const entryFormData = await this.appendFormData();
 
     if (this.form().invalid && action !== 'update-draft') {
       this.generalAppService.setErrorToast(
         'Form is not completely filled. Please review and try again.',
       );
-      this.isFormSubmitted.set(false);
+      this.isFormSubmitting.set(false);
       return;
     }
 
@@ -168,7 +169,7 @@ export class EntryComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error(error);
     } finally {
-      this.isFormSubmitted.set(false);
+      this.isFormSubmitting.set(false);
     }
   }
 
@@ -248,19 +249,19 @@ export class EntryComponent implements OnInit, OnDestroy {
   }
 
   async onSaveAsDraft() {
-    this.isFormSubmitted.set(true);
+    this.isFormSubmitting.set(true);
 
     try {
       const response = await firstValueFrom(this.apiClientService.countUserDrafts());
       if (response.count >= 10) {
         this.generalAppService.setErrorToast('You have reached the maximum number of drafts (10).');
-        this.isFormSubmitted.set(false);
+        this.isFormSubmitting.set(false);
         return;
       }
 
       if (this.form().get('date')?.invalid) {
         this.generalAppService.setErrorToast('Please fill out the date.');
-        this.isFormSubmitted.set(false);
+        this.isFormSubmitting.set(false);
         return;
       }
 
@@ -275,7 +276,7 @@ export class EntryComponent implements OnInit, OnDestroy {
       console.error(error);
       this.generalAppService.setErrorToast('Failed to save draft.');
     } finally {
-      this.isFormSubmitted.set(false);
+      this.isFormSubmitting.set(false);
     }
   }
 
@@ -284,13 +285,13 @@ export class EntryComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.isFormSubmitted.set(true);
+    this.isFormSubmitting.set(true);
 
     if (this.form().invalid) {
       this.generalAppService.setErrorToast(
         'Form is not completely filled. Please review and try again.',
       );
-      this.isFormSubmitted.set(false);
+      this.isFormSubmitting.set(false);
       return;
     }
 
@@ -315,12 +316,12 @@ export class EntryComponent implements OnInit, OnDestroy {
       console.error(error);
       this.generalAppService.setErrorToast('Failed to publish draft.');
     } finally {
-      this.isFormSubmitted.set(false);
+      this.isFormSubmitting.set(false);
     }
   }
 
   async onDelete(deleteObject: DeleteObject) {
-    this.isFormSubmitted.set(true);
+    this.isFormSubmitting.set(true);
     const response = await this.entryService.onDelete(deleteObject);
     if (response == true) {
       if (this.idType() === 'entry') {
@@ -339,7 +340,7 @@ export class EntryComponent implements OnInit, OnDestroy {
         this.generalAppService.setErrorToast('Failed to delete entry.');
       }
     }
-    this.isFormSubmitted.set(false);
+    this.isFormSubmitting.set(false);
   }
 
   onAttachmentsChange(files: File[]) {

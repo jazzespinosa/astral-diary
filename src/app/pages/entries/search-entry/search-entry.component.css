@@ -17,9 +17,6 @@ app-search-entry {
   cursor: pointer;
 }
 
-.search-bar {
-}
-
 /* FILTERS */
 .filters {
   font-size: 0.8rem;

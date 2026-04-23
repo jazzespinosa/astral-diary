@@ -1,3 +1,7 @@
+:host {
+  font-family: 'Dancing Script', cursive;
+}
+
 .mood-btn-container {
   background: rgb(215, 238, 250);
   border-radius: 2rem;

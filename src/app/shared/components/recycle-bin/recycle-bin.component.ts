@@ -13,6 +13,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { DecryptedDocument, GalleryItem } from 'app/models/entry.models';
 import { ListboxModule } from 'primeng/listbox';
+import { SkeletonModule } from 'primeng/skeleton';
 import { ThumbnailViewerComponent } from '../thumbnail-viewer/thumbnail-viewer.component';
 import { AttachmentService } from 'app/services/attachment.service';
 import { MOODS } from '../mood-rating/mood-rating.component';
@@ -29,7 +30,7 @@ interface RecoverEntryOption {
 
 @Component({
   selector: 'app-recycle-bin',
-  imports: [FormsModule, ListboxModule, DatePipe, ThumbnailViewerComponent],
+  imports: [FormsModule, ListboxModule, DatePipe, ThumbnailViewerComponent, SkeletonModule],
   templateUrl: './recycle-bin.component.html',
   styleUrl: './recycle-bin.component.css',
   encapsulation: ViewEncapsulation.None,
@@ -40,12 +41,15 @@ export class RecycleBinComponent implements OnDestroy {
   deletedEntries = input.required<DecryptedDocument[]>();
   selectedEntryIds = output<string[]>();
 
+  selectedCount = signal<number>(0);
   options = signal<RecoverEntryOption[]>([]);
+  isLoading = signal(false);
 
   moods = MOODS;
 
   constructor() {
     effect(async () => {
+      this.isLoading.set(true);
       const entries = this.deletedEntries();
       const options: RecoverEntryOption[] = [];
       for (const entry of entries) {
@@ -61,6 +65,7 @@ export class RecycleBinComponent implements OnDestroy {
         });
       }
       this.options.set(options);
+      this.isLoading.set(false);
     });
   }
 
@@ -70,6 +75,7 @@ export class RecycleBinComponent implements OnDestroy {
 
   onSelectionChange(event: any) {
     const entryIds = event.value.map((entry: RecoverEntryOption) => entry.entryId);
+    this.selectedCount.set(entryIds.length);
     this.selectedEntryIds.emit(entryIds);
   }
 
@@ -87,6 +93,10 @@ export class RecycleBinComponent implements OnDestroy {
             localUrl: item.localUrl,
           };
         });
+      })
+      .catch((error) => {
+        console.error('Error getting thumbnails:', error);
+        return [];
       });
 
     return items;

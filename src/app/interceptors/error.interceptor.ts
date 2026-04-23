@@ -18,13 +18,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         appService.setCustomToastMessage({
           severity: 'error',
           summary: 'Server Error',
-          detail: error.message,
+          detail: error.name,
         });
       } else if (error.status >= 400) {
         appService.setCustomToastMessage({
           severity: 'error',
           summary: 'Client Error',
-          detail: error.message,
+          detail: error.name,
         });
       }
       console.error(error);

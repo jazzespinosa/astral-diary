@@ -48,7 +48,7 @@ export class NavbarComponent {
         {
           label: 'Login / Register',
           icon: 'fa-solid fa-arrow-right-to-bracket',
-          command: () => this.router.navigate(['/auth']),
+          command: () => this.router.navigate(['auth']),
         },
       ],
     },
@@ -67,7 +67,7 @@ export class NavbarComponent {
         {
           label: 'Profile',
           icon: 'fa-solid fa-user',
-          command: () => this.router.navigate(['/account']),
+          command: () => this.router.navigate(['account']),
         },
         {
           label: 'Logout',

@@ -122,6 +122,9 @@
       </span>
       <div #results class="results d-flex flex-column overflow-y-auto flex-fill gap-3">
         @if (isLoading()) {
+          @for (item of [1, 2]; track item) {
+            <app-card-skeleton />
+          }
           <app-loading message="Getting search results" />
         } @else if (displaySearchResult().items.length === 0) {
           <p class="text-center mt-3">No entries found.</p>
@@ -143,6 +146,9 @@
       <h4>Recent Entries</h4>
       <div class="recents d-flex flex-column overflow-y-auto flex-fill gap-3">
         @if (isLoading()) {
+          @for (item of [1, 2]; track item) {
+            <app-card-skeleton />
+          }
           <app-loading message="Getting recent entries" />
         } @else if (recentEntries().length === 0) {
           <p class="text-center mt-3">No entries found.</p>

@@ -4,7 +4,7 @@
     (click)="onItemClick(document())"
     [ngClass]="document().mood ? 'mood-level-' + document().mood : ''"
   >
-    <ng-template pTemplate="title">
+    <ng-template #title>
       <div class="d-flex flex-row align-items-center">
         @if (document().mood) {
           <span class="card-badge-dot" [ngClass]="'mood-level-' + document().mood"></span>
@@ -21,7 +21,16 @@
         {{ document().content }}
       </p>
       @if (thumbnails() !== null && thumbnails().length > 0) {
-        <app-thumbnail-viewer [thumbnails]="thumbnails()" [imageWidth]="50"></app-thumbnail-viewer>
+        @if (isLoadingThumbnail()) {
+          <div class="d-flex flex-row gap-2 mt-3">
+            <p-skeleton width="50px" height="50px"></p-skeleton>
+          </div>
+        } @else {
+          <app-thumbnail-viewer
+            [thumbnails]="thumbnails()"
+            [imageWidth]="50"
+          ></app-thumbnail-viewer>
+        }
       }
     }
   </p-card>

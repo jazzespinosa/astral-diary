@@ -1,7 +1,7 @@
 <div class="account-wrapper">
   <div class="account-container d-flex flex-column gap-4 rounded-4 p-4 shadow-sm">
     <!-- Profile Header -->
-    <section class="profile-header text-center py-3">
+    <section class="profile-header d-flex flex-column align-items-center text-center py-3">
       <div class="avatar-ring mx-auto mb-3">
         <div class="avatar-placeholder" (click)="onHeaderAvatarClick()">
           @if (displayedAvatar()) {
@@ -11,17 +11,29 @@
           }
         </div>
       </div>
-      <h2 class="display-name">{{ userInfo()?.displayName ?? '—' }}</h2>
-      <p class="user-email text-muted">{{ userInfo()?.email ?? '—' }}</p>
+      @if (isLoading()) {
+        <p-skeleton width="10rem" height="2rem" class="mb-2"></p-skeleton>
+        <p-skeleton width="15rem" height="1.5rem"></p-skeleton>
+      } @else {
+        <h2 class="display-name">{{ userInfo()?.displayName ?? '—' }}</h2>
+        <p class="user-email text-muted">{{ userInfo()?.email ?? '—' }}</p>
+      }
       <div class="divider mx-auto mt-2"></div>
     </section>
+
     <!-- Daily Limits -->
     <section class="daily-limits-section">
       <h5 class="section-label"><i class="fa-solid fa-bars-progress me-2"></i>Daily Limits</h5>
       <div class="stats-grid">
         <div class="stat-card" (click)="onDailyEntriesLimitClick()">
           <div class="stat-icon"><i class="fa-solid fa-feather"></i></div>
-          <div class="stat-value">{{ userInfo()?.dailyEntries ?? '—' }} / {{ dailyLimit }}</div>
+          <div class="stat-value">
+            @if (isLoading()) {
+              <p-skeleton width="4rem" height="1.5rem"></p-skeleton>
+            } @else {
+              {{ userInfo()?.dailyEntries ?? '—' }} / {{ dailyLimit }}
+            }
+          </div>
           <div class="stat-label">Entries Limit</div>
         </div>
       </div>
@@ -33,26 +45,46 @@
       <div class="stats-grid">
         <div class="stat-card" (click)="onTotalEntriesClick()">
           <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
-          <div class="stat-value">{{ userInfo()?.totalEntries ?? '—' }}</div>
+          <div class="stat-value">
+            @if (isLoading()) {
+              <p-skeleton width="4rem" height="1.5rem"></p-skeleton>
+            } @else {
+              {{ userInfo()?.totalEntries ?? '—' }}
+            }
+          </div>
           <div class="stat-label">Total Entries</div>
         </div>
         <div class="stat-card" (click)="onFirstEntryClick()">
           <div class="stat-icon"><i class="fa-solid fa-seedling"></i></div>
           <div class="stat-value">
-            {{ (userInfo()?.firstEntryDate | date: 'mediumDate') ?? '—' }}
+            @if (isLoading()) {
+              <p-skeleton width="6rem" height="1.5rem"></p-skeleton>
+            } @else {
+              {{ (userInfo()?.firstEntryDate | date: 'mediumDate') ?? '—' }}
+            }
           </div>
           <div class="stat-label">First Saved Entry</div>
         </div>
         <div class="stat-card" (click)="onLatestEntryClick()">
           <div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
           <div class="stat-value">
-            {{ (userInfo()?.latestEntryDate | date: 'mediumDate') ?? '—' }}
+            @if (isLoading()) {
+              <p-skeleton width="6rem" height="1.5rem"></p-skeleton>
+            } @else {
+              {{ (userInfo()?.latestEntryDate | date: 'mediumDate') ?? '—' }}
+            }
           </div>
           <div class="stat-label">Latest Saved Entry</div>
         </div>
         <div class="stat-card streak-card" (click)="onCurrentStreakClick()">
           <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
-          <div class="stat-value">{{ userInfo()?.currentStreak ?? '0' }} days</div>
+          <div class="stat-value">
+            @if (isLoading()) {
+              <p-skeleton width="4rem" height="1.5rem"></p-skeleton>
+            } @else {
+              {{ userInfo()?.currentStreak ?? '0' }} days
+            }
+          </div>
           <div class="stat-label">Current Streak</div>
         </div>
       </div>
@@ -108,7 +140,22 @@
       </div>
     </section>
 
-    <!-- Logout -->
+    <!-- Tools -->
+    <section class="tools-section">
+      <h5 class="section-label"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Tools</h5>
+      <div class="tools-grid">
+        <div class="tool-card" (click)="onRecycleBinOpen()">
+          <div class="tool-icon"><i class="fa-regular fa-trash-can"></i></div>
+          <div class="tool-label">Recycle Bin</div>
+        </div>
+        <!-- <div class="tool-card">
+          <div class="tool-icon"><i class="fa-solid fa-gear"></i></div>
+          <div class="tool-label">Settings</div>
+        </div> -->
+      </div>
+    </section>
+
+    <!-- Footer -->
     <section class="d-flex justify-content-center mt-auto gap-3 pb-1">
       <p-button
         label="Save"
@@ -124,16 +171,6 @@
         (click)="onLogout()"
       />
     </section>
-
-    <div class="recycle-bin d-flex justify-content-center">
-      <button
-        pButton
-        text="true"
-        icon="fa-regular fa-trash-can fa-xl"
-        severity="secondary"
-        (click)="onRecycleBinOpen()"
-      ></button>
-    </div>
   </div>
 
   <!-- Avatar Selection Dialog -->

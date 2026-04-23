@@ -76,15 +76,21 @@
         >
       </p-button>
       <button
-        pButton
-        icon="fa-solid fa-paper-plane"
-        class="submit-button position-absolute p-2"
+        class="submit-button position-absolute align-items-center py-2 px-3"
         severity="primary"
         raised="true"
         rounded="true"
         (click)="onSubmit(submitButton().action)"
       >
-        {{ submitButton().label }}
+        <i
+          class="me-2"
+          [ngClass]="
+            isFormSubmitting() ? 'fa-solid fa-spinner fa-spin-pulse' : 'fa-regular fa-paper-plane'
+          "
+        ></i
+        ><span [ngClass]="isFormSubmitting() ? 'loading-submit m-0' : ''">
+          {{ isFormSubmitting() ? submitButton().loading : submitButton().label }}</span
+        >
       </button>
       <p-button
         icon="fa-solid fa-ellipsis-vertical"
@@ -117,12 +123,20 @@
 } @else if (access() === 'view' && attachmentId()) {
   <div class="attachment-gallery w-100 d-flex justify-content-center mt-3 z-1">
     <div class="container">
-      <app-thumbnail-viewer
-        [thumbnails]="thumbnails()"
-        [imageWidth]="60"
-        contentJustify="center"
-        (imageClicked)="imageClick($event)"
-      ></app-thumbnail-viewer>
+      @if (isLoadingThumbnails()) {
+        <div class="d-flex flex-row justify-content-center gap-2 mt-3">
+          @for (i of [1, 2, 3]; track $index) {
+            <p-skeleton width="60px" height="60px"></p-skeleton>
+          }
+        </div>
+      } @else {
+        <app-thumbnail-viewer
+          [thumbnails]="thumbnails()"
+          [imageWidth]="60"
+          contentJustify="center"
+          (imageClicked)="imageClick($event)"
+        ></app-thumbnail-viewer>
+      }
     </div>
     <p-galleria
       [value]="gallery()"
@@ -133,10 +147,16 @@
       circular="true"
       fullScreen="true"
       showItemNavigators="true"
+      showItemNavigatorsOnHover="true"
+      showIndicators="true"
       showThumbnails="false"
     >
       <ng-template #item let-item>
-        <img [src]="item.localUrl" class="gallery-image" />
+        @if (item.localUrl) {
+          <img [src]="item.localUrl" class="gallery-image" />
+        } @else {
+          <p-skeleton width="600px" height="600px"></p-skeleton>
+        }
       </ng-template>
     </p-galleria>
   </div>

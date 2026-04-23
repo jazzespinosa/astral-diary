@@ -116,6 +116,12 @@ app-account {
   gap: 0.75rem;
 }
 
+.tools-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+}
+
 .stat-card {
   background: rgba(240, 248, 255, 0.7);
   border: 1px solid rgba(135, 206, 250, 0.35);
@@ -128,8 +134,41 @@ app-account {
   cursor: pointer;
 }
 
+.tool-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--p-primary-300);
+  color: white;
+  border: 1px solid rgba(62, 108, 206, 0.35);
+  border-radius: 14px;
+  padding: 0.5rem;
+  text-align: center;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.tool-icon {
+  font-size: 1.1rem;
+}
+
+.tool-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .stat-card:hover {
   transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(30, 144, 255, 0.12);
+}
+
+.tool-card:hover {
+  background: var(--p-primary-400);
+  transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(30, 144, 255, 0.12);
 }
 
@@ -144,6 +183,7 @@ app-account {
 }
 
 .stat-value {
+  justify-items: center;
   font-size: 1.05rem;
   font-weight: 700;
   color: #1e90ff;

@@ -6,10 +6,11 @@ import { CardModule } from 'primeng/card';
 import { CardComponent } from 'app/shared/components/card/card.component';
 import { LoadingComponent } from 'app/shared/components/loading/loading.component';
 import { firstValueFrom } from 'rxjs';
+import { CardSkeletonComponent } from 'app/shared/components/card-skeleton/card-skeleton.component';
 
 @Component({
   selector: 'app-drafts',
-  imports: [ButtonModule, CardModule, CardComponent, LoadingComponent],
+  imports: [ButtonModule, CardModule, CardComponent, LoadingComponent, CardSkeletonComponent],
   templateUrl: './drafts.component.html',
   styleUrl: './drafts.component.css',
   encapsulation: ViewEncapsulation.None,

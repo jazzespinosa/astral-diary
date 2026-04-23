@@ -46,6 +46,9 @@ export class App implements OnInit {
   ngOnInit(): void {
     this.generalAppService.setIsMobileView(window.innerWidth < 768);
 
+    this.isLandingPage.set(this.router.url === '/');
+    this.generalAppService.setActiveLink(this.router.url);
+
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),

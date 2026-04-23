@@ -71,8 +71,15 @@ app-entry-footer {
 }
 
 .p-galleria {
-  max-height: calc(100vh - 4.5rem);
+  max-height: calc(100vh - 6rem);
   max-width: 95vw !important;
+}
+
+.p-galleria-indicator-list {
+  position: sticky;
+  bottom: 0;
+  padding: 0.5rem !important;
+  background-color: white;
 }
 
 .gallery-image {
@@ -84,6 +91,41 @@ app-entry-footer {
   width: 15rem;
   left: 50%;
   transform: translateX(-50%);
+  border: none;
+  border-radius: 50px;
+  background-color: var(--p-primary-color);
+  color: var(--p-button-primary-color);
+  font-size: 1.125rem;
+  font-weight: 500;
+  box-shadow:
+    0 0 0 1px rgba(121, 121, 121, 0.05),
+    0 10px 40px rgba(59, 59, 59, 0.2);
+}
+
+.loading-submit::after {
+  content: '...';
+  text-align: left;
+  display: inline-block;
+  animation: dot-cycle 1.5s steps(1) infinite;
+  min-width: 1rem;
+}
+
+@keyframes dot-cycle {
+  0% {
+    content: '...';
+  }
+  25% {
+    content: '';
+  }
+  50% {
+    content: '.';
+  }
+  75% {
+    content: '..';
+  }
+  100% {
+    content: '...';
+  }
 }
 
 .p-popover {
@@ -108,7 +150,7 @@ app-entry-footer {
   }
 
   .submit-button {
-    width: 10rem;
+    max-width: 12rem;
   }
 
   .p-fileupload-header,
@@ -139,6 +181,15 @@ app-entry-footer {
 
   .p-galleria {
     max-height: calc(100vh - 4rem);
+  }
+
+  .p-galleria-indicator-list {
+    padding: 0.2rem !important;
+  }
+
+  .p-galleria-indicator-button {
+    height: 0.75rem !important;
+    width: 0.75rem !important;
   }
 
   .gallery-image {
