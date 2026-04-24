@@ -98,6 +98,9 @@ export class AuthService {
           if (result) {
             await this.router.navigate(['home']);
             this.generalAppService.setSuccessToast('Google login successful');
+          } else {
+            await signOut(this.auth);
+            this.generalAppService.setErrorToast('Login failed. Please try again.');
           }
           return;
         }
@@ -112,6 +115,9 @@ export class AuthService {
       } else {
         console.error('[Auth] Redirect result error:', error);
       }
+      try {
+        await signOut(this.auth);
+      } catch (_) {}
     }
 
     return new Promise<void>((resolve) => {
@@ -119,7 +125,14 @@ export class AuthService {
         this.auth,
         async (user) => {
           if (user && user.emailVerified) {
-            await this.processAuthenticatedUser(user, 'initializeAuth (stateChange)');
+            const result = await this.processAuthenticatedUser(
+              user,
+              'initializeAuth (stateChange)',
+            );
+            if (!result) {
+              await signOut(this.auth);
+              this.generalAppService.setErrorToast('Login failed. Please try again.');
+            }
           }
           unsubscribe();
           resolve();
@@ -173,6 +186,9 @@ export class AuthService {
       return userData;
     } catch (error) {
       console.error(`[Auth] Error processing user from ${source}:`, error);
+      try {
+        await signOut(this.auth);
+      } catch (_) {}
       return null;
     } finally {
       this.isProcessingAuth = false;
@@ -217,7 +233,15 @@ export class AuthService {
         from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
           switchMap(async (userCredential) => {
             await updateProfile(userCredential.user, { displayName: name });
-            await this.initializeEncryption();
+
+            try {
+              await this.initializeEncryption();
+            } catch (encryptionError) {
+              console.warn(
+                '[Auth] Pepper generation failed during registration (will retry on login):',
+                encryptionError,
+              );
+            }
 
             return userCredential;
           }),

@@ -1,45 +1,41 @@
 import { inject } from '@angular/core';
-import { Auth, authState } from '@angular/fire/auth';
-import { CanActivateChildFn, CanActivateFn, CanDeactivateFn, Router } from '@angular/router';
+import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
 import { AuthService } from 'app/services/auth.service';
 import { GeneralAppService } from 'app/services/general-app.service';
-import { map, take } from 'rxjs';
-
-const waitForUser = () => {
-  return authState(inject(Auth)).pipe(take(1));
-};
 
 export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
+  const authService = inject(AuthService);
   const generalAppService = inject(GeneralAppService);
 
-  const result = waitForUser().pipe(map((user) => !!user || router.createUrlTree(['/auth'])));
+  if (authService.activeUser()) {
+    return true;
+  }
 
-  result.subscribe((res) => {
-    if (res !== true) {
-      generalAppService.setWarningToast('Please login to access this page.');
-    }
-  });
-
-  return result;
+  generalAppService.setWarningToast('Please login to access this page.');
+  return router.createUrlTree(['/auth']);
 };
 
 export const authChildGuard: CanActivateChildFn = (route, state) => {
   const router = inject(Router);
+  const authService = inject(AuthService);
   const generalAppService = inject(GeneralAppService);
 
-  const result = waitForUser().pipe(map((user) => !!user || router.createUrlTree(['/auth'])));
+  if (authService.activeUser()) {
+    return true;
+  }
 
-  result.subscribe((res) => {
-    if (res !== true) {
-      generalAppService.setWarningToast('Please login to access this page.');
-    }
-  });
-
-  return result;
+  generalAppService.setWarningToast('Please login to access this page.');
+  return router.createUrlTree(['/auth']);
 };
 
 export const loginGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
-  return waitForUser().pipe(map((user) => (user ? router.createUrlTree(['/home']) : true)));
+  const authService = inject(AuthService);
+
+  if (authService.activeUser()) {
+    return router.createUrlTree(['/home']);
+  }
+
+  return true;
 };
