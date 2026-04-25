@@ -1,10 +1,11 @@
 :host,
 app-account {
   display: block;
-  min-height: calc(100vh - 4.5rem);
+  height: calc(100vh - 4.5rem);
   padding: 2rem 1rem;
   font-family: 'Google Sans', sans-serif;
   overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .account-wrapper {
